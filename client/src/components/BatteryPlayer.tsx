@@ -3,6 +3,7 @@ import { useBatteryEngine } from '../hooks/useBatteryEngine';
 import { OrientationModule } from './OrientationModule';
 import { TrailMakingTask } from './TrailMakingTask';
 import { ClockDrawingTask } from './ClockDrawingTask';
+import { NamingTask } from './tasks/NamingTask';
 import type { BatteryManifest } from '../types/battery';
 
 interface Props {
@@ -25,6 +26,8 @@ export const BatteryPlayer: React.FC<Props> = ({ manifest }) => {
   switch (activeStep.type) {
     case 'orientation':
       return <OrientationModule onComplete={() => nextStep({ orientation: 'completed' })} />;
+    case 'moca-naming':
+      return <NamingTask onComplete={(data) => nextStep({ naming: data })} />;
     case 'moca-visuospatial':
       return <TrailMakingTask onComplete={(data) => nextStep({ trails: data })} />;
     case 'moca-clock':
