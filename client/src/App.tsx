@@ -1,9 +1,7 @@
-import { useTranslation } from 'react-i18next';
-import { useBatteryEngine } from './hooks/useBatteryEngine';
-import { AssessmentLayout } from './components/AssessmentLayout';
+import { BatteryPlayer } from './components/BatteryPlayer';
 import type { BatteryManifest } from './types/battery';
 
-const SAMPLE_MANIFEST: BatteryManifest = {
+const MOCA_MANIFEST: BatteryManifest = {
   id: 'moca-hebrew-v1',
   version: '1.0',
   steps: [
@@ -13,30 +11,7 @@ const SAMPLE_MANIFEST: BatteryManifest = {
 };
 
 function App() {
-  const { t } = useTranslation();
-  const { state, activeStep, nextStep, prevStep } = useBatteryEngine(SAMPLE_MANIFEST);
-
-  if (state.isFinished) {
-    return (
-      <div className="container" style={{ textAlign: 'center', padding: '100px 0' }}>
-        <h1>תודה רבה</h1>
-        <p>ההערכה הסתיימה בהצלחה.</p>
-      </div>
-    );
-  }
-
-  return (
-    <AssessmentLayout
-      title={t(activeStep.titleKey)}
-      onNext={() => nextStep({ completed: true })}
-      onBack={state.currentIndex > 0 ? prevStep : undefined}
-      isLastStep={state.currentIndex === SAMPLE_MANIFEST.steps.length - 1}
-    >
-      <div style={{ textAlign: 'center' }}>
-        <p style={{ fontSize: '1.5rem' }}>{t(`${activeStep.id}.welcome` as any)}</p>
-      </div>
-    </AssessmentLayout>
-  );
+  return <BatteryPlayer manifest={MOCA_MANIFEST} />;
 }
 
 export default App;
