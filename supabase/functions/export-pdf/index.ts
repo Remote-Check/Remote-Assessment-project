@@ -1,21 +1,26 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { jsPDF } from 'https://esm.sh/jspdf@2.5.1';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 Deno.serve(async (req) => {
-  // CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } });
+    return new Response('ok', { headers: corsHeaders });
   }
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: corsHeaders });
 
   const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return new Response('Unauthorized', { status: 401 });
+  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
 
   let body: { sessionId: string };
   try {
     body = await req.json();
   } catch {
-    return new Response('Invalid JSON', { status: 400 });
+    return new Response('Invalid JSON', { status: 400, headers: corsHeaders });
   }
 
   const supabase = createClient(
@@ -24,7 +29,7 @@ Deno.serve(async (req) => {
   );
 
   const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-  if (authError || !user) return new Response('Unauthorized', { status: 401 });
+  if (authError || !user) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
 
   const { data: session } = await supabase
     .from('sessions')
@@ -33,7 +38,7 @@ Deno.serve(async (req) => {
     .eq('clinician_id', user.id)
     .single();
 
-  if (!session) return new Response('Session not found', { status: 404 });
+  if (!session) return new Response('Session not found', { status: 404, headers: corsHeaders });
 
   const report = Array.isArray(session.scoring_reports) ? session.scoring_reports[0] : session.scoring_reports;
 
@@ -58,9 +63,9 @@ Deno.serve(async (req) => {
 
   return new Response(pdfOutput, {
     headers: {
+      ...corsHeaders,
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="report_${session.case_id}.pdf"`,
-      'Access-Control-Allow-Origin': '*',
     },
   });
 });
