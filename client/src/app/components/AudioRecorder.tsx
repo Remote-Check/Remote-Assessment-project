@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Mic, Square, Play, Pause, RotateCcw, AlertTriangle } from "lucide-react";
 import { clsx } from "clsx";
 import { AudioStore } from "../store/audioStore";
+import { useAssessmentStore } from "../store/AssessmentContext";
+import { edgeFn } from "../../lib/supabase";
 
 interface AudioRecorderProps {
   taskId: string;
@@ -9,7 +11,9 @@ interface AudioRecorderProps {
   onRecordingComplete: (audioId: string) => void;
 }
 
-export function AudioRecorder({ taskId, initialAudioId, onRecordingComplete }: AudioRecorderProps) {
+export function AudioRecorder({
+  const { state } = useAssessmentStore();
+ taskId, initialAudioId, onRecordingComplete }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioId, setAudioId] = useState<string | null>(initialAudioId || null);
@@ -20,23 +24,27 @@ export function AudioRecorder({ taskId, initialAudioId, onRecordingComplete }: A
   const audioChunksRef = useRef<Blob[]>([]);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   
-  // Load existing audio URL if we have an ID
+    // Load existing audio URL if we have an ID
   useEffect(() => {
+    let currentUrl: string | null = null;
     if (audioId) {
-      AudioStore.getAudio(audioId).then(blob => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          setAudioUrl(url);
-        }
-      }).catch(err => {
-        console.error("Failed to load audio from DB:", err);
-      });
+      if (audioId.startsWith('http')) {
+        setAudioUrl(audioId);
+      } else {
+        AudioStore.getAudio(audioId).then(blob => {
+          if (blob) {
+            currentUrl = URL.createObjectURL(blob);
+            setAudioUrl(currentUrl);
+          }
+        }).catch(err => {
+          console.error("Failed to load audio from DB:", err);
+        });
+      }
     }
     
-    // Cleanup URLs on unmount
     return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
       }
     };
   }, [audioId]);
@@ -68,16 +76,39 @@ export function AudioRecorder({ taskId, initialAudioId, onRecordingComplete }: A
       
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' });
-        const newAudioId = `audio_${taskId}_${Date.now()}`;
         
-        await AudioStore.saveAudio(newAudioId, audioBlob);
-        
-        const url = URL.createObjectURL(audioBlob);
+        let finalIdOrUrl = `audio_${taskId}_${Date.now()}`;
+        try {
+          if (state.id && state.linkToken) {
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+              const base64 = reader.result as string;
+              const res = await fetch(edgeFn('save-audio'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: state.id, linkToken: state.linkToken, taskId, audioBase64: base64 })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                finalIdOrUrl = data.url;
+              }
+              finishStop(finalIdOrUrl, audioBlob);
+            };
+            return;
+          }
+        } catch (e) {
+          console.error("Audio upload failed", e);
+        }
+        finishStop(finalIdOrUrl, audioBlob);
+      };
+
+      const finishStop = async (idOrUrl: string, blob: Blob) => {
+        if (!idOrUrl.startsWith('http')) await AudioStore.saveAudio(idOrUrl, blob);
+        const url = idOrUrl.startsWith('http') ? idOrUrl : URL.createObjectURL(blob);
         setAudioUrl(url);
-        setAudioId(newAudioId);
-        onRecordingComplete(newAudioId);
-        
-        // Stop all tracks to release the microphone
+        setAudioId(idOrUrl);
+        onRecordingComplete(idOrUrl);
         stream.getTracks().forEach(track => track.stop());
       };
       

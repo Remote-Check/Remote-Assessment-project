@@ -15,22 +15,26 @@ export function PlaybackAudio({ audioId }: { audioId: string | null }) {
 
     let url: string | null = null;
 
-    AudioStore.getAudio(audioId)
-      .then(blob => {
-        if (blob) {
-          url = URL.createObjectURL(blob);
-          setAudioUrl(url);
-        } else {
-          setError("לא נמצאה הקלטה עבור משימה זו.");
-        }
-      })
-      .catch(err => {
-        console.error("Failed to load audio:", err);
-        setError("אירעה שגיאה בטעינת ההקלטה.");
-      });
+    if (audioId.startsWith('http')) {
+      setAudioUrl(audioId);
+    } else {
+      AudioStore.getAudio(audioId)
+        .then(blob => {
+          if (blob) {
+            url = URL.createObjectURL(blob);
+            setAudioUrl(url);
+          } else {
+            setError("לא נמצאה הקלטה עבור משימה זו.");
+          }
+        })
+        .catch(err => {
+          console.error("Failed to load audio:", err);
+          setError("אירעה שגיאה בטעינת ההקלטה.");
+        });
+    }
 
     return () => {
-      if (url) {
+      if (url && !url.startsWith('http')) {
         URL.revokeObjectURL(url);
       }
     };
