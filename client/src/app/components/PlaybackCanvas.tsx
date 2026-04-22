@@ -91,7 +91,7 @@ export function PlaybackCanvas({ strokes, width = 600, height = 400, backgroundI
       }
       ctx.stroke();
     });
-  };
+    }, [validStrokes, startTime, width, height, drawStrokes]);
 
   // Redraw when progress changes manually or via initial render
   useEffect(() => {

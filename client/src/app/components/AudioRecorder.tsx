@@ -39,6 +39,7 @@ export function AudioRecorder({ taskId, initialAudioId, onRecordingComplete }: A
         URL.revokeObjectURL(audioUrl);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioId]);
   
   // Audio playback event listeners
