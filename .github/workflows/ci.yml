@@ -17,7 +17,7 @@ jobs:
           node-version: '20'
       - name: Install dependencies
         working-directory: ./client
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Run Linter
         working-directory: ./client
         run: npm run lint
