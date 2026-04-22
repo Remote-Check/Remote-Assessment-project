@@ -2,7 +2,7 @@
 import { ChevronRight, FileDown, Download, CheckSquare, Mic } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { clsx } from "clsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAssessmentStore } from "../store/AssessmentContext";
 import { PlaybackCanvas } from "./PlaybackCanvas";
 import { PlaybackAudio } from "./PlaybackAudio";
