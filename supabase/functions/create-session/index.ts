@@ -1,0 +1,70 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return json({ error: 'Method not allowed' }, 405);
+  }
+
+  let body: { caseId: string; ageBand: string; educationYears?: number };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: 'Invalid JSON' }, 400);
+  }
+
+  const { caseId, ageBand, educationYears } = body;
+  if (!caseId || !ageBand) {
+    return json({ error: 'Missing required fields' }, 400);
+  }
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  );
+
+  // Authenticate clinician from Authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return json({ error: 'Missing Authorization header' }, 401);
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+  if (userError || !user) {
+    return json({ error: 'Unauthorized clinician' }, 401);
+  }
+
+  // Create session
+  const { data: session, error } = await supabase
+    .from('sessions')
+    .insert({
+      case_id: caseId,
+      clinician_id: user.id,
+      age_band: ageBand,
+      status: 'pending'
+    })
+    .select('id, link_token')
+    .single();
+
+  if (error || !session) {
+    console.error('Session creation failed:', error);
+    return json({ error: 'Failed to create session' }, 500);
+  }
+
+  // For testing, mock a base url or use env
+  const baseUrl = Deno.env.get('PUBLIC_URL') || 'https://app.remotecheck.com';
+
+  return json({
+    sessionId: session.id,
+    linkToken: session.link_token,
+    sessionUrl: `${baseUrl}/#/session/${session.link_token}`
+  });
+});
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
