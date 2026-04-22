@@ -51,8 +51,8 @@ Deno.serve(async (req) => {
   doc.text(`Age Band: ${session.age_band}`, 20, 50);
   doc.text(`Date: ${new Date(session.created_at).toLocaleDateString()}`, 20, 60);
 
-  doc.text(`Total Score: ${report?.total_score || 'Pending'}/30`, 20, 80);
-  doc.text(`Percentile: ${report?.percentile || 'N/A'}%`, 20, 90);
+  doc.text(`Total Score: ${report?.total_score ?? 'Pending'}/30`, 20, 80);
+  doc.text(`Percentile: ${report?.percentile ?? 'N/A'}%`, 20, 90);
   
   if (report?.needs_review) {
     doc.setTextColor(200, 0, 0);
