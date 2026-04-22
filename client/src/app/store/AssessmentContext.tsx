@@ -105,7 +105,7 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
           })
             .then(res => res.ok ? res.json() : Promise.reject())
             .then(({ url }) => {
-              fetch(edgeFn('submit-results'), {
+              fetch(edgeFn('submit-task'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -118,7 +118,7 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
             .catch(err => console.error('Failed to save drawing:', err));
         } else {
           // Normal task
-          fetch(edgeFn('submit-results'), {
+          fetch(edgeFn('submit-task'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
