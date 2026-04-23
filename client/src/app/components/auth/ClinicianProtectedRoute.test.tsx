@@ -71,9 +71,9 @@ describe('ClinicianProtectedRoute', () => {
       signedIn: true,
     } as ReturnType<typeof useClinicianAuth>);
 
-    renderWithRouter();
+    const router = renderWithRouter();
 
     expect(screen.getByText('Dashboard content')).toBeInTheDocument();
-    expect(screen.queryByText('Clinician auth page')).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/dashboard');
   });
 });
