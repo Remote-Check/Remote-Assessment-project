@@ -19,6 +19,8 @@ import { ClinicianDashboardLayout } from "./components/ClinicianDashboardLayout"
 import { LandingHub } from "./components/LandingHub";
 import { PatientWelcome } from "./components/PatientWelcome";
 import { SessionValidation } from "./components/SessionValidation";
+import { ClinicianAuthPage } from "./components/auth/ClinicianAuthPage";
+import { ClinicianProtectedRoute } from "./components/auth/ClinicianProtectedRoute";
 
 export const router = createHashRouter([
   {
@@ -55,10 +57,19 @@ export const router = createHashRouter([
   },
   {
     path: "/dashboard",
-    element: <ClinicianDashboardLayout />,
+    element: <ClinicianProtectedRoute />,
     children: [
-      { index: true, element: <ClinicianDashboardList /> },
-      { path: ":patientId", element: <ClinicianDashboardDetail /> },
+      {
+        element: <ClinicianDashboardLayout />,
+        children: [
+          { index: true, element: <ClinicianDashboardList /> },
+          { path: ":patientId", element: <ClinicianDashboardDetail /> },
+        ],
+      },
     ],
+  },
+  {
+    path: "/clinician/auth",
+    element: <ClinicianAuthPage />,
   },
 ]);

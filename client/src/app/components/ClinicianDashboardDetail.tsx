@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router";
 import { supabase } from "../../lib/supabase";
 import { clsx } from "clsx";
 import { useEffect, useState } from "react";
+import type { DBScoringReport, Session as DBSession } from "../../types/database";
 
 import { useAssessmentStore } from "../store/AssessmentContext";
 import { PlaybackCanvas } from "./PlaybackCanvas";
@@ -20,6 +21,8 @@ const SUMMARY = [
 
 export function ClinicianDashboardDetail() {
   const { patientId } = useParams();
+  const [sessionRecord, setSessionRecord] = useState<DBSession | null>(null);
+  const [reportRecord, setReportRecord] = useState<DBScoringReport | null>(null);
 
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
@@ -31,6 +34,28 @@ export function ClinicianDashboardDetail() {
       .order('created_at', { ascending: false })
       .then(({ data }: any) => {
         if (data) setAuditLogs(data);
+      });
+  }, [patientId]);
+
+  useEffect(() => {
+    if (!patientId) return;
+
+    supabase
+      .from("sessions")
+      .select("id, case_id, age_band, created_at, status")
+      .eq("id", patientId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setSessionRecord(data as DBSession);
+      });
+
+    supabase
+      .from("scoring_reports")
+      .select("id, session_id, total_score, percentile, needs_review, computed_at")
+      .eq("session_id", patientId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setReportRecord(data as DBScoringReport);
       });
   }, [patientId]);
 
@@ -236,6 +261,69 @@ export function ClinicianDashboardDetail() {
     }
   };
 
+  const handlePdfExport = async () => {
+    if (!patientId) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      alert("יש להתחבר כקלינאי כדי לייצא דוח.");
+      return;
+    }
+
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-pdf`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ sessionId: patientId }),
+    });
+
+    if (!res.ok) {
+      alert("ייצוא PDF נכשל.");
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `report_${sessionRecord?.case_id || patientId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleCsvExport = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      alert("יש להתחבר כקלינאי כדי לייצא CSV.");
+      return;
+    }
+
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-csv`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!res.ok) {
+      alert("ייצוא CSV נכשל.");
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "moca_export.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="max-w-6xl mx-auto pb-20">
       <div className="mb-6">
@@ -251,25 +339,31 @@ export function ClinicianDashboardDetail() {
             י
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold text-black mb-2">ישראל ישראלי</h1>
+            <h1 className="text-3xl font-extrabold text-black mb-2">
+              {sessionRecord?.case_id ? `תיק ${sessionRecord.case_id}` : "תיק מטופל"}
+            </h1>
             <div className="flex gap-4 text-gray-500 font-medium text-lg items-center">
-              <span className="font-mono bg-gray-100 px-2 py-0.5 rounded-md">{patientId || "P-1049"}</span>
-              <span>גיל 72</span>
-              <span>מבחן שני</span>
+              <span className="font-mono bg-gray-100 px-2 py-0.5 rounded-md">{patientId || "SESSION"}</span>
+              <span>{sessionRecord?.age_band ? `קבוצת גיל ${sessionRecord.age_band}` : "קבוצת גיל לא זמינה"}</span>
+              <span>
+                {sessionRecord?.created_at
+                  ? `נוצר בתאריך ${new Date(sessionRecord.created_at).toLocaleDateString("he-IL")}`
+                  : "תאריך לא זמין"}
+              </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-amber-100 text-amber-800">
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                בבדיקה
+                {reportRecord?.needs_review ? "בבדיקה" : "נסקר"}
               </span>
             </div>
           </div>
         </div>
 
         <div className="flex gap-4">
-          <button className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 hover:border-black transition-colors text-black">
+          <button onClick={handlePdfExport} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 hover:border-black transition-colors text-black">
             <FileDown className="w-5 h-5" />
             <span>PDF</span>
           </button>
-          <button className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 hover:border-black transition-colors text-black">
+          <button onClick={handleCsvExport} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 hover:border-black transition-colors text-black">
             <Download className="w-5 h-5" />
             <span>CSV</span>
           </button>

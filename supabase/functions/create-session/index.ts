@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendSms } from '../_shared/notifications.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,15 +15,15 @@ Deno.serve(async (req) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  let body: { caseId: string; ageBand: string; educationYears?: number };
+  let body: { caseId: string; ageBand: string; educationYears?: number; patientPhone: string };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Invalid JSON' }, 400);
   }
 
-  const { caseId, ageBand, educationYears } = body;
-  if (!caseId || !ageBand) {
+  const { caseId, ageBand, educationYears, patientPhone } = body;
+  if (!caseId || !ageBand || !patientPhone) {
     return json({ error: 'Missing required fields' }, 400);
   }
 
@@ -52,7 +53,8 @@ Deno.serve(async (req) => {
       clinician_id: user.id,
       age_band: ageBand,
       status: 'pending',
-      education_years: educationYears ?? null
+      education_years: educationYears ?? null,
+      patient_phone: patientPhone
     })
     .select('id, link_token')
     .single();
@@ -65,10 +67,29 @@ Deno.serve(async (req) => {
   // For testing, mock a base url or use env
   const baseUrl = Deno.env.get('PUBLIC_URL') || 'https://app.remotecheck.com';
 
+  const sessionUrl = `${baseUrl}/#/session/${session.link_token}`;
+  const smsMessage = `Remote Check: כדי להתחיל את המבדק, פתחו את הקישור ${sessionUrl}`;
+  const smsResult = await sendSms({ to: patientPhone, message: smsMessage });
+
+  const { error: smsLogError } = await supabase
+    .from('sessions')
+    .update({
+      sms_sent_at: smsResult.sent ? new Date().toISOString() : null,
+      sms_delivery_status: smsResult.sent ? 'sent' : 'failed',
+      sms_last_error: smsResult.error ?? null,
+    })
+    .eq('id', session.id);
+
+  if (smsLogError) {
+    console.error('Failed to persist SMS status', smsLogError);
+  }
+
   return json({
     sessionId: session.id,
     linkToken: session.link_token,
-    sessionUrl: `${baseUrl}/#/session/${session.link_token}`
+    sessionUrl,
+    smsSent: smsResult.sent,
+    smsError: smsResult.error ?? null,
   });
 });
 

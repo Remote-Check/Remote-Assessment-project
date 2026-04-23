@@ -5,12 +5,11 @@ export interface Session {
   id: string;
   clinician_id: string;
   case_id: string;
-  age_band: '60-69' | '70-79' | '80+';
-  education_years: number;
-  location_place: string;
-  location_city: string;
+  age_band: '60-64' | '65-69' | '70-74' | '75-79' | '80+';
+  education_years: number | null;
+  patient_phone?: string | null;
   link_token: string;
-  link_used_at: string | null;
+  used?: boolean;
   status: SessionStatus;
   created_at: string;
   completed_at: string | null;
@@ -19,31 +18,29 @@ export interface Session {
 export interface TaskResult {
   id: string;
   session_id: string;
-  task_type: string;
+  task_name: string;
   raw_data: any;
-  created_at: string;
+  submitted_at: string;
 }
 
 export interface DBScoringReport {
   id: string;
   session_id: string;
-  total_raw: number;
-  total_adjusted: number;
-  total_provisional: boolean;
-  norm_percentile: number | null;
-  norm_sd: number | null;
-  pending_review_count: number;
-  domains: any;
-  completed_at: string;
+  total_score: number | null;
+  percentile: number | null;
+  needs_review: boolean;
+  subscores: any;
+  auto_score_errors: any;
+  computed_at: string;
 }
 
 export interface DrawingReview {
   id: string;
   session_id: string;
-  task_id: 'moca-cube' | 'moca-clock' | 'moca-visuospatial';
-  drawing_url: string;
+  task_name: 'cube' | 'clock' | 'trailMaking';
+  storage_path: string | null;
   clinician_score: number | null;
   clinician_notes: string | null;
   reviewed_at: string | null;
-  created_at: string;
+  strokes_data: any;
 }

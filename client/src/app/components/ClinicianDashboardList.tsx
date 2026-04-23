@@ -1,41 +1,98 @@
 /* eslint-disable react-hooks/incompatible-library */
-import { Search, ChevronLeft, Plus } from "lucide-react";
+import { Search, ChevronLeft, Plus, Copy, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
+import type { Session } from "../../types/database";
 
-// Generate fake patients to demonstrate virtualization
-const FIRST_NAMES = ["ישראל", "דוד", "שרה", "רחל", "משה", "רבקה", "יוסף", "חיים", "מרים", "לאה"];
-const LAST_NAMES = ["ישראלי", "לוי", "כהן", "אברהם", "מזרחי", "פרץ", "ביטון", "דסקל", "אוחיון", "פרידמן"];
-
-const generatePatients = (count: number) => {
-  return Array.from({ length: count }).map((_, i) => {
-    const fn = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
-    const ln = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
-    const isNew = i < 18; // First 18 are 'new' / 'review'
-    return {
-      id: `P-${1049 + i}`,
-      name: `${fn} ${ln}`,
-      age: 65 + Math.floor(Math.random() * 25),
-      tests: 1 + Math.floor(Math.random() * 4),
-      lastActive: i === 0 ? "היום, 10:30" : i < 5 ? "אתמול" : `21.04.2026`,
-      status: i === 0 ? "review" : isNew ? "new" : "completed",
-      score: isNew ? "-" : `${15 + Math.floor(Math.random() * 15)}/30`,
-    };
-  });
-};
+interface DashboardRow {
+  id: string;
+  caseId: string;
+  patientPhone: string | null;
+  ageBand: string | null;
+  tests: number;
+  lastActive: string;
+  status: "review" | "new" | "completed";
+  score: string;
+  token: string;
+}
 
 export function ClinicianDashboardList() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const allPatients = useMemo(() => generatePatients(1000), []);
+  const [rows, setRows] = useState<DashboardRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [copyState, setCopyState] = useState<string | null>(null);
+  const [sessionCreated, setSessionCreated] = useState<{
+    caseId: string;
+    sessionUrl: string;
+    smsSent: boolean;
+    smsError: string | null;
+  } | null>(null);
+  const [newCaseId, setNewCaseId] = useState("");
+  const [newAgeBand, setNewAgeBand] = useState("70-74");
+  const [newEducationYears, setNewEducationYears] = useState("12");
+  const [newPatientPhone, setNewPatientPhone] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const loadSessions = async () => {
+    setLoading(true);
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData.session;
+    if (!session) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("sessions")
+      .select("id, case_id, patient_phone, age_band, status, created_at, link_token, scoring_reports(total_score, needs_review)")
+      .eq("clinician_id", session.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      console.error("Failed to fetch sessions", error);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const mapped = data.map((s: Session & { scoring_reports?: { total_score: number | null; needs_review: boolean }[] }) => {
+      const score = Array.isArray(s.scoring_reports) && s.scoring_reports[0]?.total_score != null
+        ? `${s.scoring_reports[0].total_score}/30`
+        : "-";
+      const needsReview = Array.isArray(s.scoring_reports) && s.scoring_reports[0]?.needs_review;
+      return {
+        id: s.id,
+        caseId: s.case_id,
+        patientPhone: s.patient_phone,
+        ageBand: s.age_band,
+        tests: 1,
+        lastActive: new Date(s.created_at).toLocaleDateString("he-IL"),
+        status: needsReview ? "review" : s.status === "completed" ? "completed" : "new",
+        score,
+        token: s.link_token,
+      } satisfies DashboardRow;
+    });
+
+    setRows(mapped);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadSessions();
+  }, []);
   
   const filteredPatients = useMemo(() => {
-    return allPatients.filter(p => 
-      p.name.includes(search) || p.id.includes(search)
+    return rows.filter((p) =>
+      p.caseId.toLowerCase().includes(search.toLowerCase()) ||
+      (p.patientPhone || "").includes(search),
     );
-  }, [allPatients, search]);
+  }, [rows, search]);
 
   
   const handleCsvExport = async () => {
@@ -64,10 +121,81 @@ export function ClinicianDashboardList() {
     }
   };
 
+  const handleCreateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError(null);
+    setSessionCreated(null);
+
+    if (!newCaseId.trim() || !newPatientPhone.trim()) {
+      setCreateError("יש למלא מזהה מטופל ומספר טלפון.");
+      return;
+    }
+
+    const educationYears = Number(newEducationYears);
+    if (!Number.isFinite(educationYears) || educationYears < 0 || educationYears > 40) {
+      setCreateError("שנות לימוד חייבות להיות בין 0 ל-40.");
+      return;
+    }
+
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData.session;
+    if (!session) {
+      setCreateError("נדרש להתחבר מחדש כקלינאי.");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          caseId: newCaseId.trim(),
+          ageBand: newAgeBand,
+          educationYears,
+          patientPhone: newPatientPhone.trim(),
+        }),
+      });
+
+      const payload = await res.json();
+      if (!res.ok) {
+        throw new Error(payload?.error || "יצירת סשן נכשלה.");
+      }
+
+      setSessionCreated({
+        caseId: newCaseId.trim(),
+        sessionUrl: payload.sessionUrl,
+        smsSent: Boolean(payload.smsSent),
+        smsError: payload.smsError ?? null,
+      });
+      setNewCaseId("");
+      setNewPatientPhone("");
+      await loadSessions();
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : "יצירת סשן נכשלה.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyState("הקישור הועתק");
+      setTimeout(() => setCopyState(null), 2000);
+    } catch {
+      setCopyState("העתקה נכשלה");
+      setTimeout(() => setCopyState(null), 2000);
+    }
+  };
+
   const parentRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
-    count: filteredPatients.length,
+    count: Math.max(filteredPatients.length, 1),
     getScrollElement: () => parentRef.current,
     estimateSize: () => 88, // estimated row height
     overscan: 5,
@@ -79,7 +207,7 @@ export function ClinicianDashboardList() {
         <div>
           <h1 className="text-4xl font-extrabold text-black mb-2">מטופלים</h1>
           <div className="text-gray-500 font-medium text-lg">
-            1000 פעילים · 18 דורשים סקירה
+            {loading ? "טוען..." : `${rows.length} פעילים · ${rows.filter((p) => p.status === "review").length} דורשים סקירה`}
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -98,19 +226,107 @@ export function ClinicianDashboardList() {
               className="pl-4 pr-12 py-3 bg-white border border-gray-200 rounded-xl w-80 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-600 transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-md text-lg">
+          <button
+            onClick={() => setCreateOpen((v) => !v)}
+            className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-md text-lg"
+          >
             <Plus className="w-5 h-5" />
             <span>מטופל חדש</span>
           </button>
         </div>
       </div>
 
+      {createOpen && (
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+          <h2 className="text-2xl font-extrabold text-black mb-4">פתיחת מבחן חדש ושליחת SMS</h2>
+          <form onSubmit={handleCreateSession} className="grid grid-cols-12 gap-4">
+            <input
+              value={newCaseId}
+              onChange={(e) => setNewCaseId(e.target.value)}
+              placeholder="מזהה מטופל (Case ID)"
+              className="col-span-3 h-12 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-600"
+            />
+            <input
+              value={newPatientPhone}
+              onChange={(e) => setNewPatientPhone(e.target.value)}
+              placeholder="טלפון מטופל (+972...)"
+              className="col-span-3 h-12 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-600"
+            />
+            <select
+              value={newAgeBand}
+              onChange={(e) => setNewAgeBand(e.target.value)}
+              className="col-span-2 h-12 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-600 bg-white"
+            >
+              <option value="60-64">60-64</option>
+              <option value="65-69">65-69</option>
+              <option value="70-74">70-74</option>
+              <option value="75-79">75-79</option>
+              <option value="80+">80+</option>
+            </select>
+            <input
+              value={newEducationYears}
+              onChange={(e) => setNewEducationYears(e.target.value)}
+              placeholder="שנות לימוד"
+              className="col-span-2 h-12 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-600"
+            />
+            <button
+              disabled={creating}
+              className="col-span-2 h-12 rounded-xl bg-black text-white font-bold hover:bg-gray-800 disabled:opacity-60"
+            >
+              {creating ? "שולח..." : "צור ושלח"}
+            </button>
+          </form>
+
+          {createError && (
+            <div className="mt-4 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 font-bold">
+              {createError}
+            </div>
+          )}
+
+          {sessionCreated && (
+            <div className="mt-4 bg-green-50 border border-green-200 text-green-700 rounded-xl p-4">
+              <div className="font-extrabold mb-2">מבחן נוצר עבור {sessionCreated.caseId}</div>
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <span className="font-bold">{sessionCreated.smsSent ? "SMS נשלח בהצלחה" : "SMS נכשל"}</span>
+                {sessionCreated.smsError && <span className="text-red-700">{sessionCreated.smsError}</span>}
+                <button
+                  type="button"
+                  onClick={() => copyLink(sessionCreated.sessionUrl)}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-black font-bold"
+                >
+                  <Copy className="w-4 h-4" />
+                  העתק קישור ידני
+                </button>
+                {copyState && (
+                  <span className="inline-flex items-center gap-1 text-green-700 font-bold">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {copyState}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-4 gap-6 mb-8 shrink-0">
-        {[
-          { label: "מבחנים השבוע", value: "48", delta: "+12%" },
-          { label: "ציון MoCA ממוצע", value: "24.5", delta: "-0.5" },
-          { label: "זמן ממוצע (דקות)", value: "14:20", delta: "-1:10" },
-          { label: "ממתינים לבדיקה", value: "18", delta: "+3", warn: true },
+          {[
+          { label: "מבחנים השבוע", value: String(rows.length), delta: `${rows.filter((r) => r.status === "new").length} חדשים` },
+          {
+            label: "ציון MoCA ממוצע",
+            value:
+              rows.filter((r) => r.score !== "-").length > 0
+                ? (
+                    rows
+                      .filter((r) => r.score !== "-")
+                      .reduce((sum, r) => sum + Number(r.score.split("/")[0]), 0) /
+                    rows.filter((r) => r.score !== "-").length
+                  ).toFixed(1)
+                : "—",
+            delta: "מחושב מנתוני אמת",
+          },
+          { label: "בדיקות הושלמו", value: String(rows.filter((r) => r.status === "completed").length), delta: "כולל עם ציון" },
+          { label: "ממתינים לבדיקה", value: String(rows.filter((r) => r.status === "review").length), delta: "דורשים סקירה", warn: true },
         ].map((stat, i) => (
           <div key={i} className="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
             <div className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">{stat.label}</div>
@@ -148,8 +364,14 @@ export function ClinicianDashboardList() {
               position: 'relative',
             }}
           >
+            {filteredPatients.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-500 font-bold text-lg">
+                לא נמצאו מטופלים מתאימים לחיפוש.
+              </div>
+            )}
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
               const p = filteredPatients[virtualRow.index];
+              if (!p) return null;
               return (
                 <div
                   key={virtualRow.index}
@@ -162,14 +384,14 @@ export function ClinicianDashboardList() {
                 >
                   <div className="w-1/4 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shrink-0">
-                      {p.name.charAt(0)}
+                      {(p.caseId.charAt(0) || "מ").toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-bold text-lg text-black truncate">{p.name}</div>
+                      <div className="font-bold text-lg text-black truncate">מקרה {p.caseId}</div>
                       <div className="text-sm text-gray-500 font-mono">{p.id}</div>
                     </div>
                   </div>
-                  <div className="w-1/12 text-gray-600 text-lg tabular-nums">{p.age}</div>
+                  <div className="w-1/12 text-gray-600 text-lg tabular-nums">{p.ageBand || "-"}</div>
                   <div className="w-1/12 text-gray-600 text-lg tabular-nums">{p.tests}</div>
                   <div className="w-2/12 text-gray-600 text-lg tabular-nums">{p.lastActive}</div>
                   <div className="w-2/12">

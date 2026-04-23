@@ -86,7 +86,7 @@ export function LandingHub() {
 
         <div className="mt-12 text-center">
           <Link
-            to="/dashboard"
+            to="/clinician/auth"
             className="inline-flex items-center gap-3 text-gray-500 hover:text-black text-lg font-medium transition-colors"
           >
             <Lock className="w-5 h-5" />

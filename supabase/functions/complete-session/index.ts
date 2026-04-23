@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendAssessmentCompletedEmail } from '../_shared/notifications.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -38,7 +39,7 @@ Deno.serve(async (req) => {
   // Validate session is in_progress
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
-    .select('id, status, link_token')
+    .select('id, status, link_token, case_id, clinician_id')
     .eq('id', sessionId)
     .single();
 
@@ -71,6 +72,33 @@ Deno.serve(async (req) => {
   if (recalcError) {
     console.error('Recalculate Score Error:', recalcError);
     // Non-fatal, proceed
+  }
+
+  // Notify clinician by email if profile + auth email are available
+  try {
+    if (session.clinician_id) {
+      const { data: clinicianProfile } = await supabase
+        .from('clinicians')
+        .select('email')
+        .eq('id', session.clinician_id)
+        .maybeSingle();
+
+      let clinicianEmail = clinicianProfile?.email ?? null;
+      if (!clinicianEmail) {
+        const { data: userResult } = await supabase.auth.admin.getUserById(session.clinician_id);
+        clinicianEmail = userResult?.user?.email ?? null;
+      }
+
+      if (clinicianEmail) {
+        await sendAssessmentCompletedEmail({
+          toEmail: clinicianEmail,
+          sessionId: sessionId,
+          caseId: session.case_id ?? sessionId,
+        });
+      }
+    }
+  } catch (notificationError) {
+    console.error('Clinician completion email failed:', notificationError);
   }
 
   return json({ ok: true, totalScore: 0, needsReview: true });
