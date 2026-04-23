@@ -40,33 +40,31 @@ Deno.serve(async (req) => {
     return json({ error: 'Invalid link' }, 404);
   }
 
-  // Enforce single-use
+  // If the session already started, allow the same patient link to resume.
+  // This prevents lockout when the first start response is lost in transit.
+  if (session.status === 'in_progress') {
+    return json(buildStartResponse(session.id, session.age_band, session.education_years));
+  }
+
+  // Enforce single-use for links that are no longer resumable.
   if (session.used) {
     return json({ error: 'Link already used' }, 410);
   }
 
-  if (session.status !== 'pending' && session.status !== 'in_progress') {
+  if (session.status !== 'pending') {
     return json({ error: 'Session not available' }, 409);
   }
 
-  // Mark in_progress if pending
-  if (session.status === 'pending') {
-    const { error: updateError } = await supabase
-      .from('sessions')
-      .update({ started_at: new Date().toISOString(), status: 'in_progress', used: true })
-      .eq('id', session.id);
+  const { error: updateError } = await supabase
+    .from('sessions')
+    .update({ started_at: new Date().toISOString(), status: 'in_progress', used: true })
+    .eq('id', session.id);
 
-    if (updateError) {
-      return json({ error: 'Failed to start session' }, 500);
-    }
+  if (updateError) {
+    return json({ error: 'Failed to start session' }, 500);
   }
 
-  return json({
-    sessionId:      session.id,
-    ageBand:        session.age_band,
-    educationYears: session.education_years,
-    sessionDate:    new Date().toISOString(),
-  });
+  return json(buildStartResponse(session.id, session.age_band, session.education_years));
 });
 
 function json(body: unknown, status = 200): Response {
@@ -74,4 +72,13 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+function buildStartResponse(sessionId: string, ageBand: string | null, educationYears: number | null) {
+  return {
+    sessionId,
+    ageBand,
+    educationYears,
+    sessionDate: new Date().toISOString(),
+  };
 }
