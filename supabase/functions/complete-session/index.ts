@@ -9,17 +9,17 @@ Deno.serve(async (req) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  let body: { sessionId: string; scoringReport?: any };
+  let body: { sessionId: string; linkToken: string; scoringReport?: any };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Invalid JSON' }, 400);
   }
 
-  const { sessionId } = body;
+  const { sessionId, linkToken } = body;
   
-  if (!sessionId) {
-    return json({ error: 'Missing required field: sessionId' }, 400);
+  if (!sessionId || !linkToken) {
+    return json({ error: 'Missing required fields: sessionId, linkToken' }, 400);
   }
 
   const supabase = createClient(
@@ -30,12 +30,15 @@ Deno.serve(async (req) => {
   // Validate session is in_progress
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
-    .select('id, status')
+    .select('id, status, link_token')
     .eq('id', sessionId)
     .single();
 
   if (sessionError || !session) {
     return json({ error: 'Session not found' }, 404);
+  }
+  if (session.link_token !== linkToken) {
+    return json({ error: 'Unauthorized' }, 401);
   }
 
   if (session.status === 'completed') {

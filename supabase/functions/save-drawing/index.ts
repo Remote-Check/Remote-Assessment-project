@@ -6,17 +6,17 @@ Deno.serve(async (req) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  let body: { sessionId: string; taskId: string; strokesData?: any[]; imageBase64?: string };
+  let body: { sessionId: string; linkToken: string; taskId: string; strokesData?: any[]; imageBase64?: string };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Invalid JSON' }, 400);
   }
 
-  const { sessionId, taskId, strokesData, imageBase64 } = body;
+  const { sessionId, linkToken, taskId, strokesData, imageBase64 } = body;
   
-  if (!sessionId || !taskId) {
-    return json({ error: 'Missing required fields: sessionId, taskId' }, 400);
+  if (!sessionId || !linkToken || !taskId) {
+    return json({ error: 'Missing required fields: sessionId, linkToken, taskId' }, 400);
   }
 
   const taskName = taskId.replace(/^moca-/, '');
@@ -29,9 +29,21 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   );
+  
+  const { data: session, error: sessionError } = await supabase
+    .from('sessions')
+    .select('id, link_token')
+    .eq('id', sessionId)
+    .single();
+
+  if (sessionError || !session) {
+    return json({ error: 'Session not found' }, 404);
+  }
+  if (session.link_token !== linkToken) {
+    return json({ error: 'Unauthorized' }, 401);
+  }
 
   let storagePath: string | null = null;
-  let publicUrl: string | null = null;
 
   if (imageBase64) {
     try {
@@ -54,9 +66,6 @@ Deno.serve(async (req) => {
       }
 
       storagePath = fileName;
-      
-      const { data } = supabase.storage.from('drawings').getPublicUrl(fileName);
-      publicUrl = data.publicUrl;
       
     } catch (e) {
       console.error('Image decode error:', e);
@@ -87,7 +96,7 @@ Deno.serve(async (req) => {
     .update({ needs_review: true })
     .eq('session_id', sessionId);
 
-  return json({ ok: true, url: publicUrl });
+  return json({ ok: true, storagePath });
 });
 
 function json(body: unknown, status = 200): Response {
