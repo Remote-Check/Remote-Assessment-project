@@ -3,6 +3,25 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import type { ScoringContext } from '../../types/scoring';
 import { edgeFn } from '../../lib/supabase';
+import { scoreSession } from '../../lib/scoring';
+
+// Maps the in-memory task state keys to the moca-prefixed taskIds that the
+// scoring engine expects. Drawing/visuospatial lives under three different
+// keys in state but aggregates into moca-visuospatial / cube / clock.
+const TASK_STATE_TO_SCORING_ID: Record<string, string> = {
+  trailMaking: 'moca-visuospatial',
+  cube: 'moca-cube',
+  clock: 'moca-clock',
+  naming: 'moca-naming',
+  memory: 'moca-memory-learning',
+  digitSpan: 'moca-digit-span',
+  vigilance: 'moca-vigilance',
+  serial7: 'moca-serial-7s',
+  language: 'moca-language',
+  abstraction: 'moca-abstraction',
+  delayedRecall: 'moca-delayed-recall',
+  orientation: 'moca-orientation-task',
+};
 
 // Define the shape of our assessment data
 export interface AssessmentState {
@@ -153,23 +172,33 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
   const completeAssessment = useCallback(() => {
     setState((prev) => {
       if (prev.isComplete) return prev;
-      
-      // Notify backend that assessment is complete
-      if (prev.id) {
-        // In a real app, we'd trigger the full scoring engine here
-        // For now we just call complete-session
+
+      if (prev.id && prev.scoringContext) {
+        const scoringInputs: Record<string, unknown> = {};
+        for (const [stateKey, scoringId] of Object.entries(TASK_STATE_TO_SCORING_ID)) {
+          const taskData = (prev.tasks as Record<string, unknown>)[stateKey];
+          if (taskData !== undefined) {
+            scoringInputs[scoringId] = taskData;
+          }
+        }
+
+        let report;
+        try {
+          report = scoreSession(scoringInputs, prev.scoringContext);
+        } catch (err) {
+          console.error('scoreSession failed:', err);
+          report = undefined;
+        }
+
         fetch(edgeFn('complete-session'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             sessionId: prev.id,
             linkToken: prev.linkToken,
-            // Drawing URLs and other data would be passed here in a production app
-            // For MVP we just signal completion
-            scoringReport: { totalRaw: 0, totalAdjusted: 0, totalProvisional: true, pendingReviewCount: 1, domains: {} },
-            drawingUrls: []
+            scoringReport: report,
           }),
-        }).catch(err => console.error('Failed to complete session:', err));
+        }).catch((err) => console.error('Failed to complete session:', err));
       }
 
       return { ...prev, isComplete: true };
