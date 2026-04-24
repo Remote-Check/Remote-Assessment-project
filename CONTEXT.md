@@ -19,7 +19,10 @@ A remote, web-based platform for cognitive assessment of the 60+ population in I
 - **Access:** Clinician-generated "Open Links" (no patient verification step for MVP simplicity).
 - **Fallback:** Manual link sharing (Option B) to keep operational costs at zero.
 - **Reliability:** Per-section auto-save and patient retries for connection loss.
-- **Privacy:** Pseudonymization (Case IDs in DB).
+- **Privacy & Compliance:** 
+    - Pseudonymization (Case IDs in DB).
+    - **Israel MoH Audit Log Compliance:** Must adhere to the Protection of Privacy Regulations (Data Security) 5777-2017 for "High Security Level" databases. The `session_events` audit log must track User ID, Timestamp, Action, Object ID, and Source IP for all Views, Edits, Deletions, and Exports. Logs must be immutable and retained for at least 24 months.
+- **Reporting Design:** Complete creative freedom for PDF exports to ensure a clean, modern layout, provided all clinical data points are present.
 
 ## 4. MVP Roadmap
 1. **Engine Setup:** i18n-ready JSON runner with RTL Layout. (DONE)
