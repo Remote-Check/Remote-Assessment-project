@@ -31,6 +31,9 @@ Current repository migrations:
 - `20260421000004_stimuli_storage.sql`
 - `20260421000005_audit_logs.sql`
 - `20260421000007_audio_storage.sql`
+- `20260423000008_clinicians_and_session_contact.sql`
+- `20260423000009_patients_and_session_access_codes.sql`
+- `20260424000001_drawings_storage.sql`
 
 ## 4. Set environment variables
 
