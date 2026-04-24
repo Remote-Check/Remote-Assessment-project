@@ -5,10 +5,54 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
-// We won't import the complex React-based TS here due to module resolution issues.
-// Instead, we will execute the final SQL functions to mark it complete.
-// The actual complex auto-scoring can be handled either in the client, 
-// a dedicated microservice, or via a simplified server-side aggregation.
+
+// Client-side scoring (see client/src/lib/scoring) produces a ScoringReport
+// whose `domains` array maps 1:1 to the scoring_reports.subscores jsonb
+// columns. Translate domain ids to subscore keys here so legacy rows stay
+// consistent.
+const DOMAIN_TO_SUBSCORE: Record<string, string> = {
+  visuospatial: 'visuospatial',
+  naming: 'naming',
+  attention: 'attention',
+  language: 'language',
+  abstraction: 'abstraction',
+  memory: 'delayedRecall',
+  orientation: 'orientation',
+};
+
+interface DomainInput {
+  domain?: string;
+  raw?: number;
+}
+
+interface ScoringReportInput {
+  totalRaw?: number;
+  totalAdjusted?: number;
+  totalProvisional?: boolean;
+  pendingReviewCount?: number;
+  normPercentile?: number | null;
+  domains?: DomainInput[];
+}
+
+function buildSubscores(report: ScoringReportInput | undefined): Record<string, number> | null {
+  if (!report || !Array.isArray(report.domains)) return null;
+  const subscores: Record<string, number> = {
+    visuospatial: 0,
+    naming: 0,
+    attention: 0,
+    language: 0,
+    abstraction: 0,
+    delayedRecall: 0,
+    orientation: 0,
+  };
+  for (const d of report.domains) {
+    if (!d?.domain || typeof d.raw !== 'number') continue;
+    const key = DOMAIN_TO_SUBSCORE[d.domain];
+    if (!key) continue;
+    subscores[key] = d.raw;
+  }
+  return subscores;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,14 +62,14 @@ Deno.serve(async (req) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  let body: { sessionId: string; linkToken: string; scoringReport?: any };
+  let body: { sessionId: string; linkToken: string; scoringReport?: ScoringReportInput };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Invalid JSON' }, 400);
   }
 
-  const { sessionId, linkToken } = body;
+  const { sessionId, linkToken, scoringReport } = body;
   
   if (!sessionId || !linkToken) {
     return json({ error: 'Missing required fields: sessionId, linkToken' }, 400);
@@ -64,14 +108,48 @@ Deno.serve(async (req) => {
     return json({ error: 'Failed to mark session as completed' }, 500);
   }
 
-  // Trigger recalculation of the total score from subscores if any exist
-  const { error: recalcError } = await supabase.rpc('recalculate_total_score', {
-    p_session_id: sessionId
-  });
+  // Persist the client-computed scoring report into scoring_reports.
+  // A row already exists thanks to the trigger_create_scoring_report trigger
+  // that fires when the session is inserted, so we UPDATE rather than insert.
+  const subscores = buildSubscores(scoringReport);
+  if (scoringReport && subscores) {
+    const totalScore =
+      typeof scoringReport.totalAdjusted === 'number'
+        ? Math.max(0, Math.min(30, Math.round(scoringReport.totalAdjusted)))
+        : typeof scoringReport.totalRaw === 'number'
+        ? Math.max(0, Math.min(30, Math.round(scoringReport.totalRaw)))
+        : null;
+    const needsReview =
+      typeof scoringReport.totalProvisional === 'boolean'
+        ? scoringReport.totalProvisional
+        : (scoringReport.pendingReviewCount ?? 0) > 0;
+    const percentile =
+      typeof scoringReport.normPercentile === 'number'
+        ? Math.max(0, Math.min(100, Math.round(scoringReport.normPercentile)))
+        : null;
 
-  if (recalcError) {
-    console.error('Recalculate Score Error:', recalcError);
-    // Non-fatal, proceed
+    const { error: reportError } = await supabase
+      .from('scoring_reports')
+      .update({
+        total_score: totalScore,
+        subscores,
+        needs_review: needsReview,
+        percentile,
+        computed_at: new Date().toISOString(),
+      })
+      .eq('session_id', sessionId);
+
+    if (reportError) {
+      console.error('Scoring report persistence error:', reportError);
+    }
+  } else {
+    // Fallback: ask the DB to sum whatever subscores already exist.
+    const { error: recalcError } = await supabase.rpc('recalculate_total_score', {
+      p_session_id: sessionId,
+    });
+    if (recalcError) {
+      console.error('Recalculate Score Error:', recalcError);
+    }
   }
 
   // Notify clinician by email if profile + auth email are available
