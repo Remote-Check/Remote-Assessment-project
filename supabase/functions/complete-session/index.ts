@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
   // Validate session is in_progress
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
-    .select('id, status, link_token, case_id, clinician_id')
+    .select('id, status, link_token, case_id, clinician_id, patient_id, assessment_type')
     .eq('id', sessionId)
     .single();
 
@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     if (session.clinician_id) {
       const { data: clinicianProfile } = await supabase
         .from('clinicians')
-        .select('email')
+        .select('email, full_name')
         .eq('id', session.clinician_id)
         .maybeSingle();
 
@@ -89,11 +89,35 @@ Deno.serve(async (req) => {
         clinicianEmail = userResult?.user?.email ?? null;
       }
 
+      let patientName: string | null = null;
+      if (session.patient_id) {
+        const { data: patient } = await supabase
+          .from('patients')
+          .select('full_name')
+          .eq('id', session.patient_id)
+          .maybeSingle();
+        patientName = patient?.full_name ?? null;
+      }
+
+      const dashboardBase = Deno.env.get('PUBLIC_URL') || 'https://app.remotecheck.com';
+      const dashboardUrl = `${dashboardBase}/#/dashboard/session/${sessionId}`;
+      const assessmentLabel = (session.assessment_type ?? 'moca').toUpperCase();
+      const patientLine = patientName
+        ? `<p>המטופל <strong>${patientName}</strong> השלים את המבדק (${assessmentLabel}).</p>`
+        : `<p>המבדק (${assessmentLabel}) עבור מזהה תיק <strong>${session.case_id ?? sessionId}</strong> הושלם.</p>`;
+
       if (clinicianEmail) {
         await sendEmail({
           to: clinicianEmail,
           subject: 'Remote Check: מבחן הושלם',
-          html: `<p>שלום,</p><p>המבחן עבור מזהה תיק <strong>${session.case_id ?? sessionId}</strong> הושלם.</p><p>ניתן להיכנס ללוח הבקרה כדי לסקור ולייצא את התוצאות.</p>`,
+          html: `
+            <div dir="rtl" style="font-family: Heebo, Arial, sans-serif; color: #111;">
+              <p>שלום${clinicianProfile?.full_name ? ` ${clinicianProfile.full_name}` : ''},</p>
+              ${patientLine}
+              <p><a href="${dashboardUrl}" style="color:#1d4ed8;font-weight:bold;">פתחו את התוצאות בלוח הבקרה</a></p>
+              <p style="color:#666;font-size:12px;">הקישור זמין רק לקלינאים מחוברים.</p>
+            </div>
+          `,
         });
       }
     }
@@ -101,7 +125,17 @@ Deno.serve(async (req) => {
     console.error('Clinician completion email failed:', notificationError);
   }
 
-  return json({ ok: true, totalScore: 0, needsReview: true });
+  const { data: finalReport } = await supabase
+    .from('scoring_reports')
+    .select('total_score, needs_review')
+    .eq('session_id', sessionId)
+    .maybeSingle();
+
+  return json({
+    ok: true,
+    totalScore: finalReport?.total_score ?? 0,
+    needsReview: finalReport?.needs_review ?? true,
+  });
 });
 
 function json(body: unknown, status = 200): Response {

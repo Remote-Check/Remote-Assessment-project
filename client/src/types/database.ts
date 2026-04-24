@@ -17,6 +17,7 @@ export interface Session {
   used?: boolean;
   status: SessionStatus;
   created_at: string;
+  started_at?: string | null;
   completed_at: string | null;
 }
 
