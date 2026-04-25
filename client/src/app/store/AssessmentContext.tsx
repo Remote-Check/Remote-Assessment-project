@@ -61,7 +61,7 @@ interface AssessmentContextType {
   state: AssessmentState;
   startNewAssessment: (sessionId: string, linkToken: string, scoringContext: ScoringContext) => void;
   resumeAssessment: () => void;
-  updateTaskData: (taskName: keyof AssessmentState['tasks'], data: any, imageBase64?: string) => void;
+  updateTaskData: (taskName: keyof AssessmentState['tasks'], data: any, imageBase64?: string, strokesData?: unknown[]) => void;
   setLastPath: (path: string) => void;
   completeAssessment: () => void;
   hasInProgressAssessment: boolean;
@@ -101,7 +101,7 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
     // Already in state, just a placeholder for potential API fetch in the future
   }, []);
 
-  const updateTaskData = useCallback((taskName: keyof AssessmentState['tasks'], data: any, imageBase64?: string) => {
+  const updateTaskData = useCallback((taskName: keyof AssessmentState['tasks'], data: any, imageBase64?: string, strokesData?: unknown[]) => {
     setState((prev) => {
       if (prev.tasks[taskName] === data) return prev;
       
@@ -127,6 +127,7 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
               linkToken: prev.linkToken,
               taskId: taskType,
               imageBase64,
+              strokesData: strokesData ?? data?.strokes,
             }),
           })
             .then(res => res.ok ? res.json() : Promise.reject())
