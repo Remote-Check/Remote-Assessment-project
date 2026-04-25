@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.104.0';
 import { corsResponse, json, methodNotAllowed, requireClinician } from '../_shared/http.ts';
+import { browserReachableSignedUrl } from '../_shared/storage.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return corsResponse(req);
@@ -61,16 +62,16 @@ Deno.serve(async (req) => {
     const { data } = await supabase.storage
       .from('drawings')
       .createSignedUrl(review.storage_path, 60 * 15);
-    return { ...review, signedUrl: data?.signedUrl ?? null };
+    return { ...review, signedUrl: browserReachableSignedUrl(data?.signedUrl, req) };
   }));
 
   const taskResults = await Promise.all((session.task_results ?? []).map(async (result: any) => {
-    const rawData = addAudioSignedUrl(result.raw_data, await signedAudioUrl(supabase, audioStoragePathFromRaw(result.raw_data)));
+    const rawData = addAudioSignedUrl(result.raw_data, await signedAudioUrl(supabase, audioStoragePathFromRaw(result.raw_data), req));
     return { ...result, raw_data: rawData };
   }));
 
   const scoringReviews = await Promise.all((session.scoring_item_reviews ?? []).map(async (review: any) => {
-    const rawData = addAudioSignedUrl(review.raw_data, await signedAudioUrl(supabase, audioStoragePathFromRaw(review.raw_data)));
+    const rawData = addAudioSignedUrl(review.raw_data, await signedAudioUrl(supabase, audioStoragePathFromRaw(review.raw_data), req));
     return { ...review, raw_data: rawData };
   }));
   const scoreableScoringReviews = scoringReviews.filter((review: any) => Number(review.max_score ?? 0) > 0);
@@ -104,12 +105,12 @@ Deno.serve(async (req) => {
   }, 200, req);
 });
 
-async function signedAudioUrl(supabase: any, storagePath?: string | null): Promise<string | null> {
+async function signedAudioUrl(supabase: any, storagePath: string | null | undefined, req: Request): Promise<string | null> {
   if (!storagePath) return null;
   const { data } = await supabase.storage
     .from('audio')
     .createSignedUrl(storagePath, 60 * 15);
-  return data?.signedUrl ?? null;
+  return browserReachableSignedUrl(data?.signedUrl, req);
 }
 
 function addAudioSignedUrl(rawData: any, signedUrl: string | null): any {
