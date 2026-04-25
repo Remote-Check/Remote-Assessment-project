@@ -83,6 +83,22 @@ export function normalizeAudioContentType(contentType?: string): string | null {
   return AUDIO_CONTENT_TYPES.has(normalized) ? normalized : null;
 }
 
+export function parseAudioDataUrl(audioDataUrl: string, fallbackContentType?: string): { contentType: string; base64Data: string } | null {
+  const match = audioDataUrl.match(/^data:([^,]*),(.*)$/s);
+  if (!match) return null;
+
+  const metadata = match[1].trim();
+  const parts = metadata.split(';').map((part) => part.trim()).filter(Boolean);
+  const hasBase64Marker = parts.some((part) => part.toLowerCase() === 'base64');
+  if (!hasBase64Marker) return null;
+
+  const mimePart = parts.find((part) => part.includes('/')) ?? fallbackContentType;
+  const contentType = normalizeAudioContentType(mimePart);
+  if (!contentType) return null;
+
+  return { contentType, base64Data: match[2] };
+}
+
 export function audioExtension(contentType: string): string {
   if (contentType === 'audio/mp4') return 'mp4';
   if (contentType === 'audio/ogg') return 'ogg';
