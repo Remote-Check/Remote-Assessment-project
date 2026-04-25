@@ -86,8 +86,6 @@ async function createSession(request: APIRequestContext, accessToken: string, ca
       mocaVersion: '8.3',
       ageBand: '70-79',
       educationYears: 12,
-      locationPlace: 'בית',
-      locationCity: 'תל אביב',
     },
   });
   expect(response.ok()).toBeTruthy();
@@ -120,7 +118,6 @@ async function runPatientClickThrough(
         sessionDate: startedSession.sessionDate,
         educationYears: startedSession.educationYears ?? 12,
         patientAge: 75,
-        sessionLocation: { place: 'בית', city: 'תל אביב' },
       },
       lastPath: '/patient/trail-making',
       isComplete: false,

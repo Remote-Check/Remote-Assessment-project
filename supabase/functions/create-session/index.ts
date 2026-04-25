@@ -15,6 +15,22 @@ function generateAccessCode(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(6)), (byte) => (byte % 10).toString()).join('');
 }
 
+function generateCaseId(): string {
+  const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+  const suffix = crypto.randomUUID().slice(0, 8).toUpperCase();
+  return `CASE-${date}-${suffix}`;
+}
+
+function sessionBaseUrl(req: Request): string {
+  const configured = Deno.env.get('PUBLIC_URL')?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+
+  const origin = req.headers.get('Origin')?.trim();
+  if (origin) return origin.replace(/\/$/, '');
+
+  return 'https://app.remotecheck.com';
+}
+
 interface CreateSessionBody {
   patientId?: string;
   caseId?: string;
@@ -23,8 +39,6 @@ interface CreateSessionBody {
   patientPhone?: string;
   assessmentType?: string;
   mocaVersion?: string;
-  locationPlace?: string;
-  locationCity?: string;
 }
 
 Deno.serve(async (req) => {
@@ -49,8 +63,6 @@ Deno.serve(async (req) => {
     educationYears,
     patientPhone: patientPhoneInput,
     mocaVersion,
-    locationPlace,
-    locationCity,
   } = body;
   const assessmentType = (body.assessmentType ?? 'moca').toLowerCase();
 
@@ -111,9 +123,9 @@ Deno.serve(async (req) => {
     }
 
     patientRecordId = patient.id;
-    patientPhone = patient.phone;
+    patientPhone = patient.phone?.trim() || null;
     if (!caseId) {
-      caseId = `${patient.full_name.slice(0, 24)} · ${new Date().toISOString().slice(0, 10)}`;
+      caseId = generateCaseId();
     }
   }
 
@@ -131,14 +143,12 @@ Deno.serve(async (req) => {
       clinician_id: user.id,
       age_band: ageBand,
       status: 'pending',
-      education_years: educationYears ?? null,
+      education_years: educationYears ?? 12,
       patient_phone: patientPhone,
       patient_id: patientRecordId,
       access_code: accessCode,
       assessment_type: assessmentType,
       moca_version: resolvedMocaVersion,
-      location_place: locationPlace ?? null,
-      location_city: locationCity ?? null,
     })
     .select('id, link_token, access_code, moca_version')
     .single();
@@ -148,7 +158,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Failed to create session' }, 500);
   }
 
-  const baseUrl = Deno.env.get('PUBLIC_URL') || 'https://app.remotecheck.com';
+  const baseUrl = sessionBaseUrl(req);
   const sessionUrl = `${baseUrl}/#/session/${session.link_token}`;
   const smsResult = shouldSendSms
     ? await sendSms({

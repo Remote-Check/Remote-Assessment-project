@@ -90,8 +90,6 @@ async function runVersion(version) {
       mocaVersion: version,
       ageBand: '70-79',
       educationYears: 12,
-      locationPlace: `MoCA Hebrew ${version} local fixture`,
-      locationCity: 'Tel Aviv',
     }),
   });
   assert(created.status === 200 && created.body?.sessionId && created.body?.linkToken && created.body?.mocaVersion === version, `[${version}] create session`, created);

@@ -47,7 +47,7 @@ Open the Vite URL in Chrome, then:
 
 1. Go to `/dashboard`.
 2. Create a local clinician account with the dashboard login form.
-3. Create a session using a case ID, age band, education years, place, and city.
+3. Create a session using a case ID, age band, education years, and MoCA version.
 4. Copy the generated `link_token` or open `/#/session/{token}` from the created session.
 5. Confirm the patient assessment header displays the selected MoCA version.
 6. Refresh the patient browser during an in-progress session and confirm same-device resume returns to saved progress.

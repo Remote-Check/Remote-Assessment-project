@@ -131,7 +131,6 @@ export function useSession(
             educationYears:  data.educationYears || 12,
             patientAge:      AGE_BAND_MAP[data.ageBand] ?? 70,
             mocaVersion:     data.mocaVersion,
-            sessionLocation: { place: 'Home', city: 'Israel' },
           },
           requiresAccessCode: false,
         });

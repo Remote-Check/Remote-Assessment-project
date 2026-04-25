@@ -73,7 +73,6 @@ export function SessionAccessCode() {
         educationYears: data.educationYears || 12,
         patientAge: AGE_BAND_MAP[data.ageBand] ?? 70,
         mocaVersion: data.mocaVersion,
-        sessionLocation: { place: "Home", city: "Israel" },
       };
 
       startNewAssessment(data.sessionId, token, scoringContext);
