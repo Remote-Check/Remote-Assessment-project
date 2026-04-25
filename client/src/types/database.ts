@@ -25,6 +25,7 @@ export interface TaskResult {
   id: string;
   session_id: string;
   task_name: string;
+  task_type?: string;
   raw_data: any;
   submitted_at: string;
 }

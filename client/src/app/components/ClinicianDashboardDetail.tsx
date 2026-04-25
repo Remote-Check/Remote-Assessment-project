@@ -1,22 +1,52 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ChevronRight, FileDown, Download, CheckSquare, Mic } from "lucide-react";
+import { ChevronRight, FileDown, Download, CheckSquare, Mic, Save } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { supabase } from "../../lib/supabase";
 import { clsx } from "clsx";
-import { useEffect, useMemo, useState } from "react";
-import type { DBScoringReport, Session as DBSession } from "../../types/database";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { DBScoringReport, Session as DBSession, TaskResult } from "../../types/database";
 
-import { useAssessmentStore } from "../store/AssessmentContext";
 import { PlaybackCanvas } from "./PlaybackCanvas";
 import { PlaybackAudio } from "./PlaybackAudio";
+import {
+  DRAWING_TAB_TO_TASK_ID,
+  normalizeStrokes,
+  SCORING_TAB_TO_TASK_ID,
+  type ReviewTab,
+} from "./clinicianReviewUtils";
 
 interface PatientLite {
   id: string;
   full_name: string;
 }
 
+interface DrawingReviewRow {
+  id: string;
+  task_id: string;
+  task_name: string;
+  signedUrl: string | null;
+  strokes_data: any;
+  rubric_items: any;
+  clinician_score: number | null;
+  clinician_notes: string | null;
+}
+
+interface ScoringReviewRow {
+  id: string;
+  item_id: string;
+  task_type: string;
+  max_score: number;
+  raw_data: any;
+  clinician_score: number | null;
+  clinician_notes: string | null;
+}
+
 interface SessionWithPatient extends DBSession {
   patients?: PatientLite | PatientLite[] | null;
+  task_results?: TaskResult[];
+  drawings?: DrawingReviewRow[];
+  scoring_reviews?: ScoringReviewRow[];
+  scoring_report?: DBScoringReport | null;
 }
 
 function formatDuration(startIso: string | null | undefined, endIso: string | null | undefined): string {
@@ -59,6 +89,30 @@ export function ClinicianDashboardDetail() {
   const [sessionRecord, setSessionRecord] = useState<SessionWithPatient | null>(null);
   const [reportRecord, setReportRecord] = useState<DBScoringReport | null>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [reviewNotesByTab, setReviewNotesByTab] = useState<Partial<Record<ReviewTab, string>>>({});
+  const [savingReview, setSavingReview] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const loadDashboardSession = useCallback(async () => {
+    if (!sessionId) return;
+
+    const { data: authData } = await supabase.auth.getSession();
+    const authSession = authData.session;
+    if (!authSession) return;
+
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-session?sessionId=${encodeURIComponent(sessionId)}`,
+      {
+        headers: { Authorization: `Bearer ${authSession.access_token}` },
+      },
+    );
+
+    if (!res.ok) return;
+    const payload = await res.json();
+    const loadedSession = payload.session as SessionWithPatient;
+    setSessionRecord(loadedSession);
+    setReportRecord(loadedSession.scoring_report ?? null);
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -66,30 +120,7 @@ export function ClinicianDashboardDetail() {
     let cancelled = false;
 
     (async () => {
-      const { data: sessionData } = await supabase
-        .from("sessions")
-        .select(
-          "id, case_id, patient_id, age_band, created_at, started_at, completed_at, status, education_years, assessment_type, patients(id, full_name)",
-        )
-        .eq("id", sessionId)
-        .maybeSingle();
-
-      if (!cancelled && sessionData) {
-        setSessionRecord(sessionData as unknown as SessionWithPatient);
-      }
-
-      const { data: reportData } = await supabase
-        .from("scoring_reports")
-        .select(
-          "id, session_id, total_raw, total_adjusted, total_provisional, norm_percentile, norm_sd, pending_review_count, domains, finalized_at, finalized_by, total_score, percentile, needs_review, subscores, auto_score_errors, computed_at",
-        )
-        .eq("session_id", sessionId)
-        .maybeSingle();
-
-      if (!cancelled && reportData) {
-        setReportRecord(reportData as DBScoringReport);
-      }
-
+      await loadDashboardSession();
       const { data: logs } = await supabase
         .from("session_events")
         .select("*")
@@ -104,7 +135,7 @@ export function ClinicianDashboardDetail() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [loadDashboardSession, sessionId]);
 
   const patient: PatientLite | null = useMemo(() => {
     const raw = sessionRecord?.patients;
@@ -112,10 +143,7 @@ export function ClinicianDashboardDetail() {
     return Array.isArray(raw) ? raw[0] ?? null : raw;
   }, [sessionRecord]);
 
-  const { state } = useAssessmentStore();
-  const [activeTab, setActiveTab] = useState<
-    "clock" | "cube" | "trail" | "memory" | "digitSpan" | "serial7" | "language" | "abstraction" | "delayedRecall" | "orientation"
-  >("clock");
+  const [activeTab, setActiveTab] = useState<ReviewTab>("clock");
   const [rubrics, setRubrics] = useState({
     clock: { contour: true, numbers: false, hands: false },
     cube: { shape: false, lines: false, parallel: false },
@@ -129,9 +157,23 @@ export function ClinicianDashboardDetail() {
     orientation: { day: false, month: false, year: false, dayOfWeek: false, place: false, city: false },
   });
 
-  const clockStrokes = state.tasks.clock?.strokes || [];
-  const cubeStrokes = state.tasks.cube?.strokes || [];
-  const trailStrokes = state.tasks.trailMaking?.strokes || [];
+  const drawingTaskId = DRAWING_TAB_TO_TASK_ID[activeTab];
+  const scoringTaskId = SCORING_TAB_TO_TASK_ID[activeTab];
+  const currentDrawing = drawingTaskId
+    ? sessionRecord?.drawings?.find((review) => review.task_id === drawingTaskId)
+    : null;
+  const currentTaskResult = [...(sessionRecord?.task_results ?? [])]
+    .reverse()
+    .find((result: any) => result.task_type === (drawingTaskId ?? scoringTaskId));
+  const currentScoringReview = scoringTaskId
+    ? sessionRecord?.scoring_reviews?.find((review) => review.item_id === scoringTaskId || review.task_type === scoringTaskId)
+    : null;
+  const currentEvidence = currentScoringReview?.raw_data ?? currentTaskResult?.raw_data ?? null;
+  const currentStrokes = normalizeStrokes(currentDrawing?.strokes_data ?? currentTaskResult?.raw_data);
+  const currentImageUrl = currentDrawing?.signedUrl ?? null;
+  const currentAudioUrl = typeof currentEvidence?.audioSignedUrl === "string" ? currentEvidence.audioSignedUrl : null;
+  const currentReview = currentDrawing ?? currentScoringReview;
+  const reviewNotes = reviewNotesByTab[activeTab] ?? currentReview?.clinician_notes ?? "";
 
   const getDrawingStats = (strokes: any[][]) => {
     const valid = (strokes || []).filter((s) => s && s.length > 0);
@@ -147,10 +189,10 @@ export function ClinicianDashboardDetail() {
     return { count: valid.length, duration, usedPen };
   };
 
-  const currentStrokes = activeTab === "clock" ? clockStrokes : activeTab === "cube" ? cubeStrokes : trailStrokes;
   const currentStats = getDrawingStats(currentStrokes);
 
   const toggleRubric = (key: string) => {
+    setSaveMessage(null);
     setRubrics((prev) => ({
       ...prev,
       [activeTab]: {
@@ -274,6 +316,59 @@ export function ClinicianDashboardDetail() {
 
   const rubricData = getRubricData();
 
+  const handleSaveReview = async () => {
+    if (!currentReview) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      alert("יש להתחבר כקלינאי כדי לשמור ניקוד.");
+      return;
+    }
+
+    setSavingReview(true);
+    setSaveMessage(null);
+
+    const endpoint = currentDrawing ? "update-drawing-review" : "update-scoring-review";
+    const body = currentDrawing
+      ? {
+          reviewId: currentDrawing.id,
+          clinicianScore: rubricData.score,
+          rubricItems: rubrics[activeTab],
+          clinicianNotes: reviewNotes,
+        }
+      : {
+          reviewId: currentScoringReview?.id,
+          clinicianScore: Math.min(rubricData.score, currentScoringReview?.max_score ?? rubricData.max),
+          clinicianNotes: reviewNotes,
+        };
+
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    setSavingReview(false);
+
+    if (!res.ok) {
+      let message = "שמירת הניקוד נכשלה.";
+      try {
+        const payload = await res.json();
+        if (payload?.error) message = payload.error;
+      } catch {
+        // Keep localized fallback for non-JSON errors.
+      }
+      setSaveMessage(message);
+      return;
+    }
+
+    setSaveMessage("הניקוד נשמר.");
+    await loadDashboardSession();
+  };
+
   const summary = useMemo(() => {
     const subscores: Record<string, number | null> = (reportRecord?.subscores ?? {}) as Record<
       string,
@@ -310,7 +405,7 @@ export function ClinicianDashboardDetail() {
     if (["clock", "cube", "trail"].includes(activeTab)) {
       return (
         <div className="flex flex-col items-center">
-          <PlaybackCanvas strokes={currentStrokes} width={450} height={400} />
+          <PlaybackCanvas strokes={currentStrokes} width={450} height={400} backgroundImageUrl={currentImageUrl ?? undefined} />
 
           <div className="mt-8 w-full border-t border-gray-100 pt-6">
             <h4 className="font-bold text-gray-500 text-sm mb-3">סטטיסטיקת ציור</h4>
@@ -334,7 +429,6 @@ export function ClinicianDashboardDetail() {
         </div>
       );
     } else {
-      const audioId = (state.tasks as any)[activeTab]?.audioId || null;
       return (
         <div className="flex flex-col items-center w-full min-h-[400px] justify-center">
           <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-8 shadow-sm">
@@ -342,7 +436,12 @@ export function ClinicianDashboardDetail() {
           </div>
           <h3 className="text-2xl font-extrabold text-black mb-10">האזן להקלטת המטופל</h3>
 
-          <PlaybackAudio audioId={audioId} />
+          <PlaybackAudio audioId={currentAudioUrl} />
+          {currentEvidence && (
+            <pre dir="ltr" className="mt-6 w-full max-h-56 overflow-auto rounded-xl border border-gray-200 bg-gray-50 p-4 text-left text-xs text-gray-700">
+              {JSON.stringify(currentEvidence, null, 2)}
+            </pre>
+          )}
         </div>
       );
     }
@@ -566,6 +665,17 @@ export function ClinicianDashboardDetail() {
             </div>
           </div>
 
+          {currentDrawing?.clinician_score != null && (
+            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
+              ניקוד שמור: {currentDrawing.clinician_score}/{rubricData.max}
+            </div>
+          )}
+          {!currentDrawing && currentScoringReview?.clinician_score != null && (
+            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
+              ניקוד שמור: {currentScoringReview.clinician_score}/{currentScoringReview.max_score}
+            </div>
+          )}
+
           <div className="space-y-3 mb-8 flex-1">
             {rubricData.items.map((crit) => {
               const isChecked = (rubrics[activeTab] as any)[crit.id];
@@ -602,9 +712,30 @@ export function ClinicianDashboardDetail() {
           <div>
             <label className="block text-sm font-bold text-gray-500 mb-2">הערות</label>
             <textarea
+              value={reviewNotes}
+              onChange={(event) => {
+                setSaveMessage(null);
+                setReviewNotesByTab((prev) => ({ ...prev, [activeTab]: event.target.value }));
+              }}
               placeholder="הוסף הערה קלינית…"
               className="w-full h-32 p-4 bg-white border border-gray-200 rounded-xl resize-none text-lg focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-600 transition-all"
             />
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <button
+                onClick={handleSaveReview}
+                disabled={savingReview || (!currentDrawing && !currentScoringReview)}
+                className={clsx(
+                  "inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white transition-colors",
+                  savingReview || (!currentDrawing && !currentScoringReview)
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-black hover:bg-gray-800",
+                )}
+              >
+                <Save className="h-5 w-5" />
+                {savingReview ? "שומר..." : "שמור ניקוד"}
+              </button>
+              {saveMessage && <div className="text-sm font-bold text-gray-600">{saveMessage}</div>}
+            </div>
           </div>
         </div>
       </div>

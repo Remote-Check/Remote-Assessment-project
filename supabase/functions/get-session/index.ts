@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     .from('sessions')
     .select(`
       *,
+      patients ( id, full_name ),
       task_results (*),
       scoring_reports (*),
       drawing_reviews (*),

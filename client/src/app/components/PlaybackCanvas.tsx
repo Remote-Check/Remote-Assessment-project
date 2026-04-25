@@ -159,6 +159,21 @@ export function PlaybackCanvas({ strokes, width = 600, height = 400, backgroundI
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  if (validStrokes.length === 0 && backgroundImageUrl) {
+    return (
+      <div
+        className="relative bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden flex items-center justify-center"
+        style={{ width: `${width}px`, height: `${height}px` }}
+      >
+        <img
+          src={backgroundImageUrl}
+          alt="ציור המטופל"
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+        />
+      </div>
+    );
+  }
+
   if (validStrokes.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl">
