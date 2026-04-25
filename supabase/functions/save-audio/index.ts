@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.104.0';
 import { decode } from 'https://deno.land/std@0.198.0/encoding/base64.ts';
 import { writeAuditEvent } from '../_shared/audit.ts';
 import { corsResponse, json, methodNotAllowed } from '../_shared/http.ts';
-import { audioExtension, isAudioTask, normalizeAudioContentType } from '../_shared/tasks.ts';
+import { audioExtension, isAudioTask, parseAudioDataUrl } from '../_shared/tasks.ts';
 
 const MAX_AUDIO_BASE64_LENGTH = 20_000_000;
 
@@ -30,12 +30,9 @@ Deno.serve(async (req) => {
   if (!isAudioTask(taskType)) {
     return json({ error: 'Invalid audio taskType' }, 400, req);
   }
-  const contentType = normalizeAudioContentType(body.contentType);
-  if (!contentType) {
-    return json({ error: 'Unsupported audio contentType' }, 400, req);
-  }
-  if (!audioBase64.startsWith(`data:${contentType};base64,`)) {
-    return json({ error: 'audioBase64 must be a matching audio data URL' }, 400, req);
+  const audioData = parseAudioDataUrl(audioBase64, body.contentType);
+  if (!audioData) {
+    return json({ error: 'audioBase64 must be a supported audio data URL' }, 400, req);
   }
   if (audioBase64.length > MAX_AUDIO_BASE64_LENGTH) {
     return json({ error: 'Audio recording is too large' }, 413, req);
@@ -55,11 +52,10 @@ Deno.serve(async (req) => {
   if (sessionError || !session) return json({ error: 'Session not found' }, 404, req);
   if (session.status !== 'in_progress') return json({ error: 'Session not in progress' }, 409, req);
 
-  const extension = audioExtension(contentType);
-  const base64Data = audioBase64.replace(`data:${contentType};base64,`, '');
+  const extension = audioExtension(audioData.contentType);
   let audioBytes: Uint8Array;
   try {
-    audioBytes = decode(base64Data);
+    audioBytes = decode(audioData.base64Data);
   } catch (error) {
     console.error('Audio decode failed:', error);
     return json({ error: 'Failed to process audioBase64' }, 400, req);
@@ -69,7 +65,7 @@ Deno.serve(async (req) => {
   const storagePath = `${sessionId}/${taskType}.${extension}`;
   const { error: uploadError } = await supabase.storage
     .from('audio')
-    .upload(storagePath, audioBytes, { contentType, upsert: true });
+    .upload(storagePath, audioBytes, { contentType: audioData.contentType, upsert: true });
 
   if (uploadError) {
     console.error('Audio upload failed:', uploadError);
@@ -81,15 +77,15 @@ Deno.serve(async (req) => {
       eventType: 'audio_saved',
       sessionId,
       actorType: 'patient',
-      metadata: { taskType, storagePath, contentType, byteLength: audioBytes.length },
+      metadata: { taskType, storagePath, contentType: audioData.contentType, byteLength: audioBytes.length },
     });
 
     return json({
       ok: true,
       storagePath,
       audioStoragePath: storagePath,
-      contentType,
-      audioContentType: contentType,
+      contentType: audioData.contentType,
+      audioContentType: audioData.contentType,
     }, 200, req);
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Failed to write audit event' }, 500, req);
