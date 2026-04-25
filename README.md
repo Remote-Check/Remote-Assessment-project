@@ -37,6 +37,7 @@ Read these first:
 - Drawings and ambiguous/manual items go to clinician review.
 - Clinician gets an email when a test is completed.
 - Patient SMS uses Twilio first, behind a provider abstraction.
+- Licensed stimuli load from private Storage through versioned manifests and signed URLs.
 
 ## Guardrails
 
@@ -80,6 +81,6 @@ Backend/local E2E:
 
 ```bash
 supabase start
-supabase functions serve create-session start-session submit-results submit-task save-drawing save-audio complete-session get-session update-drawing-review update-scoring-review --env-file /dev/null
+supabase functions serve create-session start-session get-stimuli submit-results submit-task save-drawing save-audio complete-session get-session update-drawing-review update-scoring-review export-pdf export-csv --env-file /dev/null
 node scripts/local-e2e.mjs --all-versions
 ```
