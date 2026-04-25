@@ -16,10 +16,10 @@ A remote, web-based platform for cognitive assessment of the 60+ population in I
 
 ## 3. Core Requirements
 - **Scoring:** Hybrid Engine. Automated math/trails, manual review for drawings. Decoupled JSON-based Scoring Engine with Israeli norms.
-- **Access:** Clinician-generated test number entered by the patient on the home page.
+- **Access:** Clinician creates a case-ID-only case record and generated test number entered by the patient on the home page.
 - **Fallback:** Clinician shares the test number outside the app to keep MVP messaging costs at zero.
 - **Reliability:** Per-section auto-save and patient retries for connection loss.
-- **Privacy:** Pseudonymization (Case IDs in DB).
+- **Privacy:** Pseudonymization (case IDs only in active MVP workflow).
 
 ## 4. MVP Roadmap
 1. **Engine Setup:** i18n-ready JSON runner with RTL Layout. (DONE)

@@ -15,18 +15,13 @@ export function SessionValidation() {
       state.id &&
       state.scoringContext,
   );
-  const session = useSession(token, undefined, { enabled: !canResumeCurrentToken });
+  const session = useSession(token, { enabled: !canResumeCurrentToken });
 
   useEffect(() => {
     if (!token) return;
 
     if (canResumeCurrentToken) {
       navigate(getAssessmentResumePath(state.lastPath), { replace: true });
-      return;
-    }
-
-    if (session.status === 'code_required') {
-      navigate(`/session/${token}/code`, { replace: true });
       return;
     }
 

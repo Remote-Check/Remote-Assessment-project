@@ -5,8 +5,6 @@ import type { ScoringContext } from '../types/scoring';
 export type SessionStatus =
   | 'loading'
   | 'ready'
-  | 'code_required'
-  | 'invalid_code'
   | 'already_used'
   | 'invalid'
   | 'error';
@@ -17,7 +15,6 @@ export interface SessionState {
   linkToken: string | null;
   startToken: string | null;
   scoringContext: ScoringContext | null;
-  requiresAccessCode: boolean;
 }
 
 interface UseSessionOptions {
@@ -34,7 +31,6 @@ const AGE_BAND_MAP: Record<string, number> = {
 
 export function useSession(
   tokenOverride?: string,
-  accessCodeOverride?: string,
   options: UseSessionOptions = {},
 ): SessionState {
   const enabled = options.enabled ?? true;
@@ -44,7 +40,6 @@ export function useSession(
     linkToken: null,
     startToken: null,
     scoringContext: null,
-    requiresAccessCode: false,
   });
 
   useEffect(() => {
@@ -64,7 +59,6 @@ export function useSession(
             linkToken: null,
             startToken: null,
             scoringContext: null,
-            requiresAccessCode: false,
           }),
         0,
       );
@@ -74,7 +68,7 @@ export function useSession(
     fetch(edgeFn('start-session'), {
       method: 'POST',
       headers: edgeHeaders(),
-      body: JSON.stringify({ token, accessCode: accessCodeOverride }),
+      body: JSON.stringify({ token }),
     })
       .then(async (res) => {
         if (res.status === 410) {
@@ -84,22 +78,10 @@ export function useSession(
             linkToken: null,
             startToken: null,
             scoringContext: null,
-            requiresAccessCode: false,
           });
           return;
         }
         if (!res.ok) {
-          if (res.status === 401) {
-            setState({
-              status: 'invalid_code',
-              sessionId: null,
-              linkToken: null,
-              startToken: null,
-              scoringContext: null,
-              requiresAccessCode: true,
-            });
-            return;
-          }
           setTimeout(
             () =>
               setState({
@@ -108,7 +90,6 @@ export function useSession(
                 linkToken: null,
                 startToken: null,
                 scoringContext: null,
-                requiresAccessCode: false,
               }),
             0,
           );
@@ -116,18 +97,6 @@ export function useSession(
         }
 
         const data = await res.json();
-        if (data.status === 'code_required') {
-          setState({
-            status: 'code_required',
-            sessionId: data.sessionId,
-            linkToken: data.linkToken ?? token,
-            startToken: token,
-            scoringContext: null,
-            requiresAccessCode: true,
-          });
-          return;
-        }
-
         setState({
           status: 'ready',
           sessionId: data.sessionId,
@@ -140,7 +109,6 @@ export function useSession(
             patientAge:      AGE_BAND_MAP[data.ageBand] ?? 70,
             mocaVersion:     data.mocaVersion,
           },
-          requiresAccessCode: false,
         });
       })
       .catch(() => {
@@ -150,10 +118,9 @@ export function useSession(
           linkToken: null,
           startToken: null,
           scoringContext: null,
-          requiresAccessCode: false,
         });
       });
-  }, [tokenOverride, accessCodeOverride, enabled]);
+  }, [tokenOverride, enabled]);
 
   return state;
 }

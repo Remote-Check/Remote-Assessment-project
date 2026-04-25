@@ -34,7 +34,7 @@ Future work proceeds feature by feature: create a branch from current `origin/ma
 
 ## MVP Scope
 
-- Clinician login, session creation, dashboard list/detail, drawing/manual review, finalization.
+- Clinician login, case-ID-only case creation, session creation, dashboard list/detail, drawing/manual review, finalization.
 - Clinician auth uses email/password for MVP.
 - Patient session start by generated test number, Hebrew MoCA flow, autosave, completion.
 - Supabase persists sessions, task results, drawings, audio evidence, scoring reports, and audit events.
@@ -49,6 +49,7 @@ Future work proceeds feature by feature: create a branch from current `origin/ma
 - Build the asynchronous clinician-review workflow.
 - Use clinician email/password auth for MVP; treat MFA, SSO, and device policy as future security hardening.
 - Keep caregiver/support contact usage offline for MVP.
+- Use case IDs only for active MVP case records; keep patient PII out of the app workflow.
 - Store raw drawing/audio/task evidence for clinician review.
 - Use deterministic scoring only where the active manual supports it.
 - Use external speech-to-text only as transcript evidence.
