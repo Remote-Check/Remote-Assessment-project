@@ -92,7 +92,7 @@ Storage buckets are private. Patient-facing stimulus access and clinician-facing
 |---|---|---|---|
 | Session creation | Case ID, MoCA version, age band, education, location, generated link token. | Same, with MoCA version visible in clinician and patient workflow and preserved for reporting. | Current target. |
 | Patient start | One-time token moves session to `in_progress`; same-device resume uses stored in-progress state and matching token links reopen saved progress. | Same, with stale local state filtered out of resume controls. | Resume copy and refresh recovery can be refined. |
-| Stimulus delivery | `get-stimuli` returns versioned private Storage paths and signed URLs when licensed assets are uploaded. Patient UI uses explicit development placeholders when assets are missing. | Licensed MoCA assets are uploaded to private Storage by version and task before clinical use. | Asset upload/runbook and production asset validation are still needed. |
+| Stimulus delivery | `get-stimuli` returns versioned private Storage paths and signed URLs when licensed assets are uploaded. Patient UI uses explicit development placeholders when assets are missing. | Licensed MoCA assets are uploaded to private Storage by version and task before clinical use, then validated with `scripts/verify-stimuli.mjs`. | Production asset validation should be part of release readiness. |
 | Task persistence | Per-task submit, skipped-task review payloads, drawings, audio evidence. | Reliable autosave for every task; refresh preserves saved progress in normal use. | Full offline retry queue remains future hardening. |
 | Drawing review | Clinician dashboard reads stored drawing/audio evidence, signed URLs, and review rows from `get-session`; score updates persist through review functions. | Clinician rubric scoring from stored evidence. | Rubric UX can be refined for clinical ergonomics. |
 | Rule scoring | Server-side scoring selects an explicit `8.1`, `8.2`, or `8.3` MoCA config and preserves version in the scoring report. | Version-aware deterministic scoring by active test manual. | Some tasks still require more structured payloads and licensed manual validation before clinical use. |
@@ -107,7 +107,7 @@ Storage buckets are private. Patient-facing stimulus access and clinician-facing
 - Full offline-first browser queue and retry reconciliation.
 - External speech-to-text job model, transcript review/editing, and privacy review.
 - Twilio provider abstraction, message templates, delivery status, and retry handling.
-- Licensed stimulus asset upload/runbook and production readiness validation.
+- Production release checklist for licensed stimulus validation.
 - Arabic/Russian/English future batteries.
 - Report comparison across prior sessions.
 
@@ -129,3 +129,4 @@ Storage buckets are private. Patient-facing stimulus access and clinician-facing
 - 2026-04-25: Patient SMS session-link delivery uses the Twilio provider path behind `SMS_PROVIDER` and records `patient_session_sms` notification outcomes.
 - 2026-04-25: Scoring now uses explicit per-version MoCA config for `8.1`, `8.2`, and `8.3`; licensed stimuli remain outside the repo.
 - 2026-04-25: Patient stimulus delivery uses a versioned private Storage manifest and short-lived signed URLs; missing licensed assets show development placeholders.
+- 2026-04-25: Licensed stimulus readiness is verified through `scripts/verify-stimuli.mjs` and `docs/STIMULI_ASSET_RUNBOOK.md`.

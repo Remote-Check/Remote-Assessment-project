@@ -11,6 +11,7 @@ Canonical files:
 3. [JOURNEY.md](JOURNEY.md)
 4. [CONTEXT.md](CONTEXT.md)
 5. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
+6. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
 
 `JOURNEY.md` is the patient/clinician journey authority. Update it when browser, backend, status, scoring, notification, or review behavior changes.
 
@@ -58,3 +59,5 @@ node scripts/local-e2e.mjs --all-versions
 ```
 
 For browser or UX changes, verify the affected flow in Chrome when practical.
+
+For licensed stimulus storage or clinical-readiness changes, also run `node scripts/verify-stimuli.mjs --all-versions` with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY` configured.

@@ -13,6 +13,7 @@ Read these first:
 3. [JOURNEY.md](JOURNEY.md)
 4. [CONTEXT.md](CONTEXT.md)
 5. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
+6. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
 
 `JOURNEY.md` is the bird's-eye patient/clinician journey authority. Update it when browser, backend, status, scoring, notification, or review behavior changes.
 
@@ -62,6 +63,7 @@ Read these first:
 - `scripts/` - local automation and E2E verification.
 - `JOURNEY.md` - patient/clinician browser + backend journey playbook.
 - `docs/LOCAL_E2E_VERIFICATION.md` - local end-to-end test instructions.
+- `docs/STIMULI_ASSET_RUNBOOK.md` - private licensed stimulus upload and validation instructions.
 - `docs/plans/` - background implementation plans, not product authority.
 - `CONTEXT.md` and `MEMORY.md` - project context/history.
 
@@ -83,4 +85,11 @@ Backend/local E2E:
 supabase start
 supabase functions serve create-session start-session get-stimuli submit-results submit-task save-drawing save-audio complete-session get-session update-drawing-review update-scoring-review export-pdf export-csv --env-file /dev/null
 node scripts/local-e2e.mjs --all-versions
+```
+
+Licensed stimulus readiness:
+
+```bash
+node scripts/verify-stimuli.mjs --all-versions --print-manifest
+SUPABASE_URL=<project-url> SUPABASE_SERVICE_ROLE_KEY=<service-role-key> node scripts/verify-stimuli.mjs --all-versions
 ```

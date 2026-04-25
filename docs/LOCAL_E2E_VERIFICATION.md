@@ -67,6 +67,12 @@ From the repo root, with Supabase and Edge Functions running:
 node scripts/local-e2e.mjs --all-versions
 ```
 
+To verify uploaded private stimulus assets before clinical testing:
+
+```bash
+SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SECRET_KEY="<local Secret value>" node scripts/verify-stimuli.mjs --all-versions
+```
+
 To run only one version:
 
 ```bash
@@ -121,6 +127,6 @@ This starts or reuses Vite and expects local Supabase plus Edge Functions to alr
 ## Known Clinical Blockers
 
 - Official licensed MoCA stimuli are still required before clinical pilot use and must not be committed to this repository.
-- The local E2E script verifies the PDF files exist locally. The clinician-facing MoCA version selector stores the selected version on each session for traceability; licensed stimuli are loaded from private Storage by version/task and remain outside the repo.
+- The local E2E script verifies the PDF files exist locally. The clinician-facing MoCA version selector stores the selected version on each session for traceability; licensed stimuli are loaded from private Storage by version/task and verified with `scripts/verify-stimuli.mjs`.
 - Audio/manual tasks are supported through clinician review, but fully structured rule-based scoring is still incomplete for several tasks.
 - External speech-to-text is future transcript evidence only; it must not become an automated scoring authority.

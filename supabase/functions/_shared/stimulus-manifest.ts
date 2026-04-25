@@ -1,3 +1,5 @@
+import manifestConfig from './stimulus-manifest-data.json' with { type: 'json' };
+
 export type StimulusAssetKind = 'image' | 'audio' | 'pdf';
 
 export interface StimulusManifestEntry {
@@ -10,60 +12,15 @@ export interface StimulusManifestEntry {
   storagePath: string;
 }
 
-const SUPPORTED_MOCA_VERSIONS = ['8.1', '8.2', '8.3'] as const;
+interface StimulusManifestConfig {
+  versions: string[];
+  assets: Array<Omit<StimulusManifestEntry, 'storagePath'>>;
+}
 
-type SupportedMocaVersion = (typeof SUPPORTED_MOCA_VERSIONS)[number];
+const CONFIG = manifestConfig as StimulusManifestConfig;
+const SUPPORTED_MOCA_VERSIONS = CONFIG.versions;
 
-const TASK_ASSETS: Array<Omit<StimulusManifestEntry, 'storagePath'>> = [
-  {
-    taskType: 'moca-visuospatial',
-    assetId: 'trail-template',
-    label: 'Trail Making visual template',
-    kind: 'image',
-    contentType: 'image/png',
-    required: true,
-  },
-  {
-    taskType: 'moca-cube',
-    assetId: 'cube-stimulus',
-    label: 'Cube copy stimulus',
-    kind: 'image',
-    contentType: 'image/png',
-    required: true,
-  },
-  {
-    taskType: 'moca-naming',
-    assetId: 'item-1',
-    label: 'Naming item 1',
-    kind: 'image',
-    contentType: 'image/png',
-    required: true,
-  },
-  {
-    taskType: 'moca-naming',
-    assetId: 'item-2',
-    label: 'Naming item 2',
-    kind: 'image',
-    contentType: 'image/png',
-    required: true,
-  },
-  {
-    taskType: 'moca-naming',
-    assetId: 'item-3',
-    label: 'Naming item 3',
-    kind: 'image',
-    contentType: 'image/png',
-    required: true,
-  },
-  {
-    taskType: 'moca-memory-learning',
-    assetId: 'word-list-audio',
-    label: 'Memory learning audio prompt',
-    kind: 'audio',
-    contentType: 'audio/mpeg',
-    required: true,
-  },
-];
+const TASK_ASSETS = CONFIG.assets;
 
 const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
   'image/png': 'png',
@@ -75,8 +32,8 @@ export function supportedMocaVersions(): string[] {
   return [...SUPPORTED_MOCA_VERSIONS];
 }
 
-export function isSupportedMocaVersion(version: string): version is SupportedMocaVersion {
-  return SUPPORTED_MOCA_VERSIONS.includes(version as SupportedMocaVersion);
+export function isSupportedMocaVersion(version: string): boolean {
+  return SUPPORTED_MOCA_VERSIONS.includes(version);
 }
 
 export function buildStimulusManifest(mocaVersion: string): StimulusManifestEntry[] {
