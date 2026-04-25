@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.104.0';
 import { writeAuditEvent } from '../_shared/audit.ts';
 import { corsResponse, json, methodNotAllowed } from '../_shared/http.ts';
+import { browserReachableSignedUrl } from '../_shared/storage.ts';
 import { buildStimulusManifest } from '../_shared/stimulus-manifest.ts';
 
 interface GetStimuliBody {
@@ -78,7 +79,7 @@ Deno.serve(async (req) => {
       return {
         ...entry,
         available: Boolean(data?.signedUrl && !signedUrlError),
-        signedUrl: data?.signedUrl ?? null,
+        signedUrl: browserReachableSignedUrl(data?.signedUrl, req),
         missingReason: signedUrlError ? 'signed_url_failed' : null,
       };
     }),

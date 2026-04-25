@@ -1,0 +1,45 @@
+import { browserReachableSignedUrl } from './storage.ts';
+
+function assertEquals(actual: unknown, expected: unknown) {
+  if (actual !== expected) throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+}
+
+Deno.test('browserReachableSignedUrl rewrites local Docker signed URLs to request origin', () => {
+  const req = new Request('http://supabase_edge_runtime_remote_assessment_project:8081/functions/v1/get-stimuli');
+  const signedUrl = 'http://kong:8000/storage/v1/object/sign/stimuli/8.3/moca-cube/cube-stimulus.png?token=abc';
+
+  assertEquals(
+    browserReachableSignedUrl(signedUrl, req),
+    'http://127.0.0.1:54321/storage/v1/object/sign/stimuli/8.3/moca-cube/cube-stimulus.png?token=abc',
+  );
+});
+
+Deno.test('browserReachableSignedUrl prefers forwarded public Supabase origin', () => {
+  const req = new Request('http://supabase_edge_runtime_remote_assessment_project:8081/functions/v1/get-stimuli', {
+    headers: {
+      'x-forwarded-host': '127.0.0.1:54321',
+      'x-forwarded-proto': 'http',
+    },
+  });
+  const signedUrl = 'http://supabase_edge_runtime_remote_assessment_project:8081/storage/v1/object/sign/stimuli/8.3/moca-cube/cube-stimulus.png?token=abc';
+
+  assertEquals(
+    browserReachableSignedUrl(signedUrl, req),
+    'http://127.0.0.1:54321/storage/v1/object/sign/stimuli/8.3/moca-cube/cube-stimulus.png?token=abc',
+  );
+});
+
+Deno.test('browserReachableSignedUrl restores local Supabase API port when forwarded host omits it', () => {
+  const req = new Request('http://supabase_edge_runtime_remote_assessment_project:8081/functions/v1/get-stimuli', {
+    headers: {
+      'x-forwarded-host': '127.0.0.1',
+      'x-forwarded-proto': 'http',
+    },
+  });
+  const signedUrl = 'http://supabase_edge_runtime_remote_assessment_project:8081/storage/v1/object/sign/stimuli/8.3/moca-cube/cube-stimulus.png?token=abc';
+
+  assertEquals(
+    browserReachableSignedUrl(signedUrl, req),
+    'http://127.0.0.1:54321/storage/v1/object/sign/stimuli/8.3/moca-cube/cube-stimulus.png?token=abc',
+  );
+});
