@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/incompatible-library */
-import { Search, ChevronLeft, Plus, Phone } from "lucide-react";
+import { Search, ChevronLeft, Plus, Hash } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -9,8 +9,6 @@ import { PatientForm } from "./PatientForm";
 interface PatientRow {
   id: string;
   full_name: string;
-  phone: string;
-  date_of_birth: string | null;
   created_at: string;
   tests: number;
   completed: number;
@@ -31,8 +29,6 @@ interface ScoringSummary {
 interface PatientWithSessions {
   id: string;
   full_name: string;
-  phone: string;
-  date_of_birth: string | null;
   created_at: string;
   sessions:
     | {
@@ -68,13 +64,6 @@ function latestOf<T>(arr: T[] | null | undefined, key: (v: T) => string | null):
   return times.sort().slice(-1)[0];
 }
 
-function ageFromDob(dob: string | null): number | null {
-  if (!dob) return null;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return null;
-  return Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-}
-
 export function ClinicianDashboardList() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -95,7 +84,7 @@ export function ClinicianDashboardList() {
     const { data, error } = await supabase
       .from("patients")
       .select(
-        "id, full_name, phone, date_of_birth, created_at, sessions(id, status, created_at, scoring_reports(total_adjusted, total_provisional, pending_review_count, total_score, needs_review))",
+        "id, full_name, created_at, sessions(id, status, created_at, scoring_reports(total_adjusted, total_provisional, pending_review_count, total_score, needs_review))",
       )
       .eq("clinician_id", session.user.id)
       .order("created_at", { ascending: false });
@@ -121,8 +110,6 @@ export function ClinicianDashboardList() {
       return {
         id: p.id,
         full_name: p.full_name,
-        phone: p.phone,
-        date_of_birth: p.date_of_birth,
         created_at: p.created_at,
         tests: sessions.length,
         completed,
@@ -145,7 +132,7 @@ export function ClinicianDashboardList() {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter(
-      (r) => r.full_name.toLowerCase().includes(q) || r.phone.includes(q) || r.id.toLowerCase().includes(q),
+      (r) => r.full_name.toLowerCase().includes(q) || r.id.toLowerCase().includes(q),
     );
   }, [rows, search]);
 
@@ -186,7 +173,7 @@ export function ClinicianDashboardList() {
     }
   };
 
-  const totalPatients = rows.length;
+  const totalCases = rows.length;
   const reviewCount = rows.filter((r) => r.status === "review").length;
   const completedCount = rows.filter((r) => r.status === "completed").length;
   const avgScore = (() => {
@@ -199,11 +186,11 @@ export function ClinicianDashboardList() {
     <div className="max-w-6xl mx-auto h-[calc(100vh-56px)] flex flex-col">
       <div className="flex items-center justify-between mb-8 shrink-0">
         <div>
-          <h1 className="text-4xl font-extrabold text-black mb-2">מטופלים</h1>
+          <h1 className="text-4xl font-extrabold text-black mb-2">תיקים</h1>
           <div className="text-gray-500 font-medium text-lg">
             {loading
               ? "טוען..."
-              : `${totalPatients} מטופלים · ${reviewCount} דורשים סקירה`}
+              : `${totalCases} תיקים · ${reviewCount} דורשים סקירה`}
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -220,7 +207,7 @@ export function ClinicianDashboardList() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="חיפוש לפי שם או טלפון…"
+              placeholder="חיפוש לפי מזהה תיק…"
               className="pl-4 pr-12 py-3 bg-white border border-gray-200 rounded-xl w-80 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-600 transition-all"
             />
           </div>
@@ -230,16 +217,16 @@ export function ClinicianDashboardList() {
             className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-md text-lg"
           >
             <Plus className="w-5 h-5" />
-            <span>מטופל חדש</span>
+            <span>תיק חדש</span>
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-4 gap-6 mb-8 shrink-0">
         {[
-          { label: "סה״כ מטופלים", value: String(totalPatients), delta: "רשומים" },
+          { label: "סה״כ תיקים", value: String(totalCases), delta: "רשומים" },
           { label: "ציון MoCA ממוצע", value: avgScore, delta: "מבחנים עם ציון" },
-          { label: "בדיקות הושלמו", value: String(completedCount), delta: "מטופלים שסיימו" },
+          { label: "בדיקות הושלמו", value: String(completedCount), delta: "תיקים שהושלמו" },
           { label: "ממתינים לבדיקה", value: String(reviewCount), delta: "דורשים סקירה", warn: true },
         ].map((stat, i) => (
           <div key={i} className="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
@@ -261,8 +248,7 @@ export function ClinicianDashboardList() {
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
         <div className="bg-gray-50 border-b border-gray-200 text-gray-500 text-sm uppercase tracking-wider font-bold shrink-0">
           <div className="flex text-right px-6 py-4">
-            <div className="w-1/3 font-bold">שם</div>
-            <div className="w-1/12 font-bold">גיל</div>
+            <div className="w-5/12 font-bold">מזהה תיק</div>
             <div className="w-1/12 font-bold">מבחנים</div>
             <div className="w-2/12 font-bold">פעילות אחרונה</div>
             <div className="w-2/12 font-bold">סטטוס</div>
@@ -283,8 +269,8 @@ export function ClinicianDashboardList() {
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 font-bold text-lg gap-2">
                 <span>
                   {rows.length === 0
-                    ? "עדיין לא נוספו מטופלים. התחילו על ידי לחיצה על \"מטופל חדש\"."
-                    : "לא נמצאו מטופלים מתאימים לחיפוש."}
+                    ? "עדיין לא נוספו תיקים. התחילו על ידי לחיצה על \"תיק חדש\"."
+                    : "לא נמצאו תיקים מתאימים לחיפוש."}
                 </span>
               </div>
             )}
@@ -292,7 +278,6 @@ export function ClinicianDashboardList() {
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
               const p = filtered[virtualRow.index];
               if (!p) return null;
-              const age = ageFromDob(p.date_of_birth);
               return (
                 <div
                   key={virtualRow.index}
@@ -303,19 +288,18 @@ export function ClinicianDashboardList() {
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <div className="w-1/3 flex items-center gap-4">
+                  <div className="w-5/12 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shrink-0">
-                      {(p.full_name.trim()[0] || "מ").toUpperCase()}
+                      {(p.full_name.trim()[0] || "ת").toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-bold text-lg text-black truncate">{p.full_name}</div>
+                      <div className="font-bold text-lg text-black truncate">תיק {p.full_name}</div>
                       <div className="text-sm text-gray-500 font-mono flex items-center gap-1.5">
-                        <Phone className="w-3 h-3" />
-                        {p.phone}
+                        <Hash className="w-3 h-3" />
+                        {p.id.slice(0, 8)}
                       </div>
                     </div>
                   </div>
-                  <div className="w-1/12 text-gray-600 text-lg tabular-nums">{age ?? "-"}</div>
                   <div className="w-1/12 text-gray-600 text-lg tabular-nums">{p.tests}</div>
                   <div className="w-2/12 text-gray-600 text-lg tabular-nums">
                     {p.lastActive ? new Date(p.lastActive).toLocaleDateString("he-IL") : "—"}

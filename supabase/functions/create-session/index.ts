@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       clinic_name: user.user_metadata?.clinic_name ?? 'Remote Check',
     }, { onConflict: 'id' });
 
-  // Resolve patient: prefer patientId (modern flow), fall back to caseId/phone (legacy inline flow)
+  // Resolve case record: prefer patientId from the MVP case list, fall back to caseId for API compatibility.
   let patientRecordId: string | null = null;
   let caseId = caseIdInput?.trim() || '';
 

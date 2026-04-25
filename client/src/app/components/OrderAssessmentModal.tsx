@@ -1,12 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { X, Stethoscope, CheckCircle2, Copy } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 export interface PatientSummary {
   id: string;
   full_name: string;
-  phone: string;
-  date_of_birth: string | null;
 }
 
 export interface OrderAssessmentModalProps {
@@ -18,21 +16,8 @@ export interface OrderAssessmentModalProps {
 
 type AgeBand = "60-64" | "65-69" | "70-74" | "75-79" | "80+";
 
-function inferAgeBand(dateOfBirth: string | null): AgeBand {
-  if (!dateOfBirth) return "70-74";
-  const dob = new Date(dateOfBirth);
-  if (Number.isNaN(dob.getTime())) return "70-74";
-  const age = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-  if (age < 65) return "60-64";
-  if (age < 70) return "65-69";
-  if (age < 75) return "70-74";
-  if (age < 80) return "75-79";
-  return "80+";
-}
-
 export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: OrderAssessmentModalProps) {
-  const defaultAgeBand = useMemo(() => inferAgeBand(patient.date_of_birth), [patient.date_of_birth]);
-  const [ageBand, setAgeBand] = useState<AgeBand>(defaultAgeBand);
+  const [ageBand, setAgeBand] = useState<AgeBand>("70-74");
   const [educationYears, setEducationYears] = useState("12");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +104,7 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
             </div>
             <div>
               <h2 className="text-2xl font-extrabold text-black">פתיחת מבחן חדש</h2>
-              <p className="text-gray-500 text-sm">עבור {patient.full_name}</p>
+              <p className="text-gray-500 text-sm">עבור תיק {patient.full_name}</p>
             </div>
           </div>
           <button

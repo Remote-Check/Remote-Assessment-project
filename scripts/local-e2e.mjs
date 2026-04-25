@@ -103,6 +103,13 @@ async function runVersion(version) {
   );
 
   const { sessionId, linkToken, testNumber } = created.body;
+  const directTokenStart = await request('/functions/v1/start-session', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ token: linkToken }),
+  });
+  assert(directTokenStart.status === 404, `[${version}] internal link token cannot start patient session`, directTokenStart);
+
   const started = await request('/functions/v1/start-session', {
     method: 'POST',
     headers,
@@ -211,6 +218,13 @@ async function runVersion(version) {
   assert(finalDetail.session.scoring_report?.pending_review_count === 0, `[${version}] pending review count is 0`, finalDetail.session.scoring_report);
   assert(finalDetail.session.scoring_report?.total_provisional === false, `[${version}] report is finalized`, finalDetail.session.scoring_report);
   assert(finalDetail.session.status === 'completed', `[${version}] session status completed`, finalDetail.session);
+
+  const completedStart = await request('/functions/v1/start-session', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ token: testNumber }),
+  });
+  assert(completedStart.status === 404, `[${version}] completed test number is unavailable`, completedStart);
 
   const pdfExport = await request('/functions/v1/export-pdf', {
     method: 'POST',

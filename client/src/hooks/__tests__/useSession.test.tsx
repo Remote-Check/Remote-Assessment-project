@@ -15,8 +15,8 @@ vi.mock('../../lib/supabase', () => ({
 
 const mockFetch = vi.fn();
 
-function SessionHarness({ token, code }: { token?: string; code?: string }) {
-  const state = useSession(token, code);
+function SessionHarness({ token }: { token?: string }) {
+  const state = useSession(token);
   return <output data-testid="session-state">{JSON.stringify(state)}</output>;
 }
 
@@ -26,8 +26,8 @@ function currentSessionState(): SessionState {
   return JSON.parse(content) as SessionState;
 }
 
-async function renderAndWaitForStatus(token: string | undefined, code: string | undefined, status: SessionState['status']) {
-  render(<SessionHarness token={token} code={code} />);
+async function renderAndWaitForStatus(token: string | undefined, status: SessionState['status']) {
+  render(<SessionHarness token={token} />);
   await waitFor(() => {
     expect(currentSessionState().status).toBe(status);
   });
@@ -49,41 +49,36 @@ describe('useSession', () => {
   it('marks session invalid when no token override is provided', async () => {
     window.history.replaceState({}, '', '/?t=query-token');
 
-    const state = await renderAndWaitForStatus(undefined, undefined, 'invalid');
+    const state = await renderAndWaitForStatus(undefined, 'invalid');
 
     expect(state.sessionId).toBeNull();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('surfaces invalid access code responses', async () => {
-    mockFetch.mockResolvedValue({ ok: false, status: 401 } as Response);
+  it('sends only the patient-facing test number to start-session', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: 'ready',
+        sessionId: 'sess-ready',
+        linkToken: 'link-token',
+        sessionDate: '2026-04-01T00:00:00.000Z',
+        educationYears: 12,
+        ageBand: '70-79',
+      }),
+    } as Response);
 
-    const state = await renderAndWaitForStatus('session-token', '1234', 'invalid_code');
+    await renderAndWaitForStatus('12345678', 'ready');
 
-    expect(state.requiresAccessCode).toBe(true);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://edge.test/start-session',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ apikey: 'anon-key' }),
-        body: JSON.stringify({ token: 'session-token', accessCode: '1234' }),
+        body: JSON.stringify({ token: '12345678' }),
       }),
     );
-  });
-
-  it('returns code_required state when backend requires an access code', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ status: 'code_required', sessionId: 'sess-code' }),
-    } as Response);
-
-    const state = await renderAndWaitForStatus('session-token', undefined, 'code_required');
-
-    expect(state.sessionId).toBe('sess-code');
-    expect(state.linkToken).toBe('session-token');
-    expect(state.requiresAccessCode).toBe(true);
-    expect(state.scoringContext).toBeNull();
   });
 
   it('maps a successful start-session payload into ready scoring context', async () => {
@@ -100,7 +95,7 @@ describe('useSession', () => {
       }),
     } as Response);
 
-    const state = await renderAndWaitForStatus('session-token', undefined, 'ready');
+    const state = await renderAndWaitForStatus('session-token', 'ready');
 
     expect(state.linkToken).toBe('link-token');
     expect(state.startToken).toBe('session-token');
@@ -112,7 +107,7 @@ describe('useSession', () => {
   it('moves to error state when start-session request fails', async () => {
     mockFetch.mockRejectedValue(new Error('network down'));
 
-    const state = await renderAndWaitForStatus('session-token', undefined, 'error');
+    const state = await renderAndWaitForStatus('session-token', 'error');
 
     expect(state.sessionId).toBeNull();
     expect(state.linkToken).toBeNull();

@@ -4,10 +4,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import {
   ChevronRight,
   Stethoscope,
-  Calendar,
   Hash,
-  Phone,
-  StickyNote,
   Plus,
   Loader2,
   Activity,
@@ -19,10 +16,6 @@ import { OrderAssessmentModal } from "./OrderAssessmentModal";
 interface PatientRecord {
   id: string;
   full_name: string;
-  phone: string;
-  date_of_birth: string | null;
-  id_number: string | null;
-  notes: string | null;
   created_at: string;
 }
 
@@ -86,7 +79,7 @@ export function PatientProfilePage() {
 
     const { data: patientData, error: patientError } = await supabase
       .from("patients")
-      .select("id, full_name, phone, date_of_birth, id_number, notes, created_at")
+      .select("id, full_name, created_at")
       .eq("id", patientId)
       .maybeSingle();
 
@@ -125,10 +118,10 @@ export function PatientProfilePage() {
   if (notFound || !patient) {
     return (
       <div className="max-w-3xl mx-auto text-center py-24">
-        <h1 className="text-3xl font-extrabold text-black mb-3">המטופל לא נמצא</h1>
+        <h1 className="text-3xl font-extrabold text-black mb-3">התיק לא נמצא</h1>
         <p className="text-gray-500 mb-6">ייתכן שהקישור שגוי או שאין לך גישה לרשומה.</p>
         <Link to="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-black text-white font-bold">
-          חזרה לרשימת המטופלים
+          חזרה לרשימת התיקים
         </Link>
       </div>
     );
@@ -148,7 +141,7 @@ export function PatientProfilePage() {
           className="text-gray-500 font-bold hover:text-black flex items-center gap-2 transition-colors w-fit"
         >
           <ChevronRight className="w-5 h-5" />
-          <span>מטופלים / {patient.full_name}</span>
+          <span>תיקים / {patient.full_name}</span>
         </Link>
       </div>
 
@@ -156,27 +149,15 @@ export function PatientProfilePage() {
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="flex items-center gap-6 min-w-0">
             <div className="w-20 h-20 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-extrabold text-3xl shrink-0">
-              {patient.full_name.trim()[0]?.toUpperCase() || "מ"}
+              {patient.full_name.trim()[0]?.toUpperCase() || "ת"}
             </div>
             <div className="min-w-0">
-              <h1 className="text-3xl font-extrabold text-black mb-2 truncate">{patient.full_name}</h1>
+              <h1 className="text-3xl font-extrabold text-black mb-2 truncate">תיק {patient.full_name}</h1>
               <div className="flex gap-5 text-gray-500 font-medium flex-wrap">
                 <span className="inline-flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  <span className="font-mono">{patient.phone}</span>
+                  <Hash className="w-4 h-4" />
+                  <span className="font-mono">{patient.id.slice(0, 8)}</span>
                 </span>
-                {patient.date_of_birth && (
-                  <span className="inline-flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {formatDate(patient.date_of_birth)}
-                  </span>
-                )}
-                {patient.id_number && (
-                  <span className="inline-flex items-center gap-2">
-                    <Hash className="w-4 h-4" />
-                    <span className="font-mono">{patient.id_number}</span>
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -188,15 +169,9 @@ export function PatientProfilePage() {
             <Stethoscope className="w-5 h-5" />
             פתיחת מבחן
           </button>
-        </div>
-
-        {patient.notes && (
-          <div className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-700 flex items-start gap-3">
-            <StickyNote className="w-5 h-5 mt-0.5 text-gray-400 shrink-0" />
-            <span className="whitespace-pre-wrap">{patient.notes}</span>
-          </div>
-        )}
       </div>
+
+	      </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
@@ -230,7 +205,7 @@ export function PatientProfilePage() {
         {sessions.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-500">
             <Activity className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-            עדיין לא נפתחו מבחנים למטופל זה.
+	            עדיין לא נפתחו מבחנים לתיק זה.
           </div>
         ) : (
           <table className="w-full text-right">
@@ -287,8 +262,6 @@ export function PatientProfilePage() {
         patient={{
           id: patient.id,
           full_name: patient.full_name,
-          phone: patient.phone,
-          date_of_birth: patient.date_of_birth,
         }}
         onOrdered={loadPatient}
       />

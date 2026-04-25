@@ -9,11 +9,6 @@ const corsHeaders = {
 
 interface StartSessionBody {
   token: string;
-  accessCode?: string;
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 Deno.serve(async (req) => {
@@ -32,19 +27,19 @@ Deno.serve(async (req) => {
   }
 
   const token = body.token?.trim();
-  const accessCode = body.accessCode?.trim();
   if (!token) return json({ error: 'Missing test number' }, 400);
+  if (!/^\d{8}$/.test(token)) return json({ error: 'Invalid test number' }, 404);
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   );
 
-  const tokenColumn = isUuid(token) ? 'link_token' : 'access_code';
   const { data: session, error } = await supabase
     .from('sessions')
     .select('id, link_token, status, link_used_at, age_band, education_years, created_at, access_code, moca_version')
-    .eq(tokenColumn, token)
+    .eq('access_code', token)
+    .in('status', ['pending', 'in_progress'])
     .single();
 
   if (error || !session) {
@@ -54,14 +49,6 @@ Deno.serve(async (req) => {
   // Enforce single-use
   if (session.link_used_at) {
     return json({ error: 'Test number already used' }, 410);
-  }
-
-  if (session.status !== 'pending' && session.status !== 'in_progress') {
-    return json({ error: 'Session not available' }, 409);
-  }
-
-  if (tokenColumn === 'link_token' && session.access_code && accessCode && accessCode !== session.access_code) {
-    return json({ error: 'Invalid access code' }, 401);
   }
 
   if (session.status === 'pending') {
