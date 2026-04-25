@@ -30,7 +30,7 @@
 - Upsert task_results, validate session in_progress, idempotent
 
 **Task 6:** Write `complete-session` Edge Function
-- Insert scoring_report, insert drawing_reviews, set status, send email via Resend
+- Insert scoring_report, insert drawing_reviews, set status, send clinician completion email via the configured notification provider
 
 ---
 
@@ -51,7 +51,7 @@
 
 **Task 10:** Wire `complete-session` into BatteryPlayer
 - Call on `state.isFinished`
-- Pass scoring report computed client-side
+- Server-side scoring remains authoritative; client-side scoring is only a local preview/test helper
 
 ---
 
@@ -60,3 +60,11 @@
 **Task 11:** Write setup instructions for user
 - `supabase init`, `supabase login`, `supabase link`, `supabase db push`, `supabase functions deploy`
 - `.env` template with required vars
+
+### MVP scope notes
+
+- No Supabase Realtime/live monitoring workflow is in scope.
+- No caregiver observer route, mirror, watched badge, or remote encouragement workflow is in scope.
+- Drawing tasks are never AI/ML scored; store raw drawing evidence and create clinician review rows.
+- External speech-to-text can create transcripts/evidence only. It must not make scoring decisions.
+- Patient SMS uses Twilio by default behind a swappable provider interface; clinician review notification is email-first when a test is completed.

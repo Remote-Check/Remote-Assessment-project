@@ -141,7 +141,8 @@ Access: signed URLs generated server-side only, never exposed directly.
 - Inserts `scoring_report`
 - Inserts `drawing_reviews` rows (score=null)
 - Sets status: `awaiting_review` if drawings pending, else `completed`
-- Emails clinician via Resend (badge + link to dashboard)
+- Sends one email notification to the clinician that the session is ready for review
+- Does not trigger a Friday/weekly digest or live monitoring event
 
 ---
 
@@ -149,9 +150,17 @@ Access: signed URLs generated server-side only, never exposed directly.
 
 ```
 Clinician creates session → DB row inserted → link_token generated
-Clinician sends /assess?t={link_token} to patient (WhatsApp/SMS/email)
+Clinician sends /assess?t={link_token} to patient (Twilio SMS by default, email/manual sharing as fallback)
 Patient opens link → start-session validates token → single-use flag set
 Patient completes battery → submit-results called per task
 Patient finishes → complete-session → clinician notified
 Clinician logs in → reviews drawings → scoring_report finalized
 ```
+
+## Explicitly Out of MVP Scope
+
+- Live clinician monitoring, realtime dashboards, or patient-progress watcher views.
+- Caregiver observer links/routes, screen mirrors, watched badges, remote encouragement, or caregiver dashboards.
+- AI/ML scoring for drawing tasks. Drawing paths/images are raw evidence for manual clinician scoring.
+- Speech-to-text scoring. External STT may produce transcript evidence only.
+- Friday or weekly digest notifications. Completion email is the first clinician notification.

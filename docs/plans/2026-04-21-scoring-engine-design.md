@@ -8,7 +8,7 @@
 ## Core Principles
 
 Standardization, scoring accuracy, and data privacy always outweigh automation.  
-No patient data (drawings, responses, metadata) is ever sent to external AI models.
+No patient data (drawings, responses, metadata) is ever sent to AI/ML scoring models. External speech-to-text may be used only to create transcript evidence for clinician review; it is not a scoring authority.
 
 ---
 
@@ -20,7 +20,7 @@ interface ItemScore {
   score: number;
   max: number;
   needsReview: boolean;     // true = pending clinician manual score
-  reviewReason?: string;    // 'drawing' | 'auto_score_failed'
+  reviewReason?: string;    // 'drawing' | 'rule_score_unavailable'
   rawData?: any;            // preserved when needsReview=true
 }
 
@@ -50,9 +50,9 @@ Norm percentile only computed when total is final (no pending items).
 
 ---
 
-## Auto-Scoring Rules
+## Rule-Based Scoring
 
-Scoring entry point: `scoreSession(results, ctx)` — pure function, no side effects.
+Scoring entry point: `scoreSession(results, ctx)` — pure function, no side effects. The app may only score items that can be deterministically scored from the active test manual and captured structured payload.
 
 | Task | Payload | Rule | Max |
 |------|---------|------|-----|
@@ -65,11 +65,11 @@ Scoring entry point: `scoreSession(results, ctx)` — pure function, no side eff
 | `moca-delayed-recall` | `{recalled:string[]}` | Match vs 5 target words from i18n. 1pt each. | 5 |
 | `moca-naming` | `(string\|null)[]` | Compare vs `['אריה','קרנף','גמל']`. 1pt each. | 3 |
 | `moca-memory-learning` | registration only | No points in MoCA | 0 |
-| `moca-cube` | canvas imageData | Manual clinician rubric. `needsReview: true, reviewReason: 'drawing'` | 1 |
-| `moca-clock` | canvas imageData | Manual clinician rubric (3 criteria). `needsReview: true, reviewReason: 'drawing'` | 3 |
-| `moca-visuospatial` | canvas imageData | Manual clinician rubric. `needsReview: true, reviewReason: 'drawing'` | 1 |
+| `moca-cube` | canvas imageData/strokes | Manual clinician rubric only. No AI/ML drawing score. `needsReview: true, reviewReason: 'drawing'` | 1 |
+| `moca-clock` | canvas imageData/strokes | Manual clinician rubric only. No AI/ML drawing score. `needsReview: true, reviewReason: 'drawing'` | 3 |
+| `moca-visuospatial` | canvas imageData/strokes | Manual clinician rubric only. No AI/ML drawing score. `needsReview: true, reviewReason: 'drawing'` | 1 |
 
-**Failure fallback:** any auto-scorer that throws → `needsReview: true, reviewReason: 'auto_score_failed', rawData: preserved`. Never silently zero.
+**Fallback:** any missing, malformed, ambiguous, unsupported, or unscorable payload → `needsReview: true, reviewReason: 'rule_score_unavailable', rawData: preserved`. Never silently zero.
 
 ---
 
@@ -106,7 +106,8 @@ Supabase Edge Function `save-drawing`:
 - Receives base64 PNG from client after task complete
 - Stores to Supabase Storage (Israeli region)
 - Returns storage URL saved to session record
-- No external model calls — ever
+- No external AI/ML scoring model calls — ever
+- Raw strokes/images are evidence for clinician review, not machine-generated scores
 
 ---
 

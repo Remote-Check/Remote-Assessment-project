@@ -15,7 +15,7 @@ A remote, web-based platform for cognitive assessment of the 60+ population in I
     - **UX Metadata Table:** Tracks engagement metrics (time per task, undo counts, retries) for usability analysis.
 
 ## 3. Core Requirements
-- **Scoring:** Hybrid Engine. Automated math/trails, manual review for drawings. Decoupled JSON-based Scoring Engine with Israeli norms.
+- **Scoring:** Rule-based engine for tasks that can be scored directly from the active test manual; drawings, ambiguous payloads, missing data, and unsupported tasks require clinician review. No AI/ML drawing scoring.
 - **Access:** Clinician-generated "Open Links" (no patient verification step for MVP simplicity).
 - **Fallback:** Manual link sharing (Option B) to keep operational costs at zero.
 - **Reliability:** Per-section auto-save and patient retries for connection loss.
@@ -30,10 +30,11 @@ A remote, web-based platform for cognitive assessment of the 60+ population in I
 3. **MoCA Implementation:** Drawing Canvas + All Core Stimuli (Hebrew word lists/animals/tasks). (DONE)
 4. **Scoring Engine + Supabase Schema:** Logic for Israeli norms + full DB design. (DONE)
    - lib/scoring/{index,scorers,norms,utils}.ts — pure functions, TDD'd, 95/95 tests
-   - Drawing tasks (cube/clock/trails) → needsReview=true, clinician manual rubric per SPEC 3.6.2
-   - Auto-score failures → needsReview=true, rawData preserved, never silently zero
+   - Drawing tasks (cube/clock/trails) → needsReview=true, clinician manual rubric
+   - Rule scoring unavailable/fails → needsReview=true, rawData preserved, never silently zero
    - Norm percentile computed locally from lifshitz-norms.json (no external calls)
    - useScoring hook bridges battery state to scoreSession
    - save-drawing Edge Function: canvas PNG → Supabase Storage only
+   - External speech-to-text may produce transcripts/evidence, but never final clinical scoring decisions
 5. **Clinician Dashboard:** Patient management, export tools (Excel/PDF), and manual review interface. (DONE)
 6. **Polishing & Export:** Final UX refinements, PDF generation, and CSV export tools. (PENDING)

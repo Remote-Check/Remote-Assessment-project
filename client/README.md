@@ -1,4 +1,33 @@
-# React + TypeScript + Vite
+# Remote Assessment Client
+
+This is the active React/Vite frontend for the Remote Hebrew MoCA pilot MVP.
+
+Before changing product behavior, read:
+
+- [../README.md](../README.md)
+- [../AGENTS.md](../AGENTS.md)
+- [../CONTEXT.md](../CONTEXT.md)
+
+Exported handoff/prototype directories were removed from the active project. Do not recreate `src/imports/` or use exported prototypes as source of truth.
+
+## Development
+
+```bash
+npm install
+npm run dev
+npm test
+npm run build
+npm run lint
+```
+
+## Stack
+
+- React + TypeScript
+- Vite
+- Tailwind/Radix UI components
+- Supabase client for authenticated clinician flows
+
+## Original Vite Notes
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
