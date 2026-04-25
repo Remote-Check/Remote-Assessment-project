@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type APIResponse, type Page } from '@playwright/test';
 
 const PASSWORD = 'Password123!';
 const SUPABASE_URL = readEnv('VITE_SUPABASE_URL') ?? 'http://127.0.0.1:54321';
@@ -34,6 +34,23 @@ test('pilot MVP browser flow: patient completes and clinician review APIs finali
   expect(provisional.session.status).toBe('awaiting_review');
   expect(provisional.session.drawings).toHaveLength(3);
   expect(provisional.session.scoring_reviews.length).toBeGreaterThan(0);
+
+  const targetDrawingReview = provisional.session.drawings[0];
+  const targetScoringReview = provisional.session.scoring_reviews[0];
+  const otherClinician = await createClinician(request, `browser-e2e-other-${runId}@example.test`);
+  await expectSessionHiddenFromOtherClinician(request, otherClinician.accessToken, created.sessionId);
+  await expectDrawingReviewHiddenFromOtherClinician(request, otherClinician.accessToken, targetDrawingReview.id);
+  await expectScoringReviewHiddenFromOtherClinician(request, otherClinician.accessToken, targetScoringReview.id);
+
+  const afterUnauthorizedAttempts = await getSession(request, clinician.accessToken, created.sessionId);
+  expectReviewFieldsUnchanged(
+    findReviewById(afterUnauthorizedAttempts.session.drawings, targetDrawingReview.id),
+    targetDrawingReview,
+  );
+  expectReviewFieldsUnchanged(
+    findReviewById(afterUnauthorizedAttempts.session.scoring_reviews, targetScoringReview.id),
+    targetScoringReview,
+  );
 
   for (const review of provisional.session.drawings) {
     await updateDrawingReview(request, clinician.accessToken, review.id, drawingMax(review.task_id));
@@ -131,27 +148,90 @@ async function runPatientClickThrough(
 }
 
 async function getSession(request: APIRequestContext, accessToken: string, sessionId: string) {
-  const response = await request.get(`${SUPABASE_URL}/functions/v1/get-session?sessionId=${sessionId}`, {
-    headers: clinicianHeaders(accessToken),
-  });
+  const response = await getSessionResponse(request, accessToken, sessionId);
   expect(response.ok()).toBeTruthy();
   return response.json();
 }
 
 async function updateDrawingReview(request: APIRequestContext, accessToken: string, reviewId: string, clinicianScore: number) {
-  const response = await request.post(`${SUPABASE_URL}/functions/v1/update-drawing-review`, {
-    headers: clinicianHeaders(accessToken),
-    data: { reviewId, clinicianScore, clinicianNotes: 'browser e2e' },
-  });
+  const response = await updateDrawingReviewResponse(request, accessToken, reviewId, clinicianScore);
   expect(response.ok()).toBeTruthy();
 }
 
 async function updateScoringReview(request: APIRequestContext, accessToken: string, reviewId: string, clinicianScore: number) {
-  const response = await request.post(`${SUPABASE_URL}/functions/v1/update-scoring-review`, {
+  const response = await updateScoringReviewResponse(request, accessToken, reviewId, clinicianScore);
+  expect(response.ok()).toBeTruthy();
+}
+
+async function expectSessionHiddenFromOtherClinician(request: APIRequestContext, accessToken: string, sessionId: string) {
+  const response = await getSessionResponse(request, accessToken, sessionId);
+  expect(response.status()).toBe(404);
+  await expectJsonError(response, 'Session not found');
+}
+
+async function expectDrawingReviewHiddenFromOtherClinician(request: APIRequestContext, accessToken: string, reviewId: string) {
+  const response = await updateDrawingReviewResponse(request, accessToken, reviewId, 0);
+  expect(response.status()).toBe(404);
+  await expectJsonError(response, 'Drawing review not found');
+}
+
+async function expectScoringReviewHiddenFromOtherClinician(request: APIRequestContext, accessToken: string, reviewId: string) {
+  const response = await updateScoringReviewResponse(request, accessToken, reviewId, 0);
+  expect(response.status()).toBe(404);
+  await expectJsonError(response, 'Scoring review not found');
+}
+
+async function expectJsonError(response: APIResponse, error: string) {
+  await expect(response.json()).resolves.toMatchObject({ error });
+}
+
+function findReviewById(reviews: Array<Record<string, unknown>>, reviewId: string) {
+  const review = reviews.find(candidate => candidate.id === reviewId);
+  expect(review).toBeTruthy();
+  return review!;
+}
+
+function expectReviewFieldsUnchanged(actual: Record<string, unknown>, expected: Record<string, unknown>) {
+  expect(reviewMutationFields(actual)).toEqual(reviewMutationFields(expected));
+}
+
+function reviewMutationFields(review: Record<string, unknown>) {
+  return {
+    clinician_score: review.clinician_score ?? null,
+    clinician_notes: review.clinician_notes ?? null,
+    reviewed_at: review.reviewed_at ?? null,
+    reviewed_by: review.reviewed_by ?? null,
+  };
+}
+
+async function getSessionResponse(request: APIRequestContext, accessToken: string, sessionId: string) {
+  return request.get(`${SUPABASE_URL}/functions/v1/get-session?sessionId=${sessionId}`, {
+    headers: clinicianHeaders(accessToken),
+  });
+}
+
+async function updateDrawingReviewResponse(
+  request: APIRequestContext,
+  accessToken: string,
+  reviewId: string,
+  clinicianScore: number,
+) {
+  return request.post(`${SUPABASE_URL}/functions/v1/update-drawing-review`, {
     headers: clinicianHeaders(accessToken),
     data: { reviewId, clinicianScore, clinicianNotes: 'browser e2e' },
   });
-  expect(response.ok()).toBeTruthy();
+}
+
+async function updateScoringReviewResponse(
+  request: APIRequestContext,
+  accessToken: string,
+  reviewId: string,
+  clinicianScore: number,
+) {
+  return request.post(`${SUPABASE_URL}/functions/v1/update-scoring-review`, {
+    headers: clinicianHeaders(accessToken),
+    data: { reviewId, clinicianScore, clinicianNotes: 'browser e2e' },
+  });
 }
 
 function drawingMax(taskId: string): number {
