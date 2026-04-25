@@ -44,8 +44,8 @@ One-time start-token semantics remain strict. Target resume behavior uses same-d
 | Create session | Clinician enters case ID, MoCA version, age band, education years, place, city. | `create-session` creates `sessions` row with `pending` status, `moca_version`, and `link_token`; writes `session_created` audit event. | Current target. |
 | Share link/code | Clinician copies/generated patient URL or sends it through clinic workflow. | Target SMS provider is Twilio behind a swappable provider interface. | Current supports generated URL. SMS provider abstraction is future hardening. |
 | Wait for completion | Clinician waits for a completion notification, then opens the dashboard when ready. | `complete-session` attempts clinician completion email and audits `clinician_completion_email_*`. | Current. Email-first completion ping. |
-| Review session | Clinician opens dashboard detail for completed/awaiting review session. | `get-session` returns task results, scoring report, drawing reviews, scoring item reviews, signed drawing/audio URLs. | Current. |
-| Score manual items | Clinician scores drawings and any rule-unavailable items. | `update-drawing-review` and `update-scoring-review` persist clinician score/notes, recalculate report, write audit events. | Current. |
+| Review session | Clinician opens dashboard detail for completed/awaiting review session and sees stored patient evidence. | `get-session` returns task results, scoring report, drawing reviews, scoring item reviews, signed drawing/audio URLs. | Current. |
+| Score manual items | Clinician scores drawings and any rule-unavailable items from the stored evidence view. | `update-drawing-review` and `update-scoring-review` persist clinician score/notes, recalculate report, write audit events. | Current. |
 | Finalize | Once pending review count reaches 0, session becomes `completed`. | Final report totals and norm lookup become final; PDF/CSV export is available after finalization. | Current. |
 
 ## Patient Journey
@@ -91,7 +91,7 @@ Storage buckets are private. Browser-facing review access uses short-lived signe
 | Session creation | Case ID, MoCA version, age band, education, location, generated link token. | Same, with MoCA version visible in clinician and patient workflow and preserved for reporting. | Version-specific scoring/stimulus policy still needs deeper implementation. |
 | Patient start | One-time token moves session to `in_progress`; same-device resume uses stored in-progress state. | Same, with clearer resume UX and stale-state cleanup. | Resume UX can be improved. |
 | Task persistence | Per-task submit, skipped-task review payloads, drawings, audio evidence. | Reliable autosave for every task; refresh preserves saved progress in normal use. | Full offline retry queue remains future hardening. |
-| Drawing review | Manual drawing review rows and signed URLs. | Clinician rubric scoring from stored evidence. | Rubric UX can be improved. |
+| Drawing review | Clinician dashboard reads stored drawing/audio evidence, signed URLs, and review rows from `get-session`; score updates persist through review functions. | Clinician rubric scoring from stored evidence. | Rubric UX can be refined for clinical ergonomics. |
 | Rule scoring | Server-side scoring for supported structured tasks. | Version-aware deterministic scoring by active test manual. | Some tasks still require more structured payloads/version-specific rules. |
 | Completion notification | Email outcome via Resend when configured; skipped outcome audited locally. | Email-first clinician ping when test is done. | Production sender/config and retry policy need hardening. |
 | Dashboard review | Real session list/detail, review updates, finalized PDF export, and completed-session CSV export. | Efficient clinician review, finalization, then export. | Export templates can be refined for clinical formatting. |
@@ -119,3 +119,4 @@ Storage buckets are private. Browser-facing review access uses short-lived signe
 - 2026-04-25: Patient assessment header shows selected MoCA version and completed sessions clear local resume state after returning home.
 - 2026-04-25: Patient navigation records explicit skipped-task payloads for tasks advanced without captured evidence, so clinician review sees all visited tasks.
 - 2026-04-25: PDF export is available only after clinician finalization; CSV export uses modern report fields for completed sessions.
+- 2026-04-25: Clinician dashboard detail review uses backend `get-session` evidence, signed URLs, and review update functions instead of local patient-browser assessment state.
