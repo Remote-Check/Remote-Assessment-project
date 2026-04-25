@@ -114,6 +114,12 @@ function getPendingReviewCount(report: DBScoringReport | null): number {
   return report.pending_review_count ?? (getReportNeedsReview(report) ? 1 : 0);
 }
 
+function mergeEvidence(...items: Array<any | null | undefined>): any | null {
+  const objects = items.filter((item) => item && typeof item === "object" && !Array.isArray(item));
+  if (objects.length === 0) return null;
+  return Object.assign({}, ...objects);
+}
+
 function hydrateSavedRubrics(current: RubricState, drawings: DrawingReviewRow[]): RubricState {
   let next = current;
   for (const drawing of drawings) {
@@ -193,32 +199,38 @@ export function ClinicianDashboardDetail() {
     return Array.isArray(raw) ? raw[0] ?? null : raw;
   }, [sessionRecord]);
 
-  const reviewQueue = useMemo(() => {
-    const scoringReviews = (sessionRecord?.scoring_reviews ?? []).filter((row) => row.max_score > 0);
-    return REVIEW_TABS.map((tab) => {
-      const tabDrawingTaskId = DRAWING_TAB_TO_TASK_ID[tab.id];
-      const tabScoringTaskId = SCORING_TAB_TO_TASK_ID[tab.id];
-      const review = tabDrawingTaskId
-        ? sessionRecord?.drawings?.find((row) => row.task_id === tabDrawingTaskId)
-        : scoringReviews.find((row) => row.item_id === tabScoringTaskId || row.task_type === tabScoringTaskId);
-      const maxScore = tabDrawingTaskId ? (tab.id === "clock" ? 3 : 1) : (review as ScoringReviewRow | undefined)?.max_score;
-      return {
-        ...tab,
-        review,
-        maxScore,
-        isReviewed: review?.clinician_score != null,
-      };
-    }).filter((tab) => !!tab.review);
-  }, [sessionRecord]);
-  const audioEvidenceReviews = useMemo(() => {
+  const audioEvidenceByTaskType = useMemo(() => {
     const explicitEvidence = sessionRecord?.audio_evidence_reviews ?? [];
     const legacyEvidence = (sessionRecord?.scoring_reviews ?? []).filter((row) => row.max_score === 0);
     const byTaskType = new Map<string, ScoringReviewRow>();
     for (const review of [...explicitEvidence, ...legacyEvidence]) {
       if (typeof review.raw_data?.audioSignedUrl === "string") byTaskType.set(review.task_type, review);
     }
-    return Array.from(byTaskType.values());
+    return byTaskType;
   }, [sessionRecord]);
+
+  const reviewQueue = useMemo(() => {
+    const scoringReviews = (sessionRecord?.scoring_reviews ?? []).filter((row) => row.max_score > 0);
+    return REVIEW_TABS.map((tab) => {
+      const tabDrawingTaskId = DRAWING_TAB_TO_TASK_ID[tab.id];
+      const tabScoringTaskId = SCORING_TAB_TO_TASK_ID[tab.id];
+      const scoringReview = tabScoringTaskId
+        ? scoringReviews.find((row) => row.item_id === tabScoringTaskId || row.task_type === tabScoringTaskId)
+        : undefined;
+      const evidenceReview = tabScoringTaskId ? audioEvidenceByTaskType.get(tabScoringTaskId) : undefined;
+      const review = tabDrawingTaskId
+        ? sessionRecord?.drawings?.find((row) => row.task_id === tabDrawingTaskId)
+        : scoringReview ?? evidenceReview;
+      const maxScore = tabDrawingTaskId ? (tab.id === "clock" ? 3 : 1) : scoringReview?.max_score ?? evidenceReview?.max_score;
+      return {
+        ...tab,
+        review,
+        maxScore,
+        isEvidenceOnly: !tabDrawingTaskId && !scoringReview && !!evidenceReview,
+        isReviewed: scoringReview ? scoringReview.clinician_score != null : !!evidenceReview || review?.clinician_score != null,
+      };
+    }).filter((tab) => !!tab.review);
+  }, [audioEvidenceByTaskType, sessionRecord]);
 
   const pendingQueue = useMemo(() => reviewQueue.filter((tab) => !tab.isReviewed), [reviewQueue]);
   const completedQueue = useMemo(() => reviewQueue.filter((tab) => tab.isReviewed), [reviewQueue]);
@@ -238,11 +250,13 @@ export function ClinicianDashboardDetail() {
   const currentScoringReview = scoringTaskId
     ? sessionRecord?.scoring_reviews?.find((review) => review.max_score > 0 && (review.item_id === scoringTaskId || review.task_type === scoringTaskId))
     : null;
-  const currentEvidence = currentScoringReview?.raw_data ?? currentTaskResult?.raw_data ?? null;
+  const currentAudioEvidenceReview = scoringTaskId ? audioEvidenceByTaskType.get(scoringTaskId) ?? null : null;
+  const currentEvidence = mergeEvidence(currentTaskResult?.raw_data, currentScoringReview?.raw_data, currentAudioEvidenceReview?.raw_data);
   const currentStrokes = normalizeStrokes(currentDrawing?.strokes_data ?? currentTaskResult?.raw_data);
   const currentImageUrl = currentDrawing?.signedUrl ?? null;
   const currentAudioUrl = typeof currentEvidence?.audioSignedUrl === "string" ? currentEvidence.audioSignedUrl : null;
-  const currentReview = currentDrawing ?? currentScoringReview;
+  const currentReview = currentDrawing ?? currentScoringReview ?? currentAudioEvidenceReview;
+  const isCurrentEvidenceOnly = !currentDrawing && !currentScoringReview && !!currentAudioEvidenceReview;
   const reviewNotes = reviewNotesByTab[activeReviewTab] ?? currentReview?.clinician_notes ?? "";
 
   const getDrawingStats = (strokes: any[][]) => {
@@ -480,7 +494,7 @@ export function ClinicianDashboardDetail() {
           <ClipboardCheck className="mb-4 h-10 w-10 text-gray-400" />
           <h3 className="text-xl font-extrabold text-black">אין פריט סקירה למשימה הזו</h3>
           <p className="mt-2 max-w-md text-sm font-bold text-gray-500">
-            פריטי סקירה נוצרים אחרי שהמטופל מסיים את המבחן או כאשר נשמרה עדות שדורשת ניקוד קלינאי.
+            פריטי סקירה ועדויות קוליות נוצרים אחרי שהמטופל מסיים את המבחן.
           </p>
         </div>
       );
@@ -615,7 +629,7 @@ export function ClinicianDashboardDetail() {
   const pendingReviewCount = getPendingReviewCount(reportRecord);
   const reviewTabsForDisplay = visibleReviewTabs.length > 0
     ? visibleReviewTabs
-    : REVIEW_TABS.map((tab) => ({ ...tab, review: null, maxScore: undefined, isReviewed: false }));
+    : REVIEW_TABS.map((tab) => ({ ...tab, review: null, maxScore: undefined, isEvidenceOnly: false, isReviewed: false }));
   const exportBlockReason = canExportPdf
     ? "הדוח מוכן לייצוא"
     : pendingReviewCount > 0
@@ -791,7 +805,9 @@ export function ClinicianDashboardDetail() {
                   ) : null}
                 </div>
                 <div className={clsx("mt-2 text-xs font-bold", isActive ? "text-white/75" : "text-current/70")}>
-                  {tab.isReviewed
+                  {tab.isEvidenceOnly
+                    ? "עדות קולית"
+                    : tab.isReviewed
                     ? `נשמר ${score}/${tab.maxScore ?? "?"}`
                     : tab.review
                     ? "ממתין לניקוד"
@@ -802,24 +818,6 @@ export function ClinicianDashboardDetail() {
           })}
         </div>
 
-        {audioEvidenceReviews.length > 0 && (
-          <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-extrabold text-blue-950">
-              <Mic className="h-4 w-4" />
-              <span>עדויות קוליות לבדיקה קלינית</span>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {audioEvidenceReviews.map((review) => (
-                <div key={review.id} className="rounded-lg border border-blue-100 bg-white p-3">
-                  <div className="mb-2 text-xs font-extrabold text-gray-500" dir="ltr">
-                    {review.task_type}
-                  </div>
-                  <PlaybackAudio audioId={review.raw_data.audioSignedUrl} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-12 gap-8">
@@ -848,7 +846,11 @@ export function ClinicianDashboardDetail() {
           )}
 
           <div className="space-y-3 mb-8 flex-1">
-            {rubricData.items.map((crit) => {
+            {isCurrentEvidenceOnly ? (
+              <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm font-bold text-blue-950">
+                עדות קולית בלבד למשימה זו. אין פריט ניקוד ידני לשמירה במסך זה.
+              </div>
+            ) : rubricData.items.map((crit) => {
               const isChecked = rubrics[activeReviewTab][crit.id];
               return (
                 <div
@@ -894,10 +896,10 @@ export function ClinicianDashboardDetail() {
             <div className="mt-4 flex items-center justify-between gap-3">
               <button
                 onClick={handleSaveReview}
-                disabled={savingReview || (!currentDrawing && !currentScoringReview)}
+                disabled={savingReview || isCurrentEvidenceOnly || (!currentDrawing && !currentScoringReview)}
                 className={clsx(
                   "inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white transition-colors",
-                  savingReview || (!currentDrawing && !currentScoringReview)
+                  savingReview || isCurrentEvidenceOnly || (!currentDrawing && !currentScoringReview)
                     ? "bg-gray-300 cursor-not-allowed"
                     : "bg-black hover:bg-gray-800",
                 )}

@@ -8,6 +8,7 @@ import {
   Plus,
   Loader2,
   Activity,
+  Copy,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { supabase } from "../../lib/supabase";
@@ -96,6 +97,7 @@ export function PatientProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [orderOpen, setOrderOpen] = useState(false);
+  const [copiedAccessCode, setCopiedAccessCode] = useState<string | null>(null);
 
   const loadPatient = useCallback(async () => {
     if (!patientId) return;
@@ -156,6 +158,17 @@ export function PatientProfilePage() {
     .flatMap((s) => s.scoring_reports ?? [])
     .map(reportScore)
     .find((score) => score != null);
+
+  const copyAccessCode = async (event: React.MouseEvent, code: string) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedAccessCode(code);
+      setTimeout(() => setCopiedAccessCode(null), 2000);
+    } catch {
+      setCopiedAccessCode(null);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto pb-20">
@@ -301,7 +314,24 @@ export function PatientProfilePage() {
                     </td>
                     <td className="px-6 py-4 text-gray-600 tabular-nums">{formatDate(s.created_at)}</td>
                     <td className="px-6 py-4 text-gray-600 tabular-nums">{formatDate(s.completed_at)}</td>
-                    <td className="px-6 py-4 font-mono text-gray-600">{s.access_code ?? "—"}</td>
+                    <td className="px-6 py-4">
+                      {s.access_code ? (
+                        <div className="inline-flex items-center gap-2">
+                          <span className="font-mono text-gray-700 tabular-nums">{s.access_code}</span>
+                          <button
+                            type="button"
+                            onClick={(event) => copyAccessCode(event, s.access_code!)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-xs font-extrabold text-gray-700 hover:bg-gray-200"
+                            aria-label="העתק מספר מבחן"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            {copiedAccessCode === s.access_code ? "הועתק" : "העתק"}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

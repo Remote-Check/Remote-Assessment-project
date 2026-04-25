@@ -113,8 +113,12 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
               <Stethoscope className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-extrabold text-black">פתיחת מבחן חדש</h2>
-              <p className="text-gray-500 text-sm">עבור תיק {patient.case_id ?? patient.full_name}</p>
+              <h2 className="text-2xl font-extrabold text-black">
+                {result ? "המבחן נוצר בהצלחה" : "פתיחת מבחן חדש"}
+              </h2>
+              <p className="text-gray-500 text-sm">
+                {result ? "העתק את מספר המבחן ושלח אותו למטופל" : `עבור תיק ${patient.case_id ?? patient.full_name}`}
+              </p>
             </div>
           </div>
           <button
@@ -195,9 +199,19 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
 
         {result && (
           <div className="space-y-5">
-            <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 font-bold">
-              <CheckCircle2 className="w-6 h-6" />
-              המבחן נפתח בהצלחה.
+            <div className="flex items-center justify-between gap-4 bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 font-bold">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-6 h-6" />
+                <span>המבחן נוצר בהצלחה.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => copy(result.testNumber, "testNumber")}
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-extrabold text-green-900 shadow-sm hover:bg-green-100"
+              >
+                <Copy className="w-4 h-4" />
+                {copied === "testNumber" ? "הועתק" : "העתק מספר"}
+              </button>
             </div>
 
             <div className="space-y-3">
@@ -225,7 +239,7 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
               onClick={onClose}
               className="w-full h-14 rounded-xl bg-black text-white font-bold hover:bg-gray-800"
             >
-              סגור
+              אישור
             </button>
           </div>
         )}
