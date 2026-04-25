@@ -38,7 +38,7 @@ Read these first:
 - Server-side scoring is authoritative.
 - Drawings and ambiguous/manual items go to clinician review.
 - Clinician gets an email when a test is completed.
-- Patient SMS uses Twilio first, behind a provider abstraction.
+- Clinician copies the generated test number and sends it to the patient outside the app.
 - Licensed stimuli load from private Storage through versioned manifests and signed URLs.
 
 ## Guardrails

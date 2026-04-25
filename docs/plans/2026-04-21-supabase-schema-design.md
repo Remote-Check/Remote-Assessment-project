@@ -148,9 +148,9 @@ Access: signed URLs generated server-side only, never exposed directly.
 ## Session Link Flow
 
 ```
-Clinician creates session → DB row inserted → link_token generated
-Clinician sends /assess?t={link_token} to patient (WhatsApp/SMS/email)
-Patient opens link → start-session validates token → single-use flag set
+Clinician creates session → DB row inserted → test number generated
+Clinician copies test number and sends it to patient outside the app
+Patient enters test number → start-session validates it → single-use flag set
 Patient completes battery → submit-results called per task
 Patient finishes → complete-session → clinician notified
 Clinician logs in → reviews drawings → scoring_report finalized

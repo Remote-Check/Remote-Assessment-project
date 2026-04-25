@@ -45,7 +45,7 @@ Generated local artifacts stay out of Git: `.env.local`, `.playwright-mcp/`, `cl
 - Route drawings and ambiguous/manual items to clinician review.
 - Use external speech-to-text as transcript evidence only.
 - Notify clinicians when a patient completes a test.
-- Use Twilio as the MVP SMS default behind a provider abstraction.
+- Use clinician-shared test numbers for MVP patient start; keep SMS delivery out of the active MVP flow.
 - Keep licensed MoCA stimuli outside the repository.
 - Load licensed stimuli from private Storage through versioned manifests and signed URLs.
 
