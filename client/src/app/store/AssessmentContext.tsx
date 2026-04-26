@@ -52,7 +52,7 @@ const DEFAULT_STATE: AssessmentState = {
   linkToken: null,
   startToken: null,
   scoringContext: null,
-  lastPath: '/patient/trail-making',
+  lastPath: '/patient/welcome',
   isComplete: false,
   tasks: {},
 };

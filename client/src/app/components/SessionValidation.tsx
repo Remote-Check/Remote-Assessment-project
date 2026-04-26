@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { Loader2, AlertTriangle, ArrowRight } from "lucide-react";
 import { useSession } from "../../hooks/useSession";
@@ -8,6 +8,7 @@ export function SessionValidation() {
   const { token } = useParams();
   const navigate = useNavigate();
   const { state, hasInProgressAssessment, startNewAssessment } = useAssessmentStore();
+  const startedTokenRef = useRef<string | null>(null);
   const canResumeCurrentToken = Boolean(
     token &&
       hasInProgressAssessment &&
@@ -21,6 +22,10 @@ export function SessionValidation() {
     if (!token) return;
 
     if (canResumeCurrentToken) {
+      if (startedTokenRef.current === token) {
+        navigate('/patient/welcome', { replace: true });
+        return;
+      }
       navigate(getAssessmentResumePath(state.lastPath), { replace: true });
       return;
     }
@@ -31,6 +36,7 @@ export function SessionValidation() {
       session.linkToken &&
       session.scoringContext
     ) {
+      startedTokenRef.current = token;
       startNewAssessment(session.sessionId, session.linkToken, session.scoringContext, session.startToken);
       navigate('/patient/welcome', { replace: true });
     }

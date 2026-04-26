@@ -53,8 +53,7 @@ export function AssessmentLayout() {
       case 11: return '/patient/delayed-recall';
       case 12: return '/patient/orientation';
       case 13: return '/patient/end';
-      case 14: return '/dashboard';
-      default: return '/dashboard';
+      default: return '/patient/welcome';
     }
   };
 
@@ -118,30 +117,25 @@ export function AssessmentLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 px-4 py-4 sm:px-6 lg:px-10 lg:py-5 flex items-center justify-between gap-3">
-        <button
-          onClick={() => navigate(getPrevRoute())}
-          className="flex items-center justify-center gap-2 min-h-14 sm:min-h-[80px] px-4 sm:px-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-black font-semibold text-base sm:text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
-        >
-          <ArrowRight className="w-6 h-6" />
-          <span>חזרה</span>
-        </button>
+      {currentStep !== 14 && (
+        <footer className="bg-white border-t border-gray-200 px-4 py-4 sm:px-6 lg:px-10 lg:py-5 flex items-center justify-between gap-3">
+          <button
+            onClick={() => navigate(getPrevRoute())}
+            className="flex items-center justify-center gap-2 min-h-14 sm:min-h-[80px] px-4 sm:px-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-black font-semibold text-base sm:text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
+          >
+            <ArrowRight className="w-6 h-6" />
+            <span>חזרה</span>
+          </button>
 
           <button 
-          onClick={() => {
-            // Optional: you could add validation here based on state.tasks
-            if (currentStep === 14) {
-              navigate('/dashboard');
-            } else {
-              navigate(getNextRoute());
-            }
-          }}
-          className="flex items-center justify-center gap-2 min-h-14 sm:min-h-[80px] px-5 sm:px-10 rounded-lg bg-black hover:bg-gray-900 text-white font-semibold text-base sm:text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
-        >
-          <span>{currentStep === 14 ? 'סיום משימה' : 'המשך'}</span>
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-      </footer>
+            onClick={() => navigate(getNextRoute())}
+            className="flex items-center justify-center gap-2 min-h-14 sm:min-h-[80px] px-5 sm:px-10 rounded-lg bg-black hover:bg-gray-900 text-white font-semibold text-base sm:text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
+          >
+            <span>המשך</span>
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+        </footer>
+      )}
       </div>
     </StimuliManifestProvider>
   );

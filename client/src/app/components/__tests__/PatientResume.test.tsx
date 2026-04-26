@@ -53,6 +53,40 @@ describe('patient resume state', () => {
     vi.restoreAllMocks();
   });
 
+  it('opens a fresh valid test number at the welcome and system-check page', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          sessionId: 'session-fresh',
+          linkToken: 'link-token-fresh',
+          sessionDate: '2026-04-25T12:00:00.000Z',
+          educationYears: 14,
+          patientAge: 72,
+          mocaVersion: '8.3',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    const router = renderWithProvider(
+      [
+        { path: '/session/:token', element: <SessionValidation /> },
+        { path: '/patient/welcome', element: <div>Welcome system check</div> },
+        { path: '/patient/trail-making', element: <div>Trail making task</div> },
+      ],
+      '/session/87654321',
+    );
+
+    await screen.findByText('Welcome system check');
+    expect(router.state.location.pathname).toBe('/patient/welcome');
+    expect(screen.queryByText('Trail making task')).not.toBeInTheDocument();
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+    expect(stored.id).toBe('session-fresh');
+    expect(stored.startToken).toBe('87654321');
+    expect(stored.lastPath).toBe('/patient/welcome');
+  });
+
   it('reopens a matching in-progress link from local resume state without consuming the token again', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(storedAssessment()));
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
@@ -112,5 +146,26 @@ describe('patient resume state', () => {
     await waitFor(() => {
       expect(screen.getByText('גרסה 8.2')).toBeInTheDocument();
     });
+  });
+
+  it('keeps patients on the completion screen without a dashboard navigation action', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(storedAssessment({ lastPath: '/patient/end' })));
+
+    const router = renderWithProvider(
+      [
+        {
+          path: '/patient',
+          element: <AssessmentLayout />,
+          children: [{ path: 'end', element: <div>Patient completion body</div> }],
+        },
+        { path: '/dashboard', element: <div>Clinician dashboard</div> },
+      ],
+      '/patient/end',
+    );
+
+    await screen.findByText('Patient completion body');
+    expect(router.state.location.pathname).toBe('/patient/end');
+    expect(screen.queryByRole('button', { name: 'סיום משימה' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Clinician dashboard')).not.toBeInTheDocument();
   });
 });
