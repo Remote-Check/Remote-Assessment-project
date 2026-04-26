@@ -80,6 +80,7 @@ const REVIEW_TABS: Array<{ id: ReviewTab; label: string; kind: "drawing" | "manu
   { id: "trail", label: "מסלול", kind: "drawing" },
   { id: "memory", label: "זיכרון", kind: "manual" },
   { id: "digitSpan", label: "קיבולת זיכרון", kind: "manual" },
+  { id: "vigilance", label: "קשב לאות א", kind: "manual" },
   { id: "serial7", label: "סדרת 7", kind: "manual" },
   { id: "language", label: "שפה", kind: "manual" },
   { id: "abstraction", label: "הפשטה", kind: "manual" },
@@ -93,6 +94,7 @@ const DEFAULT_RUBRICS: RubricState = {
   trail: { correct: false, noLinesCrossed: false },
   memory: { recall1: false, recall2: false, recall3: false, recall4: false, recall5: false },
   digitSpan: { forward: false, backward: false },
+  vigilance: { correct: false },
   serial7: { first: false, second: false, third: false, fourth: false, fifth: false },
   language: { sentence1: false, sentence2: false, fluency: false },
   abstraction: { train: false, watch: false },
@@ -118,6 +120,11 @@ function mergeEvidence(...items: Array<any | null | undefined>): any | null {
   const objects = items.filter((item) => item && typeof item === "object" && !Array.isArray(item));
   if (objects.length === 0) return null;
   return Object.assign({}, ...objects);
+}
+
+function evidenceNumber(evidence: any, key: string): number | null {
+  const value = evidence?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function hydrateSavedRubrics(current: RubricState, drawings: DrawingReviewRow[]): RubricState {
@@ -340,6 +347,14 @@ export function ClinicianDashboardDetail() {
           { id: "backward", label: "7-4-2 אחורה", desc: "חזר על הסדרה בסדר הפוך מדויק" },
         ],
       };
+    } else if (activeReviewTab === "vigilance") {
+      return {
+        max: 1,
+        score: rubrics.vigilance.correct ? 1 : 0,
+        items: [
+          { id: "correct", label: "תגובה לאות א", desc: "הגיב רק כאשר נשמעה האות א, ללא טעויות משמעותיות" },
+        ],
+      };
     } else if (activeReviewTab === "serial7") {
       return {
         max: 3,
@@ -529,18 +544,41 @@ export function ClinicianDashboardDetail() {
         </div>
       );
     } else {
+      const tapped = evidenceNumber(currentEvidence, "tapped");
+      const targetCount = evidenceNumber(currentEvidence, "targetCount");
+      const sequenceLength = evidenceNumber(currentEvidence, "sequenceLength");
+      const hasVigilanceEvidence = activeReviewTab === "vigilance" && tapped !== null;
+
       return (
         <div className="flex flex-col items-center w-full min-h-[400px] justify-center">
           <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-8 shadow-sm">
             <Mic className="w-10 h-10" />
           </div>
-          <h3 className="text-2xl font-extrabold text-black mb-10">האזן להקלטת המטופל</h3>
+          <h3 className="text-2xl font-extrabold text-black mb-10">
+            {currentAudioUrl ? "האזן להקלטת המטופל" : "סקור את נתוני המשימה"}
+          </h3>
 
-          <PlaybackAudio audioId={currentAudioUrl} />
-          {currentEvidence && (
-            <pre dir="ltr" className="mt-6 w-full max-h-56 overflow-auto rounded-xl border border-gray-200 bg-gray-50 p-4 text-left text-xs text-gray-700">
-              {JSON.stringify(currentEvidence, null, 2)}
-            </pre>
+          {currentAudioUrl ? (
+            <PlaybackAudio audioId={currentAudioUrl} />
+          ) : hasVigilanceEvidence ? (
+            <div className="grid w-full max-w-xl grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
+                <div className="text-xs font-bold text-gray-500 mb-1">הקשות בפועל</div>
+                <div className="text-3xl font-extrabold tabular-nums text-black">{tapped}</div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
+                <div className="text-xs font-bold text-gray-500 mb-1">מספר אותיות א</div>
+                <div className="text-3xl font-extrabold tabular-nums text-black">{targetCount ?? "—"}</div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
+                <div className="text-xs font-bold text-gray-500 mb-1">אורך רצף</div>
+                <div className="text-3xl font-extrabold tabular-nums text-black">{sequenceLength ?? "—"}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm font-bold text-gray-600">
+              אין הקלטה או נתוני משימה זמינים לתצוגה.
+            </div>
           )}
         </div>
       );

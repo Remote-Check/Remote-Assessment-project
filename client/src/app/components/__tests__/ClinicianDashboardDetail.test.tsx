@@ -45,7 +45,22 @@ function sessionPayload() {
       task_results: [],
       drawings: [],
       scoring_reviews: [],
-      audio_evidence_reviews: [],
+      audio_evidence_reviews: [
+        {
+          id: 'audio-1',
+          item_id: 'moca-digit-span',
+          task_type: 'moca-digit-span',
+          max_score: 0,
+          raw_data: {
+            audioId: 'session-1/moca-digit-span.mp4',
+            audioContentType: 'audio/mp4',
+            audioStoragePath: 'session-1/moca-digit-span.mp4',
+            audioSignedUrl: 'http://127.0.0.1/audio/session-1/moca-digit-span.mp4',
+          },
+          clinician_score: null,
+          clinician_notes: null,
+        },
+      ],
       scoring_report: {
         total_adjusted: 24,
         total_score: 24,
@@ -129,6 +144,9 @@ describe('ClinicianDashboardDetail', () => {
 
     await screen.findByRole('heading', { name: 'תיק CASE-1' });
     expect(screen.getByText('CSV זמין גם לפני סיום סקירה ויכול לכלול נתונים זמניים.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'האזן להקלטת המטופל' })).toBeInTheDocument();
+    expect(screen.queryByText(/audioStoragePath/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/audioSignedUrl/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'CSV' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent('CSV ירד בהצלחה.');

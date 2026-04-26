@@ -134,11 +134,12 @@ function scoreTask(taskId: string, rawData: unknown, ctx: ScoringContext, max: n
       return safeScore(taskId, rawData, max, data => {
         const d = assertObject(data);
         if (typeof d.score === 'number') {
-          return [item(taskId, Math.max(0, Math.min(1, d.score)), 1)];
+          const score = Math.max(0, Math.min(1, d.score));
+          return score === 1 ? [item(taskId, score, 1)] : [reviewItem(taskId, 1, d)];
         }
         if (typeof d.tapped !== 'number' || typeof d.targetCount !== 'number') throw new Error('Invalid vigilance');
         const score = d.tapped >= d.targetCount - 1 && d.tapped <= d.targetCount + 1 ? 1 : 0;
-        return [item(taskId, score, 1)];
+        return score === 1 ? [item(taskId, score, 1)] : [reviewItem(taskId, 1, d)];
       });
     case 'moca-serial-7s':
       return safeScore(taskId, rawData, max, data => {
