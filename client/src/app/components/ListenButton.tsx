@@ -91,8 +91,8 @@ export function ListenButton({ text, pacedItems, size = "md", className }: Liste
       onClick={handlePlay}
       aria-label={isPlaying ? "משמיע…" : "השמע הוראות"}
       className={clsx(
-        "flex items-center gap-3 rounded-full font-bold transition-all whitespace-nowrap outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50",
-        isLg ? "h-16 px-6 text-xl" : "h-[52px] px-5 text-lg",
+        "flex w-fit items-center gap-2 sm:gap-3 rounded-full font-bold transition-all whitespace-nowrap outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50",
+        isLg ? "h-12 sm:h-16 px-4 sm:px-6 text-base sm:text-xl" : "h-[52px] px-5 text-lg",
         isPlaying ? "bg-black text-white" : "bg-gray-100 text-gray-900 hover:bg-gray-200",
         className
       )}

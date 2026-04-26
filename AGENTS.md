@@ -10,10 +10,13 @@ Canonical files:
 2. [AGENTS.md](AGENTS.md)
 3. [JOURNEY.md](JOURNEY.md)
 4. [CONTEXT.md](CONTEXT.md)
-5. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
-6. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
+5. [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
+6. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
+7. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
+8. [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md)
 
 `JOURNEY.md` is the patient/clinician journey authority. Update it when browser, backend, status, scoring, notification, or review behavior changes.
+`docs/DEVELOPMENT_PROCESS.md` is the provider-neutral engineering workflow. Supabase is the current MVP runtime; the app contract is the architecture boundary.
 
 ## Required GitHub Workflow
 
@@ -35,6 +38,15 @@ Every agent must use GitHub branch-based version control for all repo changes. T
 - List verification performed and skipped checks in the PR and final handoff.
 
 Generated local artifacts stay out of Git: `.env.local`, `.playwright-mcp/`, `client/test-results/`, `client/playwright-report/`, `node_modules/`, and `dist/`.
+
+## Development Process
+
+Read [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md) before backend, platform, storage, auth, notification, session-flow, or verification changes.
+
+- Build features as vertical slices: browser journey, app contract, persistence, review/scoring, verification, and docs.
+- Keep Supabase-specific work behind auth, database, storage, Edge Function/API, and notification boundaries.
+- Put deterministic scoring, validation, task mapping, and report logic in provider-independent shared modules when practical.
+- Use local Supabase E2E as the backend confidence check until hosted preview environments are intentionally configured and trusted.
 
 ## Product Guardrails
 
@@ -70,3 +82,9 @@ Record skipped local E2E checks and the reason in the PR body.
 For browser or UX changes, verify the affected flow in Chrome when practical.
 
 For licensed stimulus storage or clinical-readiness changes, keep assets out of Git. Use `node scripts/upload-stimuli-from-pdfs.mjs --all-versions --upload` for local licensed visual assets when appropriate, and run `node scripts/verify-stimuli.mjs --all-versions` with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY` configured. Use `--visual-only` only when memory word-list audio is intentionally not part of the check.
+
+## Supabase Remote Operations
+
+The linked hosted Supabase project may drift from local MVP code. Before any hosted deployment, migration push, remote function deploy, storage-policy change, or remote E2E run, read [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md).
+
+Read-only Supabase inspection is allowed when needed. Remote-changing commands require explicit user approval immediately before execution. Destructive hosted database/storage/auth actions require a backup or rollback note before approval.

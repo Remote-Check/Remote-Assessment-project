@@ -76,9 +76,12 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
         throw new Error(payload?.error || "פתיחת מבחן נכשלה.");
       }
 
-      setResult({
-        testNumber: payload.testNumber ?? payload.accessCode,
-      });
+      const testNumber = payload.testNumber ?? payload.accessCode;
+      if (!/^\d{8}$/.test(testNumber)) {
+        throw new Error("מספר מבחן לא התקבל מהשרת.");
+      }
+
+      setResult({ testNumber });
       onOrdered?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "פתיחת מבחן נכשלה.");
@@ -100,20 +103,20 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6 font-['Heebo',sans-serif]"
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-3 sm:p-6 font-['Heebo',sans-serif]"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-gray-200 p-8 max-h-[90vh] overflow-auto"
+        className="w-full max-w-2xl bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-5 sm:p-8 max-h-[92vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-black text-white flex items-center justify-center shrink-0">
               <Stethoscope className="w-6 h-6" />
             </div>
-            <div>
-              <h2 className="text-2xl font-extrabold text-black">
+            <div className="min-w-0">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-black">
                 {result ? "המבחן נוצר בהצלחה" : "פתיחת מבחן חדש"}
               </h2>
               <p className="text-gray-500 text-sm">
@@ -133,7 +136,7 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
 
         {!result && (
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-600 mb-1">מבדק</label>
                 <select
@@ -199,7 +202,7 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
 
         {result && (
           <div className="space-y-5">
-            <div className="flex items-center justify-between gap-4 bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 font-bold">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 font-bold">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-6 h-6" />
                 <span>המבחן נוצר בהצלחה.</span>
@@ -217,8 +220,10 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
             <div className="space-y-3">
               <div className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="text-xs font-bold text-gray-500 uppercase mb-1">מספר מבחן</div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="font-mono text-4xl tabular-nums tracking-[0.25em]">{result.testNumber}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <span dir="ltr" className="font-mono text-3xl sm:text-4xl tabular-nums tracking-[0.18em] sm:tracking-[0.25em] text-left">
+                    {result.testNumber}
+                  </span>
                   <button
                     type="button"
                     onClick={() => copy(result.testNumber, "testNumber")}

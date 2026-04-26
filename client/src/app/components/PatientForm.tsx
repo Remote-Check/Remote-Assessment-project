@@ -146,20 +146,20 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6 font-['Heebo',sans-serif]"
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-3 sm:p-6 font-['Heebo',sans-serif]"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-white rounded-3xl shadow-xl border border-gray-200 p-8 max-h-[90vh] overflow-auto"
+        className="w-full max-w-xl bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 max-h-[92vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between gap-4 p-5 sm:p-8 pb-4 sm:pb-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-black text-white flex items-center justify-center shrink-0">
               <Hash className="w-6 h-6" />
             </div>
-            <div>
-              <h2 className="text-2xl font-extrabold text-black">פתיחת תיק חדש</h2>
+            <div className="min-w-0">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-black">פתיחת תיק חדש</h2>
               <p className="text-gray-500 text-sm">פרטי רקע קליניים נשמרים לתיק ולפענוח המבדק</p>
             </div>
           </div>
@@ -173,7 +173,8 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-auto px-5 py-4 sm:px-8 sm:py-5 space-y-4">
           <div>
             <label className="block text-sm font-bold text-gray-600 mb-1">מזהה תיק*</label>
             <input
@@ -198,7 +199,7 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
 
           <div>
             <label className="block text-sm font-bold text-gray-600 mb-1">תאריך לידה*</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <input
                 value={birthDay}
                 onChange={(e) => setBirthDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
@@ -223,7 +224,7 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-600 mb-1">מין*</label>
               <select
@@ -251,7 +252,7 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-600 mb-1">יד דומיננטית*</label>
               <select
@@ -284,8 +285,9 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
               {error}
             </div>
           )}
+          </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white p-5 sm:p-8 sm:pt-5">
             <button
               type="button"
               onClick={onClose}
