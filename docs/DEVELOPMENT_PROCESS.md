@@ -9,6 +9,7 @@ This project uses Supabase as the current MVP runtime. The product architecture 
 - Keep each branch focused on one feature, bug fix, or cleanup.
 - Open a PR into `main` for every repo change.
 - Record verification performed, skipped checks, risks, and follow-up work in the PR.
+- Update `docs/AGENT_LEARNINGS.md` before merge when review findings, recurring bugs, or new verification patterns produce reusable lessons for future agents.
 - Merge only after explicit user approval for that PR.
 
 ## Feature Slice
@@ -21,6 +22,7 @@ Build features as complete vertical slices:
 - Review/scoring: deterministic scoring, manual review state, and finalization rules.
 - Verification: unit tests, browser checks, local Supabase E2E when the flow touches backend behavior.
 - Documentation: update `JOURNEY.md` when user-facing journey, backend journey, status, review, scoring, notification, or export behavior changes.
+- Documentation: update `docs/AGENT_LEARNINGS.md` when the branch teaches a durable engineering lesson beyond the immediate code diff.
 
 ## Provider Boundaries
 

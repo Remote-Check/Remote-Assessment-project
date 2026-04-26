@@ -10,13 +10,15 @@ Canonical files:
 2. [AGENTS.md](AGENTS.md)
 3. [JOURNEY.md](JOURNEY.md)
 4. [CONTEXT.md](CONTEXT.md)
-5. [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
-6. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
-7. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
-8. [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md)
+5. [docs/AGENT_LEARNINGS.md](docs/AGENT_LEARNINGS.md)
+6. [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
+7. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
+8. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
+9. [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md)
 
 `JOURNEY.md` is the patient/clinician journey authority. Update it when browser, backend, status, scoring, notification, or review behavior changes.
 `docs/DEVELOPMENT_PROCESS.md` is the provider-neutral engineering workflow. Supabase is the current MVP runtime; the app contract is the architecture boundary.
+`docs/AGENT_LEARNINGS.md` is the durable lessons file for future agents. Update it when PRs or review findings expose reusable engineering rules or recurring failure modes.
 
 ## Required GitHub Workflow
 
