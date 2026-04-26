@@ -18,7 +18,6 @@
   --shadow-focus: 0 0 0 3px var(--accent-focus);
   --r-lg: 0.5rem;
   
-  --font-size: 16px;
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;
@@ -159,10 +158,6 @@
   * Default typography styles for HTML elements (h1-h4, p, label, button, input).
   * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
   */
-
-  html {
-    font-size: var(--font-size);
-  }
 
   h1 {
     font-size: var(--text-2xl);

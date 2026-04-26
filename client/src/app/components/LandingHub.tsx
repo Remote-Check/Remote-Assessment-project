@@ -8,6 +8,9 @@ export function LandingHub() {
   const [token, setToken] = useState("");
   const { hasInProgressAssessment, state } = useAssessmentStore();
   const normalizedToken = token.replace(/\D/g, "");
+  const formattedToken = normalizedToken.length > 4
+    ? `${normalizedToken.slice(0, 4)}-${normalizedToken.slice(4)}`
+    : normalizedToken;
   const isCompleteTestNumber = normalizedToken.length === 8;
 
   const handleTokenSubmit = (e: React.FormEvent) => {
@@ -51,22 +54,64 @@ export function LandingHub() {
             הזן את מספר המבחן שקיבלת מהקלינאי
           </p>
 
+          {hasInProgressAssessment && (
+            <div className="mb-8 rounded-2xl border-2 border-blue-200 bg-blue-50 p-5 text-right">
+              <p className="mb-3 text-xl font-bold text-blue-950">זוהה מבדק בתהליך במכשיר הזה</p>
+              <p className="mb-5 text-base font-medium leading-relaxed text-blue-900">
+                כדי להמשיך מהמקום שבו הפסקת, השתמש באותו מכשיר.
+              </p>
+              <button
+                onClick={handleResume}
+                className="w-full min-h-16 rounded-xl bg-blue-700 px-5 py-3 text-xl font-bold text-white transition-colors hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600"
+              >
+                המשך את המבחן מאיפה שהפסקת
+              </button>
+            </div>
+          )}
+
+          {hasInProgressAssessment && (
+            <div className="mb-8 flex items-center gap-3 text-sm font-bold text-gray-500">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span>או הזן מספר מבחן חדש</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+          )}
+
           <form onSubmit={handleTokenSubmit} className="max-w-md mx-auto">
             <div className="flex flex-col gap-6">
               <input
                 type="text"
-                value={token}
-                onChange={(e) => setToken(e.target.value.replace(/\D/g, ""))}
+                value={formattedToken}
+                onChange={(e) => setToken(e.target.value.replace(/\D/g, "").slice(0, 8))}
                 placeholder="הזן מספר מבחן..."
                 inputMode="numeric"
-                maxLength={8}
+                maxLength={9}
+                aria-label="מספר מבחן בן 8 ספרות"
                 aria-describedby="test-number-help"
-                className="w-full h-16 sm:h-20 text-center text-2xl sm:text-3xl font-bold border-2 border-gray-300 rounded-2xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none transition-all placeholder:text-gray-400 placeholder:font-normal"
+                dir="ltr"
+                className="w-full h-16 sm:h-20 text-center text-2xl sm:text-3xl font-mono font-bold tabular-nums border-2 border-gray-300 rounded-2xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none transition-all placeholder:text-gray-500 placeholder:font-normal"
                 autoFocus
               />
-              <p id="test-number-help" className="text-sm font-bold text-gray-500">
-                יש להזין מספר מבחן בן 8 ספרות
-              </p>
+              <div className="space-y-3">
+                <div className="flex justify-center gap-2" dir="ltr" aria-hidden="true">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <span
+                      key={index}
+                      className={`h-2.5 w-2.5 rounded-full ${
+                        index < normalizedToken.length ? "bg-black" : "bg-gray-200"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p id="test-number-help" className="text-sm font-bold text-gray-600">
+                  יש להזין מספר מבחן בן 8 ספרות
+                </p>
+                <p className="text-sm font-bold text-gray-600" aria-live="polite">
+                  {isCompleteTestNumber
+                    ? "המספר מלא. אפשר להתחיל."
+                    : `הוזנו ${normalizedToken.length} מתוך 8 ספרות`}
+                </p>
+              </div>
               
               <button
                 type="submit"
@@ -79,17 +124,6 @@ export function LandingHub() {
             </div>
           </form>
 
-          {hasInProgressAssessment && (
-            <div className="mt-10 pt-10 border-t border-gray-100">
-              <p className="text-lg text-gray-500 mb-4">זוהה מבחן בתהליך</p>
-              <button
-                onClick={handleResume}
-                className="w-full h-16 bg-blue-50 text-blue-700 text-xl font-bold rounded-xl hover:bg-blue-100 transition-colors"
-              >
-                המשך את המבחן מאיפה שהפסקת
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="mt-12 text-center">

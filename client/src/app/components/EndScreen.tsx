@@ -40,9 +40,14 @@ export function EndScreen() {
       <div className="bg-gray-50 p-10 rounded-2xl border border-gray-100 flex-1 min-h-[500px] flex flex-col justify-center items-center text-center">
         <div className="text-gray-600 font-medium mb-12 text-2xl max-w-2xl">
           {isCompleted && (
-            <div className="text-3xl text-green-700 font-bold mt-4">
-              תודה רבה!
-              <br /><br />
+            <div className="mt-4 flex flex-col items-center gap-6">
+              <div className="rounded-2xl border border-green-200 bg-white px-6 py-5 shadow-sm">
+                <div className="text-4xl font-extrabold tabular-nums text-green-700">12</div>
+                <div className="mt-1 text-base font-bold text-gray-600">משימות הושלמו</div>
+              </div>
+              <div className="text-3xl text-green-700 font-bold">
+                תודה רבה!
+              </div>
               <span className="text-xl text-gray-600 font-medium">
                 המבדק הושלם והתוצאות נשלחות למטפל המפנה.
               </span>

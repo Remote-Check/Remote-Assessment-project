@@ -174,6 +174,26 @@ describe('patient resume state', () => {
     expect(router.state.location.pathname).toBe('/patient/clock');
   });
 
+  it('formats patient test numbers as two four-digit chunks before starting', async () => {
+    const router = renderWithProvider(
+      [
+        { path: '/', element: <LandingHub /> },
+        { path: '/session/:token', element: <div>Session validation</div> },
+      ],
+      '/',
+    );
+
+    const input = screen.getByRole('textbox', { name: 'מספר מבחן בן 8 ספרות' });
+    await userEvent.type(input, '12345678');
+
+    expect(input).toHaveValue('1234-5678');
+    expect(screen.getByText('המספר מלא. אפשר להתחיל.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /אישור/ }));
+
+    expect(router.state.location.pathname).toBe('/session/12345678');
+  });
+
   it('does not offer resume controls for stale stored state without a token', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(storedAssessment({ linkToken: null })));
 

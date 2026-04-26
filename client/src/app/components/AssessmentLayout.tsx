@@ -210,6 +210,7 @@ export function AssessmentLayout() {
 
   const progressPercent = (Math.min(currentStep, totalSteps) / totalSteps) * 100;
   const validationMessage = validation?.path === location.pathname ? validation.message : null;
+  const continueStateId = validationMessage || currentSaveStatus ? "continue-state" : undefined;
 
   return (
     <StimuliManifestProvider>
@@ -253,11 +254,6 @@ export function AssessmentLayout() {
       {/* Footer */}
       {!isEndScreen && (
         <>
-        {validationMessage && (
-          <div className="mx-4 mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-extrabold text-amber-900 sm:mx-6 lg:mx-10" role="alert">
-            {validationMessage}
-          </div>
-        )}
         <footer className="bg-white border-t border-gray-200 px-4 py-4 sm:px-6 lg:px-10 lg:py-5 flex flex-wrap items-center justify-between gap-3">
           <button
             onClick={() => navigate(currentStepConfig.prev)}
@@ -267,41 +263,69 @@ export function AssessmentLayout() {
             <span>חזרה</span>
           </button>
 
-          {currentSaveStatus && (
-            <div
-              className="order-3 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-extrabold sm:order-none sm:w-auto"
-              role={currentSaveStatus.status === "error" ? "alert" : "status"}
-            >
-              {currentSaveStatus.status === "saving" && (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin text-blue-700" />
-                  <span className="text-blue-900">שומר תשובה...</span>
-                </>
-              )}
-              {currentSaveStatus.status === "saved" && (
-                <>
-                  <CheckCircle2 className="h-5 w-5 text-green-700" />
-                  <span className="text-green-900">נשמר</span>
-                </>
-              )}
-              {currentSaveStatus.status === "error" && (
-                <>
-                  <AlertTriangle className="h-5 w-5 text-red-700" />
-                  <span className="text-red-900">שמירה נכשלה</span>
-                </>
-              )}
-            </div>
-          )}
+          <div className="flex flex-1 flex-col items-stretch gap-2 sm:flex-none sm:items-end">
+            {validationMessage && (
+              <div
+                id="continue-state"
+                className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-extrabold text-amber-900 sm:text-right"
+                role="alert"
+              >
+                {validationMessage}
+              </div>
+            )}
 
-          <button 
-            type="button"
-            onClick={handleNext}
-            aria-disabled={!canContinue}
-            className="flex items-center justify-center gap-2 min-h-14 sm:min-h-[80px] px-5 sm:px-10 rounded-lg bg-black hover:bg-gray-900 text-white font-semibold text-base sm:text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
-          >
-            <span>המשך</span>
-            <ArrowLeft className="w-6 h-6" />
-          </button>
+            {!validationMessage && currentSaveStatus && (
+              <div
+                id="continue-state"
+                className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-extrabold sm:justify-end"
+                role={currentSaveStatus.status === "error" ? "alert" : "status"}
+              >
+                {currentSaveStatus.status === "saving" && (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin text-blue-700" />
+                    <span className="text-blue-900">שומר תשובה...</span>
+                  </>
+                )}
+                {currentSaveStatus.status === "saved" && (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-green-700" />
+                    <span className="text-green-900">נשמר</span>
+                  </>
+                )}
+                {currentSaveStatus.status === "error" && (
+                  <>
+                    <AlertTriangle className="h-5 w-5 text-red-700" />
+                    <span className="text-red-900">שמירה נכשלה</span>
+                  </>
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleNext}
+              aria-disabled={!canContinue}
+              aria-describedby={continueStateId}
+              className="flex items-center justify-center gap-2 min-h-14 sm:min-h-[80px] px-5 sm:px-10 rounded-lg bg-black hover:bg-gray-900 text-white font-semibold text-base sm:text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
+            >
+              {currentSaveStatus?.status === "saving" ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>שומר...</span>
+                </>
+              ) : currentSaveStatus?.status === "error" ? (
+                <>
+                  <AlertTriangle className="h-5 w-5" />
+                  <span>שמירה נכשלה</span>
+                </>
+              ) : (
+                <>
+                  <span>המשך</span>
+                  <ArrowLeft className="w-6 h-6" />
+                </>
+              )}
+            </button>
+          </div>
         </footer>
         </>
       )}
