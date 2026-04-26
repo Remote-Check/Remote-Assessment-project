@@ -65,7 +65,7 @@ Open the Vite URL in Chrome, then:
 12. Finish the assessment and confirm the patient sees only the dead-end completion screen saying results are being sent to the referring therapist.
 13. Return home and confirm the completed session is no longer offered as a resumable test.
 14. Return to `/dashboard/{sessionId}`, review drawing rows, save scores, and confirm the report finalizes.
-15. Confirm CSV export works before finalization with inline provisional-data feedback, and PDF export remains unavailable until finalization.
+15. Confirm CSV export works before finalization only after the clinician confirms the sensitive/provisional data warning, then shows inline feedback; PDF export remains unavailable until finalization.
 
 ## Verification Commands
 
@@ -133,7 +133,7 @@ Useful browser checks:
 6. Confirm the patient header shows the selected version.
 7. Refresh during a patient task, return home, and confirm same-device resume only after pressing continue.
 8. Finish and confirm the patient sees only the dead-end completion screen.
-9. Return to dashboard detail, confirm CSV inline feedback, and complete clinician review.
+9. Return to dashboard detail, confirm the CSV warning step and inline feedback, and complete clinician review.
 
 The repeatable browser check is:
 

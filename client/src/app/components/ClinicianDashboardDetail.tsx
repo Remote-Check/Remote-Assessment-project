@@ -9,6 +9,8 @@ import type { DBScoringReport, Session as DBSession, TaskResult } from "../../ty
 
 import { PlaybackCanvas } from "./PlaybackCanvas";
 import { PlaybackAudio } from "./PlaybackAudio";
+import { CsvExportConfirmDialog } from "./CsvExportConfirmDialog";
+import { StatusPill, type StatusPillValue } from "./StatusPill";
 import {
   DRAWING_TAB_TO_TASK_ID,
   normalizeStrokes,
@@ -295,6 +297,7 @@ export function ClinicianDashboardDetail() {
   const [activeTab, setActiveTab] = useState<ReviewTab>("clock");
   const [rubrics, setRubrics] = useState<RubricState>(DEFAULT_RUBRICS);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [csvConfirmOpen, setCsvConfirmOpen] = useState(false);
   const [csvExportMessage, setCsvExportMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const loadDashboardSession = useCallback(async () => {
@@ -854,7 +857,7 @@ export function ClinicianDashboardDetail() {
   };
 
   const breadcrumbTo = patient ? `/dashboard/patient/${patient.id}` : "/dashboard";
-  const patientCaseLabel = patient?.case_id ?? patient?.full_name;
+  const patientCaseLabel = patient?.case_id ?? sessionRecord?.case_id ?? null;
   const breadcrumbLabel = patientCaseLabel ? `תיקים / ${patientCaseLabel} / מבחן` : "תיקים / מבחן";
   const reportNeedsReview = getReportNeedsReview(reportRecord);
   const canExportPdf =
@@ -869,6 +872,15 @@ export function ClinicianDashboardDetail() {
     : pendingReviewCount > 0
     ? `נותרו ${pendingReviewCount} מסכי סקירה`
     : "ניתן לייצא לאחר השלמת הסקירה";
+  const sessionStatusForPill: StatusPillValue = reportNeedsReview
+    ? "review"
+    : sessionRecord?.status === "awaiting_review"
+    ? "awaiting_review"
+    : sessionRecord?.status === "completed"
+    ? "completed"
+    : sessionRecord?.status === "in_progress"
+    ? "in_progress"
+    : "pending";
 
   return (
     <div className="max-w-6xl mx-auto pb-20">
@@ -903,25 +915,7 @@ export function ClinicianDashboardDetail() {
                   ? `נוצר בתאריך ${new Date(sessionRecord.created_at).toLocaleDateString("he-IL")}`
                   : "תאריך לא זמין"}
               </span>
-              <span
-                className={clsx(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
-                  reportNeedsReview
-                    ? "bg-amber-100 text-amber-800"
-                    : sessionRecord?.status === "completed"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-blue-100 text-blue-800",
-                )}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                {reportNeedsReview
-                  ? "בבדיקה"
-                  : sessionRecord?.status === "completed"
-                  ? "הושלם"
-                  : sessionRecord?.status === "in_progress"
-                  ? "בתהליך"
-                  : "הוזמן"}
-              </span>
+              <StatusPill status={sessionStatusForPill} />
             </div>
           </div>
         </div>
@@ -940,7 +934,7 @@ export function ClinicianDashboardDetail() {
               <span>PDF</span>
             </button>
             <button
-              onClick={handleCsvExport}
+              onClick={() => setCsvConfirmOpen(true)}
               disabled={exportingCsv}
               className={clsx(
                 "flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 transition-colors text-black",
@@ -976,7 +970,7 @@ export function ClinicianDashboardDetail() {
             key={i}
             className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-5 text-center shadow-sm sm:p-6"
           >
-            <div className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">{item.label}</div>
+            <div className="mb-2 text-sm font-bold text-gray-600">{item.label}</div>
             <div
               className={clsx(
                 "text-3xl font-extrabold tabular-nums",
@@ -1005,7 +999,7 @@ export function ClinicianDashboardDetail() {
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-right">
-              <thead className="border-b border-gray-100 text-xs font-extrabold uppercase tracking-wider text-gray-500">
+              <thead className="border-b border-gray-100 text-xs font-extrabold text-gray-600">
                 <tr>
                   <th className="px-4 py-3">תחום</th>
                   <th className="px-4 py-3">פריט</th>
@@ -1254,6 +1248,16 @@ export function ClinicianDashboardDetail() {
           )}
         </div>
       </div>
+      <CsvExportConfirmDialog
+        open={csvConfirmOpen}
+        exporting={exportingCsv}
+        scopeLabel={patientCaseLabel ? `תיק ${patientCaseLabel}` : "המבדק הנוכחי"}
+        onCancel={() => setCsvConfirmOpen(false)}
+        onConfirm={() => {
+          setCsvConfirmOpen(false);
+          void handleCsvExport();
+        }}
+      />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { PatientForm } from "./PatientForm";
+import { CsvExportConfirmDialog } from "./CsvExportConfirmDialog";
+import { StatusPill } from "./StatusPill";
 
 interface PatientRow {
   id: string;
@@ -65,6 +67,10 @@ function deriveStatus(sessionValue: PatientWithSessions["sessions"]): PatientRow
   return "new";
 }
 
+function caseDisplay(row: Pick<PatientRow, "case_id" | "id">): string {
+  return row.case_id?.trim() || row.id.slice(0, 8);
+}
+
 function latestOf<T>(arr: T[] | null | undefined, key: (v: T) => string | null): string | null {
   if (!arr || arr.length === 0) return null;
   const times = arr.map(key).filter((v): v is string => Boolean(v));
@@ -79,6 +85,7 @@ export function ClinicianDashboardList() {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [csvConfirmOpen, setCsvConfirmOpen] = useState(false);
   const [csvExportMessage, setCsvExportMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const loadPatients = useCallback(async () => {
@@ -147,7 +154,7 @@ export function ClinicianDashboardList() {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter(
-      (r) => (r.case_id ?? r.full_name).toLowerCase().includes(q) || r.id.toLowerCase().includes(q),
+      (r) => caseDisplay(r).toLowerCase().includes(q) || r.id.toLowerCase().includes(q),
     );
   }, [rows, search]);
 
@@ -228,7 +235,7 @@ export function ClinicianDashboardList() {
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr_auto] lg:flex lg:items-center lg:gap-4">
           <button
-            onClick={handleCsvExport}
+            onClick={() => setCsvConfirmOpen(true)}
             disabled={exportingCsv}
             className="flex items-center justify-center gap-2 bg-white text-black border border-gray-200 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60 transition-colors shadow-sm text-base lg:text-lg"
           >
@@ -272,7 +279,7 @@ export function ClinicianDashboardList() {
           { label: "ממתינים לבדיקה", value: String(reviewCount), delta: "דורשים סקירה", warn: true },
         ].map((stat, i) => (
           <div key={i} className="bg-white border border-gray-200 p-5 lg:p-6 rounded-2xl shadow-sm">
-            <div className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">{stat.label}</div>
+            <div className="mb-2 text-sm font-bold text-gray-600">{stat.label}</div>
             <div className="flex items-end justify-between gap-3">
               <div className="text-3xl lg:text-4xl font-extrabold text-black tabular-nums">{stat.value}</div>
               <div
@@ -288,7 +295,7 @@ export function ClinicianDashboardList() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
-        <div className="bg-gray-50 border-b border-gray-200 text-gray-500 text-sm uppercase tracking-wider font-bold shrink-0">
+        <div className="bg-gray-50 border-b border-gray-200 text-gray-600 text-sm font-bold shrink-0">
           <div className="hidden md:flex text-right px-6 py-4">
             <div className="w-5/12 font-bold">מזהה תיק</div>
             <div className="w-1/12 font-bold">מבחנים</div>
@@ -319,10 +326,10 @@ export function ClinicianDashboardList() {
             >
               <div className="flex items-start gap-3">
                 <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shrink-0">
-                  {((p.case_id ?? p.full_name).trim()[0] || "ת").toUpperCase()}
+                  {(caseDisplay(p).trim()[0] || "ת").toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-bold text-lg text-black truncate">תיק {p.case_id ?? p.full_name}</div>
+                  <div className="font-bold text-lg text-black truncate">תיק {caseDisplay(p)}</div>
                   <div className="mt-1 text-xs text-gray-500 font-mono flex items-center gap-1.5">
                     <Hash className="w-3 h-3" />
                     {p.id.slice(0, 8)}
@@ -350,26 +357,7 @@ export function ClinicianDashboardList() {
                 </div>
                 <div>
                   <div className="font-bold text-gray-500">סטטוס</div>
-                  <span
-                    className={`mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                      p.status === "review"
-                        ? "bg-amber-100 text-amber-800"
-                        : p.status === "completed"
-                        ? "bg-green-100 text-green-800"
-                        : p.status === "in_progress"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                    {p.status === "review"
-                      ? "בבדיקה"
-                      : p.status === "completed"
-                      ? "הושלם"
-                      : p.status === "in_progress"
-                      ? "בתהליך"
-                      : "חדש"}
-                  </span>
+                  <StatusPill status={p.status} className="mt-1 text-xs" />
                 </div>
               </div>
             </button>
@@ -398,10 +386,11 @@ export function ClinicianDashboardList() {
               const p = filtered[virtualRow.index];
               if (!p) return null;
               return (
-                <div
+                <button
+                  type="button"
                   key={virtualRow.index}
                   onClick={() => navigate(`/dashboard/patient/${p.id}`)}
-                  className="absolute top-0 left-0 w-full hover:bg-gray-50 transition-colors cursor-pointer group border-b border-gray-100 flex items-center text-right px-6"
+                  className="absolute left-0 top-0 flex w-full cursor-pointer appearance-none items-center border-0 border-b border-gray-100 bg-white px-6 py-0 text-right text-inherit transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 group"
                   style={{
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
@@ -409,10 +398,10 @@ export function ClinicianDashboardList() {
                 >
                   <div className="w-5/12 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shrink-0">
-                      {((p.case_id ?? p.full_name).trim()[0] || "ת").toUpperCase()}
+                      {(caseDisplay(p).trim()[0] || "ת").toUpperCase()}
                     </div>
                     <div className="min-w-0">
-	                      <div className="font-bold text-lg text-black truncate">תיק {p.case_id ?? p.full_name}</div>
+                      <div className="font-bold text-lg text-black truncate">תיק {caseDisplay(p)}</div>
                       <div className="text-sm text-gray-500 font-mono flex items-center gap-1.5">
                         <Hash className="w-3 h-3" />
                         {p.id.slice(0, 8)}
@@ -424,26 +413,7 @@ export function ClinicianDashboardList() {
                     {p.lastActive ? new Date(p.lastActive).toLocaleDateString("he-IL") : "—"}
                   </div>
                   <div className="w-2/12">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold ${
-                        p.status === "review"
-                          ? "bg-amber-100 text-amber-800"
-                          : p.status === "completed"
-                          ? "bg-green-100 text-green-800"
-                          : p.status === "in_progress"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                      {p.status === "review"
-                        ? "בבדיקה"
-                        : p.status === "completed"
-                        ? "הושלם"
-                        : p.status === "in_progress"
-                        ? "בתהליך"
-                        : "חדש"}
-                    </span>
+                    <StatusPill status={p.status} />
                   </div>
                   <div className="w-1/12 font-extrabold text-xl text-black tabular-nums">
                     {p.latestScore != null ? `${p.latestScore}/30` : "—"}
@@ -453,7 +423,7 @@ export function ClinicianDashboardList() {
                       <ChevronLeft className="w-5 h-5" />
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -466,6 +436,16 @@ export function ClinicianDashboardList() {
         onCreated={(patientId) => {
           setFormOpen(false);
           navigate(`/dashboard/patient/${patientId}`);
+        }}
+      />
+      <CsvExportConfirmDialog
+        open={csvConfirmOpen}
+        exporting={exportingCsv}
+        scopeLabel="כל התיקים"
+        onCancel={() => setCsvConfirmOpen(false)}
+        onConfirm={() => {
+          setCsvConfirmOpen(false);
+          void handleCsvExport();
         }}
       />
     </div>

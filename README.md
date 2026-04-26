@@ -54,7 +54,7 @@ Use [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md) for the full deve
 - Clinician gets an email when a test is completed.
 - Clinician copies the generated test number and sends it to the patient outside the app.
 - Licensed stimuli load from private Storage through versioned manifests and signed URLs.
-- CSV export can include incomplete/provisional data with inline feedback; finalized PDF export remains gated by clinician review.
+- CSV export can include incomplete/provisional data after clinician confirmation, with inline feedback; finalized PDF export remains gated by clinician review.
 
 ## Guardrails
 

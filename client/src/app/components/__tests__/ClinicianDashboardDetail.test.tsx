@@ -190,6 +190,9 @@ describe('ClinicianDashboardDetail', () => {
     expect(screen.queryByText(/audioStoragePath/)).not.toBeInTheDocument();
     expect(screen.queryByText(/audioSignedUrl/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'CSV' }));
+    expect(screen.getByRole('dialog', { name: 'אישור ייצוא CSV' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('checkbox', { name: /אני מבין/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'ייצא CSV' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent('CSV ירד בהצלחה.');
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({ sessionId: 'session-1' });
