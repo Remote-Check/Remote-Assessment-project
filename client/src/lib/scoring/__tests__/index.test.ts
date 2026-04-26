@@ -168,22 +168,21 @@ describe('scoreSession', () => {
     }
   });
 
-  it('applies education correction +1 for <= 12 years', () => {
+  it('does not add an education bonus for <= 12 years', () => {
     const ctx = { ...CTX, educationYears: 12 };
     const report = scoreSession(FULL_RESULTS, ctx);
-    expect(report.totalAdjusted).toBe(report.totalRaw + 1);
+    expect(report.totalAdjusted).toBe(report.totalRaw);
   });
 
-  it('does not apply education correction for > 12 years', () => {
+  it('does not add an education bonus for > 12 years', () => {
     const report = scoreSession(FULL_RESULTS, CTX); // educationYears: 16
     expect(report.totalAdjusted).toBe(report.totalRaw);
   });
 
-  it('totalAdjusted never exceeds 30', () => {
+  it('uses raw total as adjusted total for full-score cases', () => {
     const ctx = { ...CTX, educationYears: 12 };
-    // even with max score, adjusted caps at 30
     const report = scoreSession(FULL_RESULTS, ctx);
-    expect(report.totalAdjusted).toBeLessThanOrEqual(30);
+    expect(report.totalAdjusted).toBe(report.totalRaw);
   });
 
   it('accepts persisted sessionDate strings for orientation scoring', () => {

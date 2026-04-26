@@ -27,7 +27,7 @@ const revokeObjectURLMock = vi.fn();
 const originalCreateObjectURL = window.URL.createObjectURL;
 const originalRevokeObjectURL = window.URL.revokeObjectURL;
 
-function sessionPayload() {
+function sessionPayload(sessionOverrides: Record<string, unknown> = {}) {
   return {
     session: {
       id: 'session-1',
@@ -69,8 +69,13 @@ function sessionPayload() {
         pending_review_count: 0,
         subscores: {},
       },
+      ...sessionOverrides,
     },
   };
+}
+
+function exactText(expected: string) {
+  return (_content: string, element: Element | null) => element?.textContent === expected;
 }
 
 function renderDetail() {
@@ -153,5 +158,41 @@ describe('ClinicianDashboardDetail', () => {
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({ sessionId: 'session-1' });
     expect(createObjectURLMock).toHaveBeenCalled();
     expect(revokeObjectURLMock).toHaveBeenCalledWith('blob:csv-export');
+  });
+
+  it('scores five correct Serial 7 review items as 3 out of 3', async () => {
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify(sessionPayload({
+          scoring_reviews: [
+            {
+              id: 'serial7-review',
+              item_id: 'moca-serial-7s',
+              task_type: 'moca-serial-7s',
+              max_score: 3,
+              raw_data: null,
+              clinician_score: null,
+              clinician_notes: null,
+            },
+          ],
+          audio_evidence_reviews: [],
+        })),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+
+    renderDetail();
+    await screen.findByRole('heading', { name: 'תיק CASE-1' });
+
+    for (const label of ['93', '86', '79', '72', '65']) {
+      await userEvent.click(screen.getByText(label));
+    }
+
+    expect(screen.getByText(exactText('3/3'))).toBeInTheDocument();
+    expect(screen.queryByText(exactText('5/3'))).not.toBeInTheDocument();
   });
 });

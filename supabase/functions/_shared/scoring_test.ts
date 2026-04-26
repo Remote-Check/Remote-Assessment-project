@@ -1,4 +1,4 @@
-import { scoreSession, type ScoringContext } from './scoring.ts';
+import { applyManualScores, scoreSession, type ScoringContext } from './scoring.ts';
 
 function assertEquals(actual: unknown, expected: unknown) {
   if (actual !== expected) throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
@@ -32,6 +32,38 @@ Deno.test('scoreSession scores active naming answers object', () => {
   }, CTX);
 
   assertEquals(report.domains.find((domain) => domain.domain === 'naming')?.raw, 3);
+});
+
+Deno.test('scoreSession does not add an education bonus to the total score', () => {
+  const report = scoreSession({
+    'moca-naming': {
+      answers: {
+        'item-1': 'סוס',
+        'item-2': 'נמר',
+        'item-3': 'ברווז',
+      },
+    },
+  }, { ...CTX, educationYears: 10 });
+
+  assertEquals(report.totalRaw, 3);
+  assertEquals(report.totalAdjusted, 3);
+});
+
+Deno.test('applyManualScores keeps adjusted total equal to raw total without an education bonus', () => {
+  const lowEducationCtx = { ...CTX, educationYears: 10 };
+  const report = scoreSession({
+    'moca-naming': {
+      answers: {
+        'item-1': 'סוס',
+        'item-2': 'נמר',
+        'item-3': 'ברווז',
+      },
+    },
+  }, lowEducationCtx);
+
+  const updated = applyManualScores(report, lowEducationCtx, {});
+  assertEquals(updated.totalRaw, 3);
+  assertEquals(updated.totalAdjusted, 3);
 });
 
 Deno.test('scoreSession scores version-specific naming answers', () => {

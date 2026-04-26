@@ -88,6 +88,7 @@ Patient test-number starts also write hashed attempt records for operational rat
 - Keep audio-only speech responses in clinician rubric review until an external transcript or structured response workflow exists.
 - Preserve raw data and create clinician review work for missing, malformed, ambiguous, unsupported, or unscorable payloads.
 - `total_provisional=true` until all review items are scored.
+- Education years stratify normative interpretation only; the app does not add an education bonus point to the MoCA total.
 - Norm percentile/SD are meaningful only after the report is final.
 - Show scores, flags, and clinician notes only in the clinician dashboard.
 
@@ -148,3 +149,4 @@ Patient test-number starts also write hashed attempt records for operational rat
 - 2026-04-26: Patient flow requires Hebrew audio and microphone preflight before task start; naming feedback is neutral during the test; audio-only speech tasks remain clinician-rubric review until structured transcript evidence exists.
 - 2026-04-26: Welcome/system-check is a local first-use gate only. Resume happens from the explicit home-page continue button; patient completion is a dead-end screen that says results are being sent to the referring therapist. CSV export can include incomplete/provisional data with inline feedback.
 - 2026-04-26: Off-target vigilance tap counts route to clinician review instead of becoming a hidden final zero. Clinician review screens show task evidence in clinician-friendly fields and keep raw storage paths/signed URLs out of the visible page.
+- 2026-04-26: Education years remain clinical context for norm lookup, but MoCA totals no longer receive an added education bonus point.

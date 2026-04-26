@@ -116,6 +116,13 @@ function getPendingReviewCount(report: DBScoringReport | null): number {
   return report.pending_review_count ?? (getReportNeedsReview(report) ? 1 : 0);
 }
 
+function scoreSerial7Rubric(correctCount: number): number {
+  if (correctCount >= 4) return 3;
+  if (correctCount >= 2) return 2;
+  if (correctCount >= 1) return 1;
+  return 0;
+}
+
 function mergeEvidence(...items: Array<any | null | undefined>): any | null {
   const objects = items.filter((item) => item && typeof item === "object" && !Array.isArray(item));
   if (objects.length === 0) return null;
@@ -356,9 +363,10 @@ export function ClinicianDashboardDetail() {
         ],
       };
     } else if (activeReviewTab === "serial7") {
+      const correctCount = Object.values(rubrics.serial7).filter((v) => v).length;
       return {
         max: 3,
-        score: Object.values(rubrics.serial7).filter((v) => v).length,
+        score: scoreSerial7Rubric(correctCount),
         items: [
           { id: "first", label: "93", desc: "תשובה ראשונה נכונה" },
           { id: "second", label: "86", desc: "תשובה שנייה נכונה" },
