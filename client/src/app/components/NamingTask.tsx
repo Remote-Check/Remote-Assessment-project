@@ -61,19 +61,19 @@ export function NamingTask() {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full">
-      <div className="flex justify-between items-start mb-10">
-        <div>
-          <div className="text-gray-500 font-bold uppercase tracking-wider text-sm mb-3">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-6 sm:mb-10">
+        <div className="min-w-0">
+          <div className="text-gray-500 font-bold uppercase tracking-wider text-xs sm:text-sm mb-2 sm:mb-3">
             משימת שיום · פריט {currentIndex + 1} מתוך 3
           </div>
-          <h2 className="text-4xl font-extrabold text-black">מה שם החיה בתמונה?</h2>
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-black leading-tight">מה שם החיה בתמונה?</h2>
         </div>
         <ListenButton text="מה שם החיה בתמונה?" size="lg" />
       </div>
 
       {/* Progress Pips */}
-      <div className="flex gap-2 mb-12">
+      <div className="flex gap-2 mb-6 sm:mb-12">
         {namingItems.map((_, i) => (
           <div
             key={i}
@@ -86,14 +86,14 @@ export function NamingTask() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-10 bg-gray-50 p-10 rounded-2xl border border-gray-100 flex-1 min-h-[500px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-10 bg-gray-50 p-5 sm:p-10 rounded-2xl border border-gray-100 flex-1 min-h-[360px] sm:min-h-[500px]">
         {/* Right half (RTL): Image */}
-        <div className="flex flex-col items-center justify-center gap-4 bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+        <div className="flex flex-col items-center justify-center gap-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-8">
           {imageSrc ? (
             <img
               src={imageSrc}
               alt="Animal outline"
-              className="w-[360px] h-[360px] object-contain rounded-lg shadow-inner grayscale contrast-125"
+              className="w-full max-w-[360px] aspect-square object-contain rounded-lg shadow-inner grayscale contrast-125"
             />
           ) : (
             <DevStimulusNotice className="w-full text-center" />
@@ -102,7 +102,7 @@ export function NamingTask() {
 
         {/* Left half (RTL): Answers */}
         <div className="flex flex-col gap-4 justify-center">
-          <div className="text-gray-500 font-medium mb-2 text-lg text-center">
+          <div className="text-gray-500 font-medium mb-2 text-base sm:text-lg text-center">
             בחר תשובה, או אמור את השם בקול רם
           </div>
           <div className="grid grid-cols-1 gap-4">
@@ -130,7 +130,7 @@ export function NamingTask() {
                   onClick={() => handleSelect(option)}
                   disabled={isAnswered}
                   className={clsx(
-                    "min-h-[72px] rounded-xl text-2xl font-bold flex items-center justify-between px-8 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600",
+                    "min-h-14 sm:min-h-[72px] rounded-xl text-xl sm:text-2xl font-bold flex items-center justify-between px-5 sm:px-8 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600",
                     btnClass
                   )}
                 >

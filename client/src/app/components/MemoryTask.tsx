@@ -20,13 +20,13 @@ export function MemoryTask() {
   };
   
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full">
-      <div className="flex justify-between items-start mb-10">
-        <div>
-          <div className="text-gray-500 font-bold uppercase tracking-wider text-sm mb-3">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-6 sm:mb-10">
+        <div className="min-w-0">
+          <div className="text-gray-500 font-bold uppercase tracking-wider text-xs sm:text-sm mb-2 sm:mb-3">
             משימת זיכרון · למידה
           </div>
-          <h2 className="text-4xl font-extrabold text-black">זכור את המילים הבאות</h2>
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-black leading-tight">זכור את המילים הבאות</h2>
         </div>
         <ListenButton 
           text="אקריא לך כעת רשימת מילים שעליך לזכור. הקשב היטב וכשאסיים, חזור על כל המילים שאתה זוכר, באיזה סדר שתרצה." 
@@ -35,8 +35,8 @@ export function MemoryTask() {
         />
       </div>
 
-      <div className="bg-gray-50 p-10 rounded-2xl border border-gray-100 flex-1 min-h-[500px] flex flex-col justify-center items-center text-center">
-        <div className="text-gray-600 font-medium mb-12 text-2xl max-w-2xl">
+      <div className="bg-gray-50 p-5 sm:p-10 rounded-2xl border border-gray-100 flex-1 min-h-[360px] sm:min-h-[500px] flex flex-col justify-center items-center text-center">
+        <div className="text-gray-600 font-medium mb-8 sm:mb-12 text-lg sm:text-2xl max-w-2xl leading-relaxed">
           המערכת תקריא 5 מילים. עליך להקשיב היטב, לזכור אותן, ולחזור עליהן כעת על ידי הקלטת קולך.
           <br /><br />
           תתבקש לחזור עליהן שוב בסוף המבדק.

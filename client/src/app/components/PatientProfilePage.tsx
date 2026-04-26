@@ -99,9 +99,10 @@ export function PatientProfilePage() {
   const [orderOpen, setOrderOpen] = useState(false);
   const [copiedAccessCode, setCopiedAccessCode] = useState<string | null>(null);
 
-  const loadPatient = useCallback(async () => {
+  const loadPatient = useCallback(async (options?: { background?: boolean }) => {
     if (!patientId) return;
-    setLoading(true);
+    const background = Boolean(options?.background);
+    if (!background) setLoading(true);
 
     const { data: patientData, error: patientError } = await supabase
       .from("patients")
@@ -111,7 +112,7 @@ export function PatientProfilePage() {
 
     if (patientError || !patientData) {
       setNotFound(true);
-      setLoading(false);
+      if (!background) setLoading(false);
       return;
     }
 
@@ -126,7 +127,7 @@ export function PatientProfilePage() {
       .order("created_at", { ascending: false });
 
     setSessions((sessionsData ?? []) as PatientSession[]);
-    setLoading(false);
+    if (!background) setLoading(false);
   }, [patientId]);
 
   useEffect(() => {
@@ -182,14 +183,14 @@ export function PatientProfilePage() {
         </Link>
       </div>
 
-      <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm mb-8">
+      <div className="bg-white p-5 sm:p-8 rounded-2xl border border-gray-200 shadow-sm mb-8">
         <div className="flex items-start justify-between gap-6 flex-wrap">
-          <div className="flex items-center gap-6 min-w-0">
-            <div className="w-20 h-20 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-extrabold text-3xl shrink-0">
+          <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-extrabold text-2xl sm:text-3xl shrink-0">
               {caseLabel(patient).trim()[0]?.toUpperCase() || "ת"}
             </div>
             <div className="min-w-0">
-              <h1 className="text-3xl font-extrabold text-black mb-2 truncate">תיק {caseLabel(patient)}</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-black mb-2 truncate">תיק {caseLabel(patient)}</h1>
               <div className="flex gap-5 text-gray-500 font-medium flex-wrap">
                 <span className="inline-flex items-center gap-2">
                   <Hash className="w-4 h-4" />
@@ -210,7 +211,7 @@ export function PatientProfilePage() {
 
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div className="text-xs font-bold text-gray-500 uppercase mb-1">סה"כ מבחנים</div>
           <div className="text-3xl font-extrabold text-black tabular-nums">{sessions.length}</div>
@@ -233,7 +234,7 @@ export function PatientProfilePage() {
 
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-8">
         <h2 className="text-lg font-extrabold text-black mb-4">פרטי רקע קליניים</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <div className="font-bold text-gray-500 mb-1">טלפון</div>
             <div className="font-mono text-gray-900">{patient.phone ?? "—"}</div>
@@ -275,7 +276,8 @@ export function PatientProfilePage() {
 	            עדיין לא נפתחו מבחנים לתיק זה.
           </div>
         ) : (
-          <table className="w-full text-right">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[780px] text-right">
             <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-bold">
               <tr>
                 <th className="px-6 py-3">מזהה</th>
@@ -337,22 +339,27 @@ export function PatientProfilePage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
-      <OrderAssessmentModal
-        open={orderOpen}
-        onClose={() => setOrderOpen(false)}
-        patient={{
-          id: patient.id,
-          case_id: patient.case_id,
-          full_name: patient.full_name,
-          language: patient.language,
-          education_years: patient.education_years,
-          date_of_birth: patient.date_of_birth,
-        }}
-        onOrdered={loadPatient}
-      />
+      {orderOpen && (
+        <OrderAssessmentModal
+          open={orderOpen}
+          onClose={() => setOrderOpen(false)}
+          patient={{
+            id: patient.id,
+            case_id: patient.case_id,
+            full_name: patient.full_name,
+            language: patient.language,
+            education_years: patient.education_years,
+            date_of_birth: patient.date_of_birth,
+          }}
+          onOrdered={() => {
+            void loadPatient({ background: true });
+          }}
+        />
+      )}
     </div>
   );
 }

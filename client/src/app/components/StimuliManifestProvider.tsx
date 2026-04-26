@@ -112,7 +112,7 @@ export function StimulusReadinessBanner() {
   if (!error && (!manifest || manifest.clinicalReady)) return null;
 
   return (
-    <div className="border-b border-amber-200 bg-amber-50 px-10 py-3 text-amber-950">
+    <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 sm:px-6 lg:px-10 text-amber-950">
       <div className="mx-auto flex max-w-[1100px] items-center gap-3 text-sm font-semibold">
         <AlertTriangle className="h-5 w-5 shrink-0" />
         <span>

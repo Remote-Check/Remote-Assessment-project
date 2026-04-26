@@ -218,7 +218,7 @@ export function AudioRecorder({
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-lg mx-auto bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
+    <div className="flex flex-col items-center gap-5 sm:gap-6 w-full max-w-lg mx-auto bg-white p-5 sm:p-8 rounded-3xl border border-gray-200 shadow-sm">
       {/* Hidden Audio Element for Playback */}
       {displayAudioUrl && (
         <audio ref={audioElementRef} src={displayAudioUrl} className="hidden" />
@@ -228,15 +228,15 @@ export function AudioRecorder({
       {!audioId ? (
         <div className="flex flex-col items-center gap-4 w-full">
           <div className={clsx(
-            "w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300",
+            "w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all duration-300",
             isRecording ? "bg-red-50 scale-110" : "bg-gray-50"
           )}>
             <div className={clsx(
-              "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300",
+              "w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all duration-300",
               isRecording ? "bg-red-100 animate-pulse" : "bg-gray-100"
             )}>
               <Mic className={clsx(
-                "w-12 h-12 transition-colors",
+                "w-10 h-10 sm:w-12 sm:h-12 transition-colors",
                 isRecording ? "text-red-600" : "text-gray-400"
               )} />
             </div>
@@ -261,7 +261,7 @@ export function AudioRecorder({
           {!isRecording ? (
             <button
               onClick={startRecording}
-              className="w-full h-16 bg-black text-white text-xl font-bold rounded-xl hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 flex items-center justify-center gap-3"
+              className="w-full h-14 sm:h-16 bg-black text-white text-lg sm:text-xl font-bold rounded-xl hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 flex items-center justify-center gap-3"
             >
               <Mic className="w-6 h-6" />
               התחל הקלטה
@@ -269,7 +269,7 @@ export function AudioRecorder({
           ) : (
             <button
               onClick={stopRecording}
-              className="w-full h-16 bg-red-600 text-white text-xl font-bold rounded-xl hover:bg-red-700 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-600/50 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.4)]"
+              className="w-full h-14 sm:h-16 bg-red-600 text-white text-lg sm:text-xl font-bold rounded-xl hover:bg-red-700 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-600/50 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.4)]"
             >
               <Square className="w-6 h-6 fill-current" />
               עצור הקלטה
@@ -287,7 +287,7 @@ export function AudioRecorder({
             <p className="text-gray-500 font-medium">התשובה שלך הוקלטה ותועבר לקלינאי לבדיקה</p>
           </div>
           
-          <div className="flex gap-4 w-full mt-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full mt-4">
             <button
               onClick={togglePlayback}
               className="flex-1 h-14 bg-gray-100 text-black font-bold text-lg rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600"
