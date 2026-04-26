@@ -71,6 +71,8 @@ GitHub CI intentionally runs the stable baseline only: dependency install, lint,
 For backend, session-flow, patient-flow, dashboard, scoring, review, export, storage, and notification changes, full browser/Supabase E2E remains a required local pre-merge check. Start local Supabase and Edge Functions, then run:
 
 ```bash
+supabase start
+supabase functions serve create-session start-session get-stimuli submit-results submit-task save-drawing save-audio complete-session get-session update-drawing-review update-scoring-review export-pdf export-csv --env-file /dev/null
 cd client && npm test && npm run build && npm run lint && npm run e2e:browser
 cd ..
 deno check --frozen supabase/functions/complete-session/index.ts supabase/functions/create-session/index.ts supabase/functions/start-session/index.ts supabase/functions/get-stimuli/index.ts supabase/functions/submit-results/index.ts supabase/functions/submit-task/index.ts supabase/functions/save-drawing/index.ts supabase/functions/save-audio/index.ts supabase/functions/get-session/index.ts supabase/functions/update-drawing-review/index.ts supabase/functions/update-scoring-review/index.ts supabase/functions/export-pdf/index.ts supabase/functions/export-csv/index.ts
@@ -79,9 +81,15 @@ node scripts/local-e2e.mjs --all-versions
 
 Record skipped local E2E checks and the reason in the PR body.
 
+Useful local variants from the current runbooks:
+
+- `supabase db reset` resets the local database before rerunning flows. Use it only when local test data can be discarded.
+- `supabase start -x vector,logflare` is the fallback when Colima or Docker socket mounts break the default local start.
+- `node scripts/local-e2e.mjs --version 8.3` runs the scripted E2E flow for a single MoCA version.
+
 For browser or UX changes, verify the affected flow in Chrome when practical.
 
-For licensed stimulus storage or clinical-readiness changes, keep assets out of Git. Use `node scripts/upload-stimuli-from-pdfs.mjs --all-versions --upload` for local licensed visual assets when appropriate, and run `node scripts/verify-stimuli.mjs --all-versions` with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY` configured. Use `--visual-only` only when memory word-list audio is intentionally not part of the check.
+For licensed stimulus storage or clinical-readiness changes, keep assets out of Git. Use `node scripts/upload-stimuli-from-pdfs.mjs --all-versions --upload` for local licensed visual assets when appropriate, and run `node scripts/verify-stimuli.mjs --all-versions` with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY` configured. Use `node scripts/verify-stimuli.mjs --all-versions --print-manifest` to inspect the expected manifest, and use `--visual-only` only when memory word-list audio is intentionally not part of the check.
 
 ## Supabase Remote Operations
 
