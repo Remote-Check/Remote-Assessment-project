@@ -25,9 +25,44 @@ export function ClinicianDashboardLayout() {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen flex bg-gray-50 text-black font-['Heebo',sans-serif]">
+    <div dir="rtl" className="min-h-screen flex flex-col lg:flex-row bg-gray-50 text-black font-['Heebo',sans-serif]">
+      <header className="lg:hidden bg-[#0a0a0a] text-white border-b border-gray-800">
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <div className="font-bold text-lg leading-tight">Remote Check</div>
+            <div className="text-gray-400 text-xs">פורטל קלינאים</div>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="h-10 shrink-0 rounded-lg bg-white/10 px-3 text-sm font-bold text-gray-200 hover:bg-white/15"
+          >
+            התנתקות
+          </button>
+        </div>
+        <nav className="flex gap-2 overflow-x-auto px-4 pb-3">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                clsx(
+                  "inline-flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-colors",
+                  isActive
+                    ? "bg-white text-black"
+                    : "bg-white/10 text-gray-200 hover:bg-white/15"
+                )
+              }
+            >
+              <item.icon className="w-4 h-4" />
+              <span>{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </header>
+
       {/* Sidebar */}
-      <aside className="w-[240px] bg-[#0a0a0a] text-white flex flex-col h-screen sticky top-0">
+      <aside className="hidden lg:flex w-[240px] bg-[#0a0a0a] text-white flex-col h-screen sticky top-0">
         <div className="p-6 mb-4 border-b border-gray-800">
           <div className="font-bold text-xl">Remote Check</div>
           <div className="text-gray-400 text-xs mt-1 tracking-wider">CLINICIAN PORTAL</div>
@@ -81,7 +116,7 @@ export function ClinicianDashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-[28px] overflow-auto">
+      <main className="flex-1 p-4 sm:p-6 lg:p-[28px] overflow-auto min-w-0">
         <Outlet />
       </main>
     </div>

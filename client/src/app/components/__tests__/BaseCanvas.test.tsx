@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BaseCanvas } from "../BaseCanvas";
 
 function mockCanvasContext() {
@@ -23,24 +23,34 @@ function mockCanvasContext() {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
 }
 
-function mockCanvasElement(canvas: HTMLCanvasElement) {
+function mockCanvasElement(
+  canvas: HTMLCanvasElement,
+  rect: Partial<DOMRect> = {},
+) {
   vi.spyOn(canvas, "toDataURL").mockReturnValue("data:image/png;base64,test");
   canvas.setPointerCapture = vi.fn();
   canvas.releasePointerCapture = vi.fn();
+  const width = rect.width ?? 800;
+  const height = rect.height ?? 500;
   vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
     x: 0,
     y: 0,
-    top: 0,
-    left: 0,
-    bottom: 500,
-    right: 800,
-    width: 800,
-    height: 500,
+    top: rect.top ?? 0,
+    left: rect.left ?? 0,
+    bottom: rect.bottom ?? height,
+    right: rect.right ?? width,
+    width,
+    height,
     toJSON: () => ({}),
   });
 }
 
 describe("BaseCanvas", () => {
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
   it("passes current strokes to onSave when a stroke completes", () => {
     const onSave = vi.fn();
     const onDrawChange = vi.fn();
@@ -57,5 +67,19 @@ describe("BaseCanvas", () => {
     expect(onSave).toHaveBeenCalledWith("data:image/png;base64,test", [
       [expect.objectContaining({ x: 10, y: 20 })],
     ]);
+  });
+
+  it("scales pointer coordinates from displayed canvas size to logical drawing size", () => {
+    const onDrawChange = vi.fn();
+    mockCanvasContext();
+    render(<BaseCanvas width={800} height={400} onDrawChange={onDrawChange} />);
+
+    const canvas = screen.getByRole("img", { name: "אזור לציור" }) as HTMLCanvasElement;
+    mockCanvasElement(canvas, { width: 400, height: 200, right: 400, bottom: 200 });
+
+    fireEvent.pointerDown(canvas, { pointerId: 1, pointerType: "mouse", clientX: 200, clientY: 100, pressure: 0.5 });
+    fireEvent.pointerUp(canvas, { pointerId: 1, pointerType: "mouse", clientX: 200, clientY: 100, pressure: 0.5 });
+
+    expect(onDrawChange).toHaveBeenCalledWith([[expect.objectContaining({ x: 400, y: 200 })]]);
   });
 });

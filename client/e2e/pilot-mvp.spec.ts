@@ -31,7 +31,7 @@ test('pilot MVP browser flow: patient completes and clinician review APIs finali
   expect(started.patientAge).toBeGreaterThanOrEqual(60);
   expect(started.educationYears).toBe(16);
 
-  await runPatientClickThrough(page, created.linkToken, started);
+  await runPatientClickThrough(page, started.linkToken, started);
 
   const provisional = await getSession(request, clinician.accessToken, created.sessionId);
   expect(provisional.session.status).toBe('awaiting_review');
@@ -120,9 +120,8 @@ async function createSession(request: APIRequestContext, accessToken: string, pa
   expect(response.ok()).toBeTruthy();
   const body = await response.json();
   expect(body.sessionId).toBeTruthy();
-  expect(body.linkToken).toBeTruthy();
   expect(body.testNumber).toMatch(/^\d{8}$/);
-  return body as { sessionId: string; linkToken: string; testNumber: string };
+  return body as { sessionId: string; testNumber: string };
 }
 
 async function startPatientSession(request: APIRequestContext, testNumber: string) {

@@ -186,38 +186,38 @@ export function ClinicianDashboardList() {
   })();
 
   return (
-    <div className="max-w-6xl mx-auto h-[calc(100vh-56px)] flex flex-col">
-      <div className="flex items-center justify-between mb-8 shrink-0">
+    <div className="max-w-6xl mx-auto min-h-[calc(100vh-120px)] lg:h-[calc(100vh-56px)] flex flex-col">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6 lg:mb-8 shrink-0">
         <div>
-          <h1 className="text-4xl font-extrabold text-black mb-2">תיקים</h1>
-          <div className="text-gray-500 font-medium text-lg">
+          <h1 className="text-3xl lg:text-4xl font-extrabold text-black mb-2">תיקים</h1>
+          <div className="text-gray-500 font-medium text-base lg:text-lg">
             {loading
               ? "טוען..."
               : `${totalCases} תיקים · ${reviewCount} דורשים סקירה`}
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr_auto] lg:flex lg:items-center lg:gap-4">
           <button
             onClick={handleCsvExport}
-            className="flex items-center gap-2 bg-white text-black border border-gray-200 px-6 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors shadow-sm text-lg"
+            className="flex items-center justify-center gap-2 bg-white text-black border border-gray-200 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors shadow-sm text-base lg:text-lg"
           >
             <span>ייצוא CSV</span>
           </button>
 
-          <div className="relative">
+          <div className="relative min-w-0">
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="חיפוש לפי מזהה תיק…"
-              className="pl-4 pr-12 py-3 bg-white border border-gray-200 rounded-xl w-80 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-600 transition-all"
+              className="w-full lg:w-80 pl-4 pr-12 py-3 bg-white border border-gray-200 rounded-xl text-base lg:text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-600 transition-all"
             />
           </div>
 
           <button
             onClick={() => setFormOpen(true)}
-            className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-md text-lg"
+            className="flex items-center justify-center gap-2 bg-black text-white px-5 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-md text-base lg:text-lg"
           >
             <Plus className="w-5 h-5" />
             <span>תיק חדש</span>
@@ -225,19 +225,19 @@ export function ClinicianDashboardList() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-6 mb-8 shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8 shrink-0">
         {[
           { label: "סה״כ תיקים", value: String(totalCases), delta: "רשומים" },
           { label: "ציון MoCA ממוצע", value: avgScore, delta: "מבחנים עם ציון" },
           { label: "בדיקות הושלמו", value: String(completedCount), delta: "תיקים שהושלמו" },
           { label: "ממתינים לבדיקה", value: String(reviewCount), delta: "דורשים סקירה", warn: true },
         ].map((stat, i) => (
-          <div key={i} className="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+          <div key={i} className="bg-white border border-gray-200 p-5 lg:p-6 rounded-2xl shadow-sm">
             <div className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">{stat.label}</div>
-            <div className="flex items-end justify-between">
-              <div className="text-4xl font-extrabold text-black tabular-nums">{stat.value}</div>
+            <div className="flex items-end justify-between gap-3">
+              <div className="text-3xl lg:text-4xl font-extrabold text-black tabular-nums">{stat.value}</div>
               <div
-                className={`text-sm font-bold ${
+                className={`text-xs lg:text-sm font-bold ${
                   stat.warn ? "text-red-600" : "text-green-600"
                 } bg-gray-50 px-2 py-1 rounded-md`}
               >
@@ -250,7 +250,7 @@ export function ClinicianDashboardList() {
 
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col min-h-0">
         <div className="bg-gray-50 border-b border-gray-200 text-gray-500 text-sm uppercase tracking-wider font-bold shrink-0">
-          <div className="flex text-right px-6 py-4">
+          <div className="hidden md:flex text-right px-6 py-4">
             <div className="w-5/12 font-bold">מזהה תיק</div>
             <div className="w-1/12 font-bold">מבחנים</div>
             <div className="w-2/12 font-bold">פעילות אחרונה</div>
@@ -258,9 +258,86 @@ export function ClinicianDashboardList() {
             <div className="w-1/12 font-bold">ציון</div>
             <div className="w-1/12"></div>
           </div>
+          <div className="md:hidden px-4 py-3 font-bold">רשימת תיקים</div>
         </div>
 
-        <div ref={parentRef} className="overflow-auto flex-1 relative">
+        <div className="md:hidden overflow-auto flex-1 p-3 space-y-3">
+          {filtered.length === 0 && !loading && (
+            <div className="flex min-h-52 flex-col items-center justify-center text-center text-gray-500 font-bold text-base gap-2 px-4">
+              <span>
+                {rows.length === 0
+                  ? "עדיין לא נוספו תיקים. התחילו על ידי לחיצה על \"תיק חדש\"."
+                  : "לא נמצאו תיקים מתאימים לחיפוש."}
+              </span>
+            </div>
+          )}
+
+          {filtered.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => navigate(`/dashboard/patient/${p.id}`)}
+              className="w-full rounded-xl border border-gray-200 bg-white p-4 text-right shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shrink-0">
+                  {((p.case_id ?? p.full_name).trim()[0] || "ת").toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-lg text-black truncate">תיק {p.case_id ?? p.full_name}</div>
+                  <div className="mt-1 text-xs text-gray-500 font-mono flex items-center gap-1.5">
+                    <Hash className="w-3 h-3" />
+                    {p.id.slice(0, 8)}
+                  </div>
+                </div>
+                <ChevronLeft className="mt-2 w-5 h-5 text-gray-400 shrink-0" />
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <div className="font-bold text-gray-500">מבחנים</div>
+                  <div className="text-gray-900 tabular-nums">{p.tests}</div>
+                </div>
+                <div>
+                  <div className="font-bold text-gray-500">ציון</div>
+                  <div className="font-extrabold text-black tabular-nums">
+                    {p.latestScore != null ? `${p.latestScore}/30` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-bold text-gray-500">פעילות אחרונה</div>
+                  <div className="text-gray-900 tabular-nums">
+                    {p.lastActive ? new Date(p.lastActive).toLocaleDateString("he-IL") : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-bold text-gray-500">סטטוס</div>
+                  <span
+                    className={`mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                      p.status === "review"
+                        ? "bg-amber-100 text-amber-800"
+                        : p.status === "completed"
+                        ? "bg-green-100 text-green-800"
+                        : p.status === "in_progress"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    {p.status === "review"
+                      ? "בבדיקה"
+                      : p.status === "completed"
+                      ? "הושלם"
+                      : p.status === "in_progress"
+                      ? "בתהליך"
+                      : "חדש"}
+                  </span>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div ref={parentRef} className="hidden md:block overflow-auto flex-1 relative">
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,

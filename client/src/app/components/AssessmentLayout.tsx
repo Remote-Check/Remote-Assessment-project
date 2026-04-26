@@ -82,23 +82,23 @@ export function AssessmentLayout() {
     <StimuliManifestProvider>
       <div dir="rtl" className="min-h-screen flex flex-col bg-white text-black font-['Heebo',sans-serif]">
       {/* Header */}
-      <header className="flex items-center justify-between px-10 py-5 border-b border-gray-200 bg-white z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center text-white font-bold text-xl">
+      <header className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10 lg:py-5 border-b border-gray-200 bg-white z-10">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="w-10 h-10 shrink-0 bg-black rounded-lg flex items-center justify-center text-white font-bold text-xl">
             RC
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="font-bold text-lg leading-tight">Remote Check</div>
             <div className="text-sm text-gray-500">הערכה נוירופסיכולוגית</div>
           </div>
         </div>
 
-        <div className="text-center">
-          <h1 className="font-bold text-xl">MoCA - עברית</h1>
+        <div className="order-3 w-full text-right sm:order-none sm:w-auto sm:text-center">
+          <h1 className="font-bold text-lg sm:text-xl">MoCA - עברית</h1>
           <div className="text-sm text-gray-500">גרסה {mocaVersion}</div>
         </div>
 
-        <div className="font-mono text-lg font-medium tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
+        <div className="font-mono text-base sm:text-lg font-medium tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
           שלב {currentStep} מתוך {totalSteps}
         </div>
       </header>
@@ -113,15 +113,15 @@ export function AssessmentLayout() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-[1100px] mx-auto px-10 py-12 flex flex-col">
+      <main className="flex-1 w-full max-w-[1100px] mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-12 flex flex-col min-w-0">
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="sticky bottom-0 bg-white border-t border-gray-200 px-10 py-5 flex items-center justify-between">
+      <footer className="bg-white border-t border-gray-200 px-4 py-4 sm:px-6 lg:px-10 lg:py-5 flex items-center justify-between gap-3">
         <button
           onClick={() => navigate(getPrevRoute())}
-          className="flex items-center gap-2 h-[80px] px-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-black font-semibold text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
+          className="flex items-center justify-center gap-2 min-h-14 sm:min-h-[80px] px-4 sm:px-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-black font-semibold text-base sm:text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
         >
           <ArrowRight className="w-6 h-6" />
           <span>חזרה</span>
@@ -136,7 +136,7 @@ export function AssessmentLayout() {
               navigate(getNextRoute());
             }
           }}
-          className="flex items-center gap-2 h-[80px] px-10 rounded-lg bg-black hover:bg-gray-900 text-white font-semibold text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
+          className="flex items-center justify-center gap-2 min-h-14 sm:min-h-[80px] px-5 sm:px-10 rounded-lg bg-black hover:bg-gray-900 text-white font-semibold text-base sm:text-xl transition-colors min-w-[var(--target-size)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
         >
           <span>{currentStep === 14 ? 'סיום משימה' : 'המשך'}</span>
           <ArrowLeft className="w-6 h-6" />

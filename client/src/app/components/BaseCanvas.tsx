@@ -23,6 +23,18 @@ export function BaseCanvas({
   const currentStrokeRef = useRef<any[]>([]);
   const [stylusOnly, setStylusOnly] = useState(false);
 
+  const getLogicalPoint = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+
+    return {
+      x: (e.clientX - rect.left) * (width / rect.width),
+      y: (e.clientY - rect.top) * (height / rect.height),
+    };
+  };
+
   useEffect(() => {
     let cancelled = false;
     const canvas = canvasRef.current;
@@ -64,9 +76,9 @@ export function BaseCanvas({
     // Use setPointerCapture to ensure dragging outside canvas continues drawing
     canvas.setPointerCapture(e.pointerId);
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const point = getLogicalPoint(e);
+    if (!point) return;
+    const { x, y } = point;
 
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -87,9 +99,9 @@ export function BaseCanvas({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const point = getLogicalPoint(e);
+      if (!point) return;
+      const { x, y } = point;
 
       ctx.lineTo(x, y);
       ctx.stroke();
@@ -151,8 +163,8 @@ export function BaseCanvas({
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      <div className="flex justify-between items-center w-full px-2">
+    <div className="flex flex-col items-center gap-4 w-full min-w-0">
+      <div className="flex justify-between items-center w-full px-1 sm:px-2">
         <div className="flex items-center gap-2">
           <input 
             type="checkbox" 
@@ -161,20 +173,24 @@ export function BaseCanvas({
             onChange={(e) => setStylusOnly(e.target.checked)}
             className="w-5 h-5 accent-black cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50"
           />
-          <label htmlFor="stylus-only" className="text-gray-700 font-medium cursor-pointer select-none">
+          <label htmlFor="stylus-only" className="text-sm sm:text-base text-gray-700 font-medium cursor-pointer select-none">
             התעלם ממגע (עט חכם בלבד)
           </label>
         </div>
       </div>
 
-      <div className="relative border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm touch-none bg-white focus-within:ring-4 focus-within:ring-blue-600 focus-within:ring-opacity-50 transition-all">
+      <div
+        className="relative w-full border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm touch-none bg-white focus-within:ring-4 focus-within:ring-blue-600 focus-within:ring-opacity-50 transition-all"
+        style={{ maxWidth: `${width}px` }}
+      >
         <canvas
           ref={canvasRef}
+          data-testid="drawing-canvas"
           role="img"
           aria-label="אזור לציור"
           tabIndex={0}
-          className="outline-none"
-          style={{ width: `${width}px`, height: `${height}px`, cursor: "crosshair" }}
+          className="block w-full max-w-full outline-none"
+          style={{ aspectRatio: `${width} / ${height}`, height: "auto", cursor: "crosshair" }}
           onPointerDown={startDrawing}
           onPointerMove={draw}
           onPointerUp={stopDrawing}
@@ -182,12 +198,12 @@ export function BaseCanvas({
         />
       </div>
       
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full justify-center">
         <button 
           onClick={handleUndo} 
           disabled={strokes.length === 0}
           className={clsx(
-            "px-6 py-3 rounded-lg font-bold text-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50",
+            "px-5 sm:px-6 py-3 rounded-lg font-bold text-base sm:text-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50",
             strokes.length === 0 
               ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed" 
               : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100"
@@ -199,7 +215,7 @@ export function BaseCanvas({
           onClick={handleClear}
           disabled={strokes.length === 0}
           className={clsx(
-            "px-6 py-3 rounded-lg font-bold text-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50",
+            "px-5 sm:px-6 py-3 rounded-lg font-bold text-base sm:text-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 focus-visible:ring-opacity-50",
             strokes.length === 0 
               ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed" 
               : "border-gray-300 text-red-600 bg-white hover:bg-red-50 hover:border-red-200 active:bg-red-100"
