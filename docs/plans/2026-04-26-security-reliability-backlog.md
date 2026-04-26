@@ -1,6 +1,6 @@
 # Security And Reliability Backlog
 
-This backlog distills the useful findings from `CODE_REVIEW_2026-04-26.md`. The root review file is not a source of truth; keep durable decisions here, in `JOURNEY.md`, and in code.
+This backlog distills the useful findings from the external review artifact dated 2026-04-26. Raw review exports are intentionally not committed; keep durable decisions here, in `JOURNEY.md`, and in code.
 
 ## First Implementation Slice
 
