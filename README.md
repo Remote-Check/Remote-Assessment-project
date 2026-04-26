@@ -14,6 +14,7 @@ Read these first:
 4. [CONTEXT.md](CONTEXT.md)
 5. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
 6. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
+7. [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md)
 
 `JOURNEY.md` is the bird's-eye patient/clinician journey authority. Update it when browser, backend, status, scoring, notification, or review behavior changes.
 
@@ -77,6 +78,7 @@ Full browser/Supabase E2E is a required local pre-merge check for backend, sessi
 - `JOURNEY.md` - patient/clinician browser + backend journey playbook.
 - `docs/LOCAL_E2E_VERIFICATION.md` - local end-to-end test instructions.
 - `docs/STIMULI_ASSET_RUNBOOK.md` - private licensed stimulus upload and validation instructions.
+- `docs/SUPABASE_RECONCILIATION.md` - hosted Supabase drift/reconciliation runbook.
 - `docs/plans/` - background implementation plans, not product authority.
 - `CONTEXT.md` and `MEMORY.md` - project context/history.
 

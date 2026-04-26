@@ -1,5 +1,7 @@
 # Supabase Setup Instructions
 
+For linked hosted-project drift, migration reconciliation, remote function deployment, and remote safety rules, read [SUPABASE_RECONCILIATION.md](SUPABASE_RECONCILIATION.md) before changing remote Supabase state.
+
 ## Prerequisites
 - Supabase account at supabase.com
 - Supabase CLI installed (see official Supabase CLI install docs for your OS)
@@ -26,14 +28,7 @@ supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
 ```
 
-Current repository migrations:
-- `20260421000001_initial_schema.sql`
-- `20260421000004_stimuli_storage.sql`
-- `20260421000005_audit_logs.sql`
-- `20260421000007_audio_storage.sql`
-- `20260423000008_clinicians_and_session_contact.sql`
-- `20260423000009_patients_and_session_access_codes.sql`
-- `20260424000001_drawings_storage.sql`
+Confirm the current migration list directly from `supabase/migrations/`. This document intentionally does not duplicate the full list because it changes during active MVP work.
 
 ## 4. Set environment variables
 
@@ -53,10 +48,15 @@ Deploy the functions used by current `main`:
 ```bash
 supabase functions deploy create-session
 supabase functions deploy start-session
+supabase functions deploy get-stimuli
+supabase functions deploy submit-results
 supabase functions deploy submit-task
 supabase functions deploy save-drawing
 supabase functions deploy save-audio
 supabase functions deploy complete-session
+supabase functions deploy get-session
+supabase functions deploy update-drawing-review
+supabase functions deploy update-scoring-review
 supabase functions deploy export-csv
 supabase functions deploy export-pdf
 ```
