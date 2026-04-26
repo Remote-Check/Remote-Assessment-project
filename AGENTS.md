@@ -10,13 +10,15 @@ Canonical files:
 2. [AGENTS.md](AGENTS.md)
 3. [JOURNEY.md](JOURNEY.md)
 4. [CONTEXT.md](CONTEXT.md)
-5. [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
-6. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
-7. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
-8. [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md)
+5. [docs/AGENT_LEARNINGS.md](docs/AGENT_LEARNINGS.md)
+6. [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
+7. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
+8. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
+9. [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md)
 
 `JOURNEY.md` is the patient/clinician journey authority. Update it when browser, backend, status, scoring, notification, or review behavior changes.
 `docs/DEVELOPMENT_PROCESS.md` is the provider-neutral engineering workflow. Supabase is the current MVP runtime; the app contract is the architecture boundary.
+`docs/AGENT_LEARNINGS.md` is the durable lessons file for future agents. Update it when PRs or review findings expose reusable engineering rules or recurring failure modes.
 
 ## Required GitHub Workflow
 
@@ -71,6 +73,8 @@ GitHub CI intentionally runs the stable baseline only: dependency install, lint,
 For backend, session-flow, patient-flow, dashboard, scoring, review, export, storage, and notification changes, full browser/Supabase E2E remains a required local pre-merge check. Start local Supabase and Edge Functions, then run:
 
 ```bash
+supabase start
+supabase functions serve create-session start-session get-stimuli submit-results submit-task save-drawing save-audio complete-session get-session update-drawing-review update-scoring-review export-pdf export-csv --env-file /dev/null
 cd client && npm test && npm run build && npm run lint && npm run e2e:browser
 cd ..
 deno check --frozen supabase/functions/complete-session/index.ts supabase/functions/create-session/index.ts supabase/functions/start-session/index.ts supabase/functions/get-stimuli/index.ts supabase/functions/submit-results/index.ts supabase/functions/submit-task/index.ts supabase/functions/save-drawing/index.ts supabase/functions/save-audio/index.ts supabase/functions/get-session/index.ts supabase/functions/update-drawing-review/index.ts supabase/functions/update-scoring-review/index.ts supabase/functions/export-pdf/index.ts supabase/functions/export-csv/index.ts
@@ -79,9 +83,15 @@ node scripts/local-e2e.mjs --all-versions
 
 Record skipped local E2E checks and the reason in the PR body.
 
+Useful local variants from the current runbooks:
+
+- `supabase db reset` resets the local database before rerunning flows. Use it only when local test data can be discarded.
+- `supabase start -x vector,logflare` is the fallback when Colima or Docker socket mounts break the default local start.
+- `node scripts/local-e2e.mjs --version 8.3` runs the scripted E2E flow for a single MoCA version.
+
 For browser or UX changes, verify the affected flow in Chrome when practical.
 
-For licensed stimulus storage or clinical-readiness changes, keep assets out of Git. Use `node scripts/upload-stimuli-from-pdfs.mjs --all-versions --upload` for local licensed visual assets when appropriate, and run `node scripts/verify-stimuli.mjs --all-versions` with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY` configured. Use `--visual-only` only when memory word-list audio is intentionally not part of the check.
+For licensed stimulus storage or clinical-readiness changes, keep assets out of Git. Use `node scripts/upload-stimuli-from-pdfs.mjs --all-versions --upload` for local licensed visual assets when appropriate, and run `node scripts/verify-stimuli.mjs --all-versions` with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY` configured. Use `node scripts/verify-stimuli.mjs --all-versions --print-manifest` to inspect the expected manifest, and use `--visual-only` only when memory word-list audio is intentionally not part of the check.
 
 ## Supabase Remote Operations
 
