@@ -147,6 +147,8 @@ export function ClinicianDashboardDetail() {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<ReviewTab>("clock");
   const [rubrics, setRubrics] = useState<RubricState>(DEFAULT_RUBRICS);
+  const [exportingCsv, setExportingCsv] = useState(false);
+  const [csvExportMessage, setCsvExportMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const loadDashboardSession = useCallback(async () => {
     if (!sessionId) return;
@@ -591,33 +593,55 @@ export function ClinicianDashboardDetail() {
   };
 
   const handleCsvExport = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      alert("יש להתחבר כקלינאי כדי לייצא CSV.");
-      return;
+    if (exportingCsv) return;
+    setExportingCsv(true);
+    setCsvExportMessage(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("יש להתחבר כקלינאי כדי לייצא CSV.");
+      }
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-csv`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!res.ok) {
+        let message = "ייצוא CSV נכשל.";
+        try {
+          const payload = await res.json();
+          if (payload?.error) message = payload.error;
+        } catch {
+          // Keep the localized fallback for non-JSON errors.
+        }
+        throw new Error(message);
+      }
+
+      const blob = await res.blob();
+      if (blob.size === 0) {
+        throw new Error("קובץ ה-CSV שהתקבל ריק.");
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "moca_export.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      setCsvExportMessage({ kind: "success", text: "CSV ירד בהצלחה." });
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : "ייצוא CSV נכשל.";
+      setCsvExportMessage({ kind: "error", text: message });
+    } finally {
+      setExportingCsv(false);
     }
-
-    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-csv`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (!res.ok) {
-      alert("ייצוא CSV נכשל.");
-      return;
-    }
-
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "moca_export.csv";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
   };
 
   const breadcrumbTo = patient ? `/dashboard/patient/${patient.id}` : "/dashboard";
@@ -692,25 +716,42 @@ export function ClinicianDashboardDetail() {
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <button
-            onClick={handlePdfExport}
-            disabled={!canExportPdf}
-            className={clsx(
-              "flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 transition-colors text-black",
-              canExportPdf ? "hover:border-black" : "opacity-50 cursor-not-allowed",
-            )}
-          >
-            <FileDown className="w-5 h-5" />
-            <span>PDF</span>
-          </button>
-          <button
-            onClick={handleCsvExport}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 hover:border-black transition-colors text-black"
-          >
-            <Download className="w-5 h-5" />
-            <span>CSV</span>
-          </button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-4">
+            <button
+              onClick={handlePdfExport}
+              disabled={!canExportPdf}
+              className={clsx(
+                "flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 transition-colors text-black",
+                canExportPdf ? "hover:border-black" : "opacity-50 cursor-not-allowed",
+              )}
+            >
+              <FileDown className="w-5 h-5" />
+              <span>PDF</span>
+            </button>
+            <button
+              onClick={handleCsvExport}
+              disabled={exportingCsv}
+              className={clsx(
+                "flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-white border-2 border-gray-200 transition-colors text-black",
+                exportingCsv ? "cursor-wait opacity-60" : "hover:border-black",
+              )}
+            >
+              <Download className="w-5 h-5" />
+              <span>{exportingCsv ? "מייצא..." : "CSV"}</span>
+            </button>
+          </div>
+          {csvExportMessage && (
+            <p
+              role={csvExportMessage.kind === "error" ? "alert" : "status"}
+              className={clsx(
+                "max-w-xs text-right text-sm font-bold",
+                csvExportMessage.kind === "error" ? "text-red-700" : "text-green-700",
+              )}
+            >
+              {csvExportMessage.text}
+            </p>
+          )}
         </div>
       </div>
 
