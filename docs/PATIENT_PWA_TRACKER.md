@@ -28,7 +28,7 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 | Device context | Codex | Done | Session metadata captures concise device context and clinician detail/PDF/CSV display it. | `codex/patient-device-context` |
 | UX hardening: preflight + drawing | Codex | Done | Preflight and drawing tasks fit tablet/phone viewports and drawing is stable with finger/stylus. | `codex/patient-tablet-drawing` |
 | UX hardening: audio/speech tasks | Codex | Done | Generated Hebrew speech and audio capture work on tablet/phone viewports. | `codex/patient-audio-speech` |
-| UX hardening: simple input tasks | Codex | Not Started | Remaining patient tasks fit main action and guarded navigation without desktop-web assumptions. | TBD |
+| UX hardening: simple input tasks | Codex | Done | Naming task fits phone/tablet viewports with local item progress, guarded next-item navigation, and answer revisit controls. | `codex/patient-simple-inputs` |
 | Pilot readiness | Both | Not Started | Shared staging, all enabled licensed visual stimuli, iPad/tablet install, and phone fallback checks pass. | TBD |
 
 ## Current Shell Scope
@@ -46,6 +46,16 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 - Expire abandoned same-device resume state after 6 hours.
 
 ## Latest Verification
+
+2026-04-27 Codex simple-input verification:
+
+- `cd client && npm test -- NamingTask`
+- `cd client && npm test -- --reporter=dot`
+- `cd client && npm run lint`
+- `cd client && npm run build -- --debug`
+- Patient-surface browser smoke with `npm run dev:patient -- --host 127.0.0.1`
+- Phone viewport check at 390x844 for `/patient/naming`
+- Tablet landscape viewport check at 1024x768 for `/patient/naming`
 
 2026-04-27 Codex audio/speech verification:
 
