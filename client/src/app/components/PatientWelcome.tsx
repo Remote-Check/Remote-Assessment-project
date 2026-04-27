@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Mic, PenTool, Volume2 } from "lucide-react";
 import { clsx } from "clsx";
-import { markPatientOnboardingComplete, useAssessmentStore } from "../store/AssessmentContext";
+import { markPatientOnboardingComplete } from "../store/AssessmentContext";
 
 type CheckState = "idle" | "checking" | "success" | "error";
 type VoiceState = "checking" | "ready" | "missing" | "unsupported";
@@ -18,7 +18,6 @@ function findHebrewVoice() {
 
 export function PatientWelcome() {
   const navigate = useNavigate();
-  const { state } = useAssessmentStore();
   const [voiceState, setVoiceState] = useState<VoiceState>(() => hasSpeechSupport() ? "checking" : "unsupported");
   const [audioCheck, setAudioCheck] = useState<CheckState>("idle");
   const [micCheck, setMicCheck] = useState<CheckState>("idle");
@@ -274,7 +273,7 @@ export function PatientWelcome() {
               <button
                 onClick={() => {
                   if (!canStart) return;
-                  markPatientOnboardingComplete(state.id);
+                  markPatientOnboardingComplete();
                   navigate("/patient/trail-making");
                 }}
                 disabled={!canStart}

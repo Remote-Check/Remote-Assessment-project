@@ -76,21 +76,21 @@ const DEFAULT_STATE: AssessmentState = {
 
 const STORAGE_KEY = 'moca_assessment_state';
 const PATIENT_ONBOARDING_KEY = 'moca_patient_onboarding_completed';
+const PATIENT_ONBOARDING_COMPLETE_VALUE = 'true';
 const LOCAL_RESUME_EXPIRY_MS = 6 * 60 * 60 * 1000;
 
-export function hasCompletedPatientOnboarding(sessionId?: string | null): boolean {
+export function hasCompletedPatientOnboarding(): boolean {
   try {
     const value = localStorage.getItem(PATIENT_ONBOARDING_KEY);
-    if (!sessionId) return value === 'true';
-    return value === sessionId;
+    return value === PATIENT_ONBOARDING_COMPLETE_VALUE || Boolean(value);
   } catch {
     return false;
   }
 }
 
-export function markPatientOnboardingComplete(sessionId?: string | null): void {
+export function markPatientOnboardingComplete(): void {
   try {
-    localStorage.setItem(PATIENT_ONBOARDING_KEY, sessionId || 'true');
+    localStorage.setItem(PATIENT_ONBOARDING_KEY, PATIENT_ONBOARDING_COMPLETE_VALUE);
   } catch {
     // If storage is unavailable, keep the current session flow working.
   }
@@ -153,7 +153,6 @@ function cleanupLocalSessionArtifacts(state: AssessmentState): void {
   try {
     if (state.id) clearAutosaveQueueForSession(state.id);
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(PATIENT_ONBOARDING_KEY);
   } catch {
     // Storage cleanup is best-effort; backend completion remains authoritative.
   }

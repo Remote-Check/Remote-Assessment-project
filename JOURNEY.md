@@ -167,3 +167,4 @@ Patient test-number starts also write hashed attempt records for operational rat
 - 2026-04-27: Product direction changed to a split surface model: clinician remains a website, while patient assessment becomes a separate tablet/phone-first PWA deployment from the same repo and shared Supabase backend.
 - 2026-04-27: Patient start captures concise device context on the session, and clinician detail plus PDF/CSV exports expose it for tablet/phone interpretation.
 - 2026-04-27: Patient PWA shell, deploy split, install guidance, and tablet/phone UX hardening are implemented in code. Clinical pilot readiness remains blocked on hosted staging, licensed-stimuli validation, installed-PWA real-device QA, and phone fallback checks.
+- 2026-04-27: Patient welcome/audio/microphone preflight is a durable local-device gate. Completion and abandoned-session cleanup remove assessment evidence but preserve the local preflight-complete flag for future tests on the same device.

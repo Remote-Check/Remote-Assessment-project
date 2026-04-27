@@ -74,7 +74,7 @@ test.describe('landing test number entry', () => {
 
   test('returning local patients start a new valid test at the first task', async ({ page }) => {
     await page.addInitScript(() => {
-      window.localStorage.setItem('moca_patient_onboarding_completed', 'returning-session');
+      window.localStorage.setItem('moca_patient_onboarding_completed', 'previous-session');
     });
     await page.route('**/functions/v1/start-session', async (route) => {
       await route.fulfill({

@@ -46,10 +46,18 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 - Use generated Hebrew speech for memory words; do not require licensed memory MP3 files.
 - Clear local session evidence after successful completion.
 - Expire abandoned same-device resume state after 6 hours.
+- Preserve the local preflight-complete flag when session evidence is cleared, so returning local patients can start future tests at the first task.
 - Show home-screen guidance on patient entry unless the PWA is already running in standalone mode.
 - Use `docs/PATIENT_PWA_PILOT_READINESS.md` for the final staging, licensed-stimuli, installed-PWA, and phone fallback gates before clinical pilot use.
 
 ## Latest Verification
+
+2026-04-27 Codex onboarding-once verification:
+
+- `cd client && npm test -- PatientResume PatientWelcome EndScreen`
+- `cd client && npm run lint`
+- `cd client && npm run build -- --debug`
+- `cd client && npx playwright test ux-blockers.spec.ts -g "landing test number entry"`
 
 2026-04-27 Codex install-guidance verification:
 

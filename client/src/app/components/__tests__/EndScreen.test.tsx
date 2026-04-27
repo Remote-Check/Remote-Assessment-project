@@ -13,6 +13,7 @@ vi.mock('../../../lib/supabase', () => ({
 }));
 
 const STORAGE_KEY = 'moca_assessment_state';
+const ONBOARDING_KEY = 'moca_patient_onboarding_completed';
 const fetchMock = vi.fn();
 
 function storedAssessment() {
@@ -47,6 +48,7 @@ function renderEndScreen() {
 describe('EndScreen', () => {
   beforeEach(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(storedAssessment()));
+    localStorage.setItem(ONBOARDING_KEY, 'true');
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: vi.fn() });
   });
@@ -71,6 +73,7 @@ describe('EndScreen', () => {
     await waitFor(() => {
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
+    expect(localStorage.getItem(ONBOARDING_KEY)).toBe('true');
   });
 
   it('keeps resume state and allows retry when complete-session fails', async () => {
