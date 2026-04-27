@@ -91,7 +91,7 @@ describe('patient resume state', () => {
   });
 
   it('opens a fresh valid test number at the first task after local onboarding is complete', async () => {
-    localStorage.setItem(ONBOARDING_KEY, 'session-returning');
+    localStorage.setItem(ONBOARDING_KEY, 'true');
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response(
         JSON.stringify({
@@ -113,6 +113,36 @@ describe('patient resume state', () => {
         { path: '/patient/trail-making', element: <div>Trail making task</div> },
       ],
       '/session/87654322',
+    );
+
+    await screen.findByText('Trail making task');
+    expect(router.state.location.pathname).toBe('/patient/trail-making');
+    expect(screen.queryByText('Welcome system check')).not.toBeInTheDocument();
+  });
+
+  it('treats legacy session-scoped onboarding as local onboarding complete', async () => {
+    localStorage.setItem(ONBOARDING_KEY, 'previous-session');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          sessionId: 'session-new',
+          linkToken: 'link-token-new',
+          sessionDate: '2026-04-25T12:00:00.000Z',
+          educationYears: 14,
+          patientAge: 72,
+          mocaVersion: '8.3',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    const router = renderWithProvider(
+      [
+        { path: '/session/:token', element: <SessionValidation /> },
+        { path: '/patient/welcome', element: <div>Welcome system check</div> },
+        { path: '/patient/trail-making', element: <div>Trail making task</div> },
+      ],
+      '/session/87654323',
     );
 
     await screen.findByText('Trail making task');

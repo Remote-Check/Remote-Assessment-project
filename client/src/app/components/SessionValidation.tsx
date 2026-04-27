@@ -4,8 +4,8 @@ import { Loader2, AlertTriangle, ArrowRight } from "lucide-react";
 import { useSession } from "../../hooks/useSession";
 import { hasCompletedPatientOnboarding, useAssessmentStore } from "../store/AssessmentContext";
 
-function getPatientStartPath(sessionId?: string | null): string {
-  return hasCompletedPatientOnboarding(sessionId) ? '/patient/trail-making' : '/patient/welcome';
+function getPatientStartPath(): string {
+  return hasCompletedPatientOnboarding() ? '/patient/trail-making' : '/patient/welcome';
 }
 
 export function SessionValidation() {
@@ -27,7 +27,7 @@ export function SessionValidation() {
 
     if (canResumeCurrentToken) {
       if (startedTokenRef.current === token) {
-        navigate(getPatientStartPath(state.id), { replace: true });
+        navigate(getPatientStartPath(), { replace: true });
         return;
       }
       navigate('/', { replace: true });
@@ -42,7 +42,7 @@ export function SessionValidation() {
     ) {
       startedTokenRef.current = token;
       startNewAssessment(session.sessionId, session.linkToken, session.scoringContext, session.startToken);
-      navigate(getPatientStartPath(session.sessionId), { replace: true });
+      navigate(getPatientStartPath(), { replace: true });
     }
   }, [
     session.status,

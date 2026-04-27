@@ -132,6 +132,6 @@ describe('PatientWelcome', () => {
 
     await screen.findByText('Trail task');
     expect(router.state.location.pathname).toBe('/patient/trail-making');
-    expect(localStorage.getItem(ONBOARDING_KEY)).toBe('session-1');
+    expect(localStorage.getItem(ONBOARDING_KEY)).toBe('true');
   });
 });
