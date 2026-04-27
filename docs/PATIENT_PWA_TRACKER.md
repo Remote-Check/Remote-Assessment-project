@@ -21,7 +21,7 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 | Phase | Owner | Status | Acceptance check | PR/link |
 |---|---|---|---|---|
 | PR #80 baseline | Codex | Done | Tracker exists and is linked from architecture docs. | #80 |
-| PR #80 review | User | Not Started | PR #80 checks are green and the branch is reviewed before merge. | #80 |
+| PR #80 review | User | Done | PR #80 merged to main on 2026-04-27. | #80 |
 | PWA shell | Codex | Done | Patient manifest, icons, metadata, manual service worker, surface flags, route gating, staging banner, and offline screen pass targeted checks. | #80 |
 | Install guidance | Codex | Done | Patient surface gives tablet/phone home-screen guidance without exposing clinician navigation. | `codex/patient-install-guidance` |
 | Real device shell QA | User | Not Started | Installed PWA tested on iPad/tablet and phone fallback. | TBD |
