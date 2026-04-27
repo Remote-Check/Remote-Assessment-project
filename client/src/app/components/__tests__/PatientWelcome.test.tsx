@@ -8,6 +8,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PatientWelcome } from '../PatientWelcome';
 import { AssessmentProvider } from '../../store/AssessmentContext';
 
+vi.mock('../../../lib/supabase', () => ({
+  edgeFn: (name: string) => `/functions/v1/${name}`,
+  edgeHeaders: () => ({ 'Content-Type': 'application/json' }),
+}));
+
 const STORAGE_KEY = 'moca_assessment_state';
 const ONBOARDING_KEY = 'moca_patient_onboarding_completed';
 
