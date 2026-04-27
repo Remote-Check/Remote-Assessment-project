@@ -2,7 +2,7 @@ import { ListenButton } from "./ListenButton";
 import { AudioRecorder } from "./AudioRecorder";
 import { useAssessmentStore } from "../store/AssessmentContext";
 
-const MEMORY_WORDS = ["פנים", "קטיפה", "כנסייה", "חרצית", "אדום"];
+const FALLBACK_MEMORY_WORDS = ["פנים", "קטיפה", "כנסייה", "חרצית", "אדום"];
 
 export function MemoryTask() {
   const { state, updateTaskData } = useAssessmentStore();
@@ -27,7 +27,7 @@ export function MemoryTask() {
         </div>
         <ListenButton 
           text="אקריא לך כעת רשימת מילים שעליך לזכור. הקשב היטב וכשאסיים, חזור על כל המילים שאתה זוכר, באיזה סדר שתרצה." 
-          pacedItems={MEMORY_WORDS}
+          pacedItems={FALLBACK_MEMORY_WORDS}
           size="lg" 
         />
       </div>
