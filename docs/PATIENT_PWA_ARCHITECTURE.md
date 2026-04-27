@@ -4,6 +4,8 @@ This document is the source of truth for the selected product direction: **the c
 
 Future developers and AI agents should not treat the patient journey as a desktop website. Patient UX, QA, and deployment work must assume touch/stylus devices first.
 
+Use `docs/PATIENT_PWA_TRACKER.md` as the shared implementation tracker for milestones, owners, status, and acceptance checks.
+
 ## Decision
 
 Use a separate patient PWA deployment from the same repo and backend.
@@ -123,11 +125,14 @@ For patient PWA work, run the relevant baseline checks plus explicit device-mode
 
 Record skipped PWA/device checks in the PR.
 
+Update `docs/PATIENT_PWA_TRACKER.md` whenever a PWA milestone starts, is blocked, or is completed.
+
 ## Version Control Rules
 
 - Use branches named for the surface, for example `codex/patient-pwa-manifest`, `codex/patient-pwa-deploy-split`, or `codex/patient-tablet-drawing`.
 - Do not mix clinician dashboard refactors with patient PWA install/deployment work unless the shared contract requires it.
 - Update this document, `JOURNEY.md`, and `docs/DEVELOPMENT_PROCESS.md` whenever the patient/clinician surface boundary changes.
+- Update `docs/PATIENT_PWA_TRACKER.md` whenever milestone ownership, status, or acceptance criteria changes.
 - Update `docs/AGENT_LEARNINGS.md` when a PWA bug or review finding creates a reusable rule.
 
 ## Non-Goals

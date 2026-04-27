@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router";
 import { Lock, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { getAssessmentResumePath, useAssessmentStore } from "../store/AssessmentContext";
+import { isPatientSurface } from "../surface";
 
 export function LandingHub() {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ export function LandingHub() {
     ? `${normalizedToken.slice(0, 4)}-${normalizedToken.slice(4)}`
     : normalizedToken;
   const isCompleteTestNumber = normalizedToken.length === 8;
+  const title = isPatientSurface ? "הערכה קוגניטיבית" : "Remote Check";
+  const subtitle = isPatientSurface ? "מבדק מרחוק" : "הערכה נוירופסיכולוגית ממוחשבת";
 
   const handleTokenSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +39,10 @@ export function LandingHub() {
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-black leading-tight">
-              Remote Check
+              {title}
             </h1>
             <p className="text-sm text-gray-500 font-medium">
-              הערכה נוירופסיכולוגית ממוחשבת
+              {subtitle}
             </p>
           </div>
         </div>
@@ -92,7 +95,7 @@ export function LandingHub() {
                 disabled={!isCompleteTestNumber}
                 className="w-full h-14 sm:h-16 bg-black text-white text-xl sm:text-2xl font-bold rounded-2xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-4 focus:ring-4 focus:ring-black/20 outline-none"
               >
-                התחל מבדק
+                התחלת המבדק
                 <ArrowLeft className="w-7 h-7" />
               </button>
             </div>
@@ -116,6 +119,7 @@ export function LandingHub() {
           )}
         </div>
 
+        {!isPatientSurface && (
         <div className="mt-4 text-center">
           <Link
             to="/clinician/auth"
@@ -125,6 +129,7 @@ export function LandingHub() {
             כניסה לקלינאים
           </Link>
         </div>
+        )}
       </div>
     </div>
   );

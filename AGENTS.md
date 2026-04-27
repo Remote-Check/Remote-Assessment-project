@@ -20,6 +20,7 @@ Canonical files:
 
 `JOURNEY.md` is the patient/clinician journey authority. Update it when browser, backend, status, scoring, notification, or review behavior changes.
 `docs/PATIENT_PWA_ARCHITECTURE.md` is the surface architecture authority. Clinician work is a website; patient work is a tablet/phone-first PWA.
+`docs/PATIENT_PWA_TRACKER.md` is the shared patient PWA implementation tracker. Update it when milestone status, ownership, or acceptance checks change.
 `docs/HEBREW_TERMINOLOGY.md` is the Hebrew UI terminology authority. Use it before changing patient-facing copy, clinician dashboard labels, status labels, task names, or review rubrics.
 `docs/DEVELOPMENT_PROCESS.md` is the provider-neutral engineering workflow. Supabase is the current MVP runtime; the app contract is the architecture boundary.
 `docs/AGENT_LEARNINGS.md` is the durable lessons file for future agents. Update it when PRs or review findings expose reusable engineering rules or recurring failure modes.
