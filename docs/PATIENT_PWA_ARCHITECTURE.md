@@ -55,30 +55,32 @@ Do not expose clinician navigation inside the installed patient PWA. Authenticat
 
 ## Implementation Phases
 
+Current status: Phase 1, Phase 2, and the Codex-owned Phase 3 hardening slices are implemented in the app and tracked in `docs/PATIENT_PWA_TRACKER.md`. Phase 4 remains a future decision gate, and real-device installed-PWA evidence is still required before clinical pilot use.
+
 ### Phase 1: Add PWA Readiness Without Backend Changes
 
-- Add patient PWA manifest and icons.
-- Add iOS home-screen metadata and Apple touch icon.
-- Add a conservative service worker that caches the static app shell only.
-- Keep Supabase API calls, signed URLs, audio, drawings, PHI, reports, and exports network-only.
-- Add install guidance for tablet/phone users.
-- Add PWA smoke tests and Chrome/mobile viewport QA.
+- Implemented: patient PWA manifest and icons.
+- Implemented: iOS home-screen metadata and Apple touch icon.
+- Implemented: conservative service worker that caches the static app shell only.
+- Implemented: Supabase API calls, signed URLs, audio, drawings, PHI, reports, and exports stay network-only.
+- Implemented: install guidance for tablet/phone users.
+- Implemented: PWA smoke tests and Chrome/mobile viewport QA.
 
 ### Phase 2: Split Deployment Targets
 
-- Configure separate patient and clinician build/deploy targets.
-- Give the patient deployment a PWA-specific `start_url`, name, icons, and route fallback.
-- Give the clinician deployment website-oriented metadata and no patient install prompt.
-- Keep backend Edge Function contracts shared.
-- Document environment variables and deployment commands for each surface.
+- Implemented: separate patient and clinician build/deploy targets.
+- Implemented: patient deployment has a PWA-specific `start_url`, name, icons, and route fallback.
+- Implemented: clinician deployment keeps website-oriented metadata and no patient install prompt.
+- Implemented: backend Edge Function contracts stay shared.
+- Implemented: environment variables and deployment commands are documented for each surface.
 
 ### Phase 3: Tablet-First Patient UX Hardening
 
-- Redesign every patient task for tablet/phone portrait and landscape.
-- Optimize drawing canvas for touch and stylus.
-- Prevent accidental scroll/zoom during drawing.
-- Keep task screens full-screen, single-purpose, and low-distraction.
-- Recheck Hebrew audio, microphone permission, local retry queue, and completion from installed PWA mode.
+- Implemented for current MVP tasks: tablet/phone portrait and landscape hardening.
+- Implemented: drawing canvas touch/stylus optimization.
+- Implemented: drawing surface avoids accidental scroll/zoom.
+- Implemented: task screens remain focused, single-purpose, and low-distraction.
+- Still required before clinical pilot: recheck Hebrew audio, microphone permission, local retry queue, resume, and completion from installed PWA mode on real devices.
 
 ### Phase 4: Decide Whether Native Wrapper Is Needed
 
