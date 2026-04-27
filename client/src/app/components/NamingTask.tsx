@@ -45,6 +45,8 @@ export function NamingTask() {
   const imageSrc = stimulusAsset?.signedUrl ?? null;
   const selectedAnswer = answers[currentAnimal.id];
   const isAnswered = !!selectedAnswer;
+  const answeredCount = namingItems.filter((item) => answers[item.id]).length;
+  const isComplete = answeredCount === namingItems.length;
 
   const handleSelect = (option: string) => {
     const nextAnswers = { ...answers, [currentAnimal.id]: option };
@@ -59,51 +61,66 @@ export function NamingTask() {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full min-w-0">
-      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-6 sm:mb-10">
+    <div className="mx-auto flex h-full w-full max-w-5xl min-w-0 flex-col">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <div className="text-gray-500 font-bold uppercase tracking-wider text-xs sm:text-sm mb-2 sm:mb-3">
-            משימת שיום · פריט {currentIndex + 1} מתוך 3
+            משימת שיום · פריט {currentIndex + 1} מתוך {namingItems.length}
           </div>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-black leading-tight">מה שם החיה בתמונה?</h2>
+          <h2 className="text-2xl font-extrabold leading-tight text-black sm:text-3xl">
+            מה שם החיה בתמונה?
+          </h2>
         </div>
         <ListenButton text="מה שם החיה בתמונה?" size="lg" />
       </div>
 
-      {/* Progress Pips */}
-      <div className="flex gap-2 mb-6 sm:mb-12">
-        {namingItems.map((_, i) => (
-          <div
-            key={i}
-              className={clsx(
-                "h-2 rounded-full transition-all duration-300",
-                i === currentIndex ? "w-12 bg-black" : "w-8",
-                i < (currentIndex || 0) ? "bg-gray-500" : "bg-gray-200"
-              )}
-            />
-          ))}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-5">
+        <div className="flex gap-2" aria-label="התקדמות פריטי השיום">
+          {namingItems.map((item, i) => {
+            const itemAnswered = !!answers[item.id];
+            const isCurrent = i === currentIndex;
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setCurrentIndex(i)}
+                disabled={!itemAnswered && !isCurrent}
+                aria-current={isCurrent ? "step" : undefined}
+                aria-label={`פריט ${i + 1}${itemAnswered ? " נבחרה תשובה" : ""}`}
+                className={clsx(
+                  "h-3 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600",
+                  isCurrent ? "w-12 bg-black" : "w-8",
+                  itemAnswered && !isCurrent ? "bg-gray-500" : "bg-gray-200",
+                  !itemAnswered && !isCurrent ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                )}
+              />
+            );
+          })}
+        </div>
+        <div className="rounded-full bg-gray-100 px-3 py-1 text-sm font-extrabold text-gray-700" aria-live="polite">
+          נבחרו {answeredCount} מתוך {namingItems.length}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-10 bg-gray-50 p-5 sm:p-10 rounded-2xl border border-gray-100 flex-1 min-h-[360px] sm:min-h-[500px]">
-        {/* Right half (RTL): Image */}
-        <div className="flex flex-col items-center justify-center gap-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-8">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 rounded-xl border border-gray-100 bg-gray-50 p-3 sm:rounded-2xl sm:p-5 md:grid-cols-[minmax(240px,0.85fr)_minmax(300px,1fr)] md:gap-5">
+        <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 rounded-xl border border-gray-100 bg-white p-3 shadow-sm sm:min-h-[260px] sm:p-5">
           {imageSrc ? (
             <img
               src={imageSrc}
-              alt="Animal outline"
-              className="w-full max-w-[360px] aspect-square object-contain rounded-lg shadow-inner grayscale contrast-125"
+              alt="תמונת חיה לזיהוי"
+              className="aspect-square w-full max-w-[260px] rounded-lg object-contain shadow-inner grayscale contrast-125 sm:max-w-[300px] lg:max-w-[320px]"
             />
           ) : !isLoading ? (
             <DevStimulusNotice className="w-full text-center" />
           ) : null}
         </div>
 
-        {/* Left half (RTL): Answers */}
-        <div className="flex flex-col gap-4 justify-center">
-          <div className="text-gray-500 font-medium mb-2 text-base sm:text-lg text-center">
+        <div className="flex min-w-0 flex-col justify-center gap-3 sm:gap-4">
+          <div className="text-center text-base font-medium text-gray-500 sm:text-lg">
             בחר תשובה, או אמור את השם בקול רם
           </div>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             {currentAnimal.options.map((option) => {
               const isSelected = selectedAnswer === option;
               
@@ -120,10 +137,11 @@ export function NamingTask() {
               return (
                 <button
                   key={option}
+                  type="button"
                   onClick={() => handleSelect(option)}
                   aria-pressed={isSelected}
                   className={clsx(
-                    "min-h-14 sm:min-h-[72px] rounded-xl text-xl sm:text-2xl font-bold flex items-center justify-between px-5 sm:px-8 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600",
+                    "relative flex min-h-14 items-center justify-between overflow-hidden rounded-xl px-5 text-lg font-bold transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 sm:min-h-16 sm:px-6 sm:text-xl",
                     btnClass
                   )}
                 >
@@ -134,14 +152,35 @@ export function NamingTask() {
             })}
           </div>
 
-          {isAnswered && currentIndex < namingItems.length - 1 && (
+          <div className="mt-2 flex flex-col gap-3 sm:mt-3 sm:flex-row sm:items-center sm:justify-between">
             <button
-              onClick={handleNext}
-              className="mt-8 py-5 rounded-xl bg-black text-white text-xl font-bold hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600"
+              type="button"
+              onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+              disabled={currentIndex === 0}
+              className="min-h-12 rounded-xl border border-gray-200 bg-white px-5 text-base font-extrabold text-gray-800 transition-colors hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600"
             >
-              לפריט הבא
+              לפריט הקודם
             </button>
-          )}
+
+            {currentIndex < namingItems.length - 1 && (
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={!isAnswered}
+                className="min-h-12 rounded-xl bg-black px-5 text-base font-extrabold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600"
+              >
+                לפריט הבא
+              </button>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-center text-sm font-extrabold text-gray-700" role="status" aria-live="polite">
+            {isComplete
+              ? "כל פריטי השיום נבחרו. אפשר להמשיך למשימה הבאה."
+              : isAnswered
+                ? "התשובה נשמרה. אפשר לעבור לפריט הבא."
+                : "בחר תשובה כדי להמשיך לפריט הבא."}
+          </div>
         </div>
       </div>
     </div>
