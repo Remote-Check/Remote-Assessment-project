@@ -115,12 +115,16 @@ Deno.test("handleStartSession stores normalized patient device context on start"
   };
   const session = {
     id: "session-1",
+    patient_id: "patient-1",
     link_token: "link-token",
     status: "pending",
     link_used_at: null,
     age_band: "70-74",
     education_years: 12,
     patient_age_years: 73,
+    patient_date_of_birth: "1952-04-28",
+    patient_gender: "female",
+    patient_dominant_hand: "right",
     moca_version: "8.3",
     assessment_language: "he",
   };
@@ -206,4 +210,171 @@ Deno.test("handleStartSession stores normalized patient device context on start"
     typeof (attempts[0]?.metadata as Record<string, unknown>).deviceContext,
     "undefined",
   );
+});
+
+Deno.test("handleStartSession backfills legacy session clinical context from patient profile", async () => {
+  const updates: Array<Record<string, unknown>> = [];
+  const attempts: Array<Record<string, unknown>> = [];
+  const fingerprint: StartAttemptFingerprint = {
+    source: "203.0.113.10",
+    ipHash: "ip-hash",
+    accessCodeHash: "code-hash",
+  };
+  const session = {
+    id: "session-legacy",
+    patient_id: "patient-legacy",
+    link_token: "link-token",
+    status: "pending",
+    link_used_at: null,
+    age_band: "70-74",
+    education_years: null,
+    patient_age_years: null,
+    patient_date_of_birth: null,
+    patient_gender: null,
+    patient_dominant_hand: null,
+    moca_version: "8.3",
+    assessment_language: "he",
+  };
+  const patient = {
+    date_of_birth: "1950-04-28",
+    gender: "male",
+    dominant_hand: "left",
+    education_years: 16,
+    language: "he",
+  };
+  const supabase = {
+    from: (table: string) => {
+      const query = {
+        select: () => query,
+        eq: () => query,
+        in: () => query,
+        is: () => query,
+        update: (payload: Record<string, unknown>) => {
+          updates.push(payload);
+          return query;
+        },
+        single: async () => ({
+          data: table === "patients" ? patient : session,
+          error: null,
+        }),
+        maybeSingle: async () => ({ data: { id: session.id }, error: null }),
+      };
+      return query;
+    },
+  };
+
+  const response = await handleStartSession(
+    new Request("https://example.test/functions/v1/start-session", {
+      method: "POST",
+      body: JSON.stringify({ token: "12345678" }),
+      headers: { "content-type": "application/json" },
+    }),
+    {
+      createSupabaseClient: () => supabase,
+      buildStartAttemptFingerprint: async () => fingerprint,
+      checkStartRateLimit: async () => ({
+        allowed: true,
+        ipFailures: 0,
+        codeFailures: 0,
+      }),
+      recordStartAttempt: async (_supabase, input) => {
+        attempts.push(input);
+      },
+      writeAuditEvent: async () => undefined,
+      now: () => "2026-04-28T00:00:00.000Z",
+    },
+  );
+
+  assertEquals(response.status, 200);
+  assertEquals(updates.length, 1);
+  assertEquals(updates[0]?.education_years, 16);
+  assertEquals(updates[0]?.patient_age_years, 76);
+  assertEquals(updates[0]?.patient_date_of_birth, "1950-04-28");
+  assertEquals(updates[0]?.patient_gender, "male");
+  assertEquals(updates[0]?.patient_dominant_hand, "left");
+  const body = await response.json();
+  assertEquals(body.educationYears, 16);
+  assertEquals(body.patientAge, 76);
+  assertEquals(attempts.length, 1);
+  assertEquals(attempts[0]?.success, true);
+});
+
+Deno.test("handleStartSession returns 409 before update when clinical context cannot be resolved", async () => {
+  const updates: Array<Record<string, unknown>> = [];
+  const attempts: Array<Record<string, unknown>> = [];
+  const fingerprint: StartAttemptFingerprint = {
+    source: "203.0.113.10",
+    ipHash: "ip-hash",
+    accessCodeHash: "code-hash",
+  };
+  const session = {
+    id: "session-incomplete",
+    patient_id: "patient-incomplete",
+    link_token: "link-token",
+    status: "pending",
+    link_used_at: null,
+    age_band: "70-74",
+    education_years: null,
+    patient_age_years: null,
+    patient_date_of_birth: null,
+    patient_gender: null,
+    patient_dominant_hand: null,
+    moca_version: "8.3",
+    assessment_language: "he",
+  };
+  const patient = {
+    date_of_birth: null,
+    gender: null,
+    dominant_hand: null,
+    education_years: null,
+    language: "he",
+  };
+  const supabase = {
+    from: (table: string) => {
+      const query = {
+        select: () => query,
+        eq: () => query,
+        in: () => query,
+        is: () => query,
+        update: (payload: Record<string, unknown>) => {
+          updates.push(payload);
+          return query;
+        },
+        single: async () => ({
+          data: table === "patients" ? patient : session,
+          error: null,
+        }),
+        maybeSingle: async () => ({ data: { id: session.id }, error: null }),
+      };
+      return query;
+    },
+  };
+
+  const response = await handleStartSession(
+    new Request("https://example.test/functions/v1/start-session", {
+      method: "POST",
+      body: JSON.stringify({ token: "12345678" }),
+      headers: { "content-type": "application/json" },
+    }),
+    {
+      createSupabaseClient: () => supabase,
+      buildStartAttemptFingerprint: async () => fingerprint,
+      checkStartRateLimit: async () => ({
+        allowed: true,
+        ipFailures: 0,
+        codeFailures: 0,
+      }),
+      recordStartAttempt: async (_supabase, input) => {
+        attempts.push(input);
+      },
+      writeAuditEvent: async () => undefined,
+      now: () => "2026-04-28T00:00:00.000Z",
+    },
+  );
+
+  assertEquals(response.status, 409);
+  assertEquals(updates.length, 0);
+  assertEquals(attempts.length, 1);
+  assertEquals(attempts[0]?.success, false);
+  assertEquals(attempts[0]?.failureReason, "missing_scoring_context");
 });
