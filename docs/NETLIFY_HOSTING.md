@@ -35,6 +35,14 @@ VITE_SUPABASE_ANON_KEY=<hosted-supabase-anon-key>
 
 Do not set service-role keys in Netlify. The browser app needs only the anon key.
 
+Set the matching hosted Supabase Edge Function CORS secret before browser QA:
+
+```bash
+supabase secrets set ALLOWED_ORIGINS=https://<clinician-host>,https://<patient-staging-host> --project-ref <hosted-project-ref>
+```
+
+Without `ALLOWED_ORIGINS`, hosted browser calls to `create-session`, `start-session`, and the other Edge Functions fail CORS preflight even when the Netlify shell loads.
+
 Optional after the patient staging URL is known:
 
 ```bash
@@ -103,10 +111,10 @@ After both Netlify URLs exist, run the hosted smoke:
 
 ```bash
 cd client
-PATIENT_STAGING_URL=https://<patient-staging-host> CLINICIAN_STAGING_URL=https://<clinician-host> npm run e2e:hosted-pwa
+HOSTED_SUPABASE_URL=https://<hosted-project-ref>.supabase.co PATIENT_STAGING_URL=https://<patient-staging-host> CLINICIAN_STAGING_URL=https://<clinician-host> npm run e2e:hosted-pwa
 ```
 
-The hosted smoke checks HTTPS, patient staging banner, manifest, service worker, manifest icons, clinician-route redirects on the patient host, and absence of patient PWA assets on the clinician host.
+The hosted smoke checks HTTPS, patient staging banner, manifest, service worker, manifest icons, clinician-route redirects on the patient host, absence of patient PWA assets on the clinician host, and hosted Edge Function CORS for the patient and clinician origins.
 
 ## Pilot Handoff
 

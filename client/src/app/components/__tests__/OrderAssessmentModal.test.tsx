@@ -88,4 +88,16 @@ describe('OrderAssessmentModal', () => {
       }),
     );
   });
+
+  it('shows an actionable message when session creation cannot reach the Edge Function', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('Load failed'));
+
+    render(<OrderAssessmentModal open onClose={vi.fn()} patient={completePatient} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'צור מספר מבדק' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('לא ניתן להתחבר לשרת פתיחת המבדקים');
+    });
+  });
 });

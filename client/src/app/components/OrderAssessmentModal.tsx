@@ -21,6 +21,25 @@ export interface OrderAssessmentModalProps {
   onOrdered?: () => void;
 }
 
+async function readJsonPayload(res: Response): Promise<Record<string, unknown> | null> {
+  try {
+    const payload = await res.json();
+    return payload && typeof payload === "object" && !Array.isArray(payload)
+      ? payload as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function orderAssessmentErrorMessage(err: unknown): string {
+  if (!(err instanceof Error)) return "פתיחת מבדק נכשלה.";
+  if (err.name === "TypeError" || /failed to fetch|load failed|network/i.test(err.message)) {
+    return "לא ניתן להתחבר לשרת פתיחת המבדקים. בדוק חיבור ונסה שוב. אם הבעיה חוזרת, יש לבדוק את הגדרות Supabase/Netlify.";
+  }
+  return err.message || "פתיחת מבדק נכשלה.";
+}
+
 export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: OrderAssessmentModalProps) {
   const [assessmentType, setAssessmentType] = useState("moca");
   const [language, setLanguage] = useState(patient.language ?? "he");
@@ -81,12 +100,17 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
         }),
       });
 
-      const payload = await res.json();
+      const payload = await readJsonPayload(res);
       if (!res.ok) {
-        throw new Error(payload?.error || "פתיחת מבדק נכשלה.");
+        throw new Error(typeof payload?.error === "string" ? payload.error : "פתיחת מבדק נכשלה.");
       }
 
-      const testNumber = payload.testNumber ?? payload.accessCode;
+      const testNumber =
+        typeof payload?.testNumber === "string"
+          ? payload.testNumber
+          : typeof payload?.accessCode === "string"
+            ? payload.accessCode
+            : "";
       if (!/^\d{8}$/.test(testNumber)) {
         throw new Error("מספר מבדק לא התקבל מהשרת.");
       }
@@ -94,7 +118,7 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
       setResult({ testNumber });
       onOrdered?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "פתיחת מבדק נכשלה.");
+      setError(orderAssessmentErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -193,7 +217,7 @@ export function OrderAssessmentModal({ open, onClose, patient, onOrdered }: Orde
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 font-bold">
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 font-bold" role="alert">
                 {error}
               </div>
             )}

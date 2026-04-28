@@ -287,11 +287,11 @@ async function runPatientClickThrough(
   await drawOnCanvas(page);
   await clickContinue(page);
 
-  await page.getByRole('button', { name: 'סוס' }).click();
+  await page.getByRole('textbox', { name: 'שם החיה' }).fill('סוס');
   await page.getByRole('button', { name: 'לפריט הבא' }).click();
-  await page.getByRole('button', { name: 'נמר' }).click();
+  await page.getByRole('textbox', { name: 'שם החיה' }).fill('נמר');
   await page.getByRole('button', { name: 'לפריט הבא' }).click();
-  await page.getByRole('button', { name: 'ברווז' }).click();
+  await page.getByRole('textbox', { name: 'שם החיה' }).fill('ברווז');
   await clickContinue(page);
 
   await recordAudio(page);

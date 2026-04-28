@@ -165,6 +165,9 @@ function cleanupLocalSessionArtifacts(state: AssessmentState): void {
 }
 
 function shouldDeferBackendSync(taskName: keyof AssessmentState['tasks'], data: any): boolean {
+  if (data && typeof data === 'object' && !Array.isArray(data) && data.skipped === true) {
+    return false;
+  }
   if (taskName === 'naming') {
     const answers = data?.answers;
     return !answers || typeof answers !== 'object' || Object.keys(answers).length < 3;
