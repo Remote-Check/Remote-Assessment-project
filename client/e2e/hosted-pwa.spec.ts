@@ -55,7 +55,8 @@ test.describe('hosted patient PWA staging', () => {
     await page.goto(new URL('/#/clinician/auth', clinicianUrl).href);
 
     await expect(page).toHaveTitle('Remote Check');
-    await expect(page.getByRole('heading', { name: /כניסה לקלינאים/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'פורטל קלינאים' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /כניסה לקלינאים/ })).toBeVisible();
 
     const manifest = await request.get(new URL('/patient.webmanifest', clinicianUrl).href);
     await expectNotPatientAsset(manifest, ['"Remote Assessment"', '"display"', '"standalone"']);
