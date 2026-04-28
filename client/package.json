@@ -18,6 +18,7 @@
     "preview:patient:staging": "vite preview --outDir dist/patient-staging",
     "preview:clinician": "vite preview --outDir dist/clinician",
     "verify:surface-builds": "node ../scripts/verify-surface-builds.mjs",
+    "verify:patient-pwa-readiness": "node ../scripts/patient-pwa-readiness.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
