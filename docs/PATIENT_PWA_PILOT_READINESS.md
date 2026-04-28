@@ -71,6 +71,8 @@ Keep licensed PDFs, extracted images, and service-role keys out of Git.
 
 Hosted staging is not complete until a shared patient staging URL exists and is connected to the intended Supabase project.
 
+For Netlify setup, use [NETLIFY_HOSTING.md](NETLIFY_HOSTING.md).
+
 Required staging checks:
 
 - Patient staging host serves `client/dist/patient-staging`.

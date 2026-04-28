@@ -70,6 +70,17 @@ Recommended cache policy:
 | `/patient.webmanifest` | No-cache or short TTL. |
 | Supabase API, signed URLs, PDF, CSV, audio, drawings | Network-only; do not route through an app-shell cache. |
 
+## Netlify
+
+Use [NETLIFY_HOSTING.md](NETLIFY_HOSTING.md) for the provider-specific setup. The current Netlify plan uses two separate sites from the same GitHub repository:
+
+| Netlify site | Package directory | Publish directory |
+|---|---|---|
+| Patient PWA staging | `deploy/netlify/patient-staging` | `client/dist/patient-staging` |
+| Clinician website | `deploy/netlify/clinician` | `client/dist/clinician` |
+
+Leave Base directory unset for both sites. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Netlify with the Builds scope.
+
 ## Verification
 
 Before publishing a patient build:

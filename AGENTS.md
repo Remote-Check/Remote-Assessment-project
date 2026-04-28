@@ -11,18 +11,20 @@ Canonical files:
 3. [JOURNEY.md](JOURNEY.md)
 4. [docs/PATIENT_PWA_ARCHITECTURE.md](docs/PATIENT_PWA_ARCHITECTURE.md)
 5. [docs/PATIENT_PWA_DEPLOYMENT.md](docs/PATIENT_PWA_DEPLOYMENT.md)
-6. [docs/PATIENT_PWA_PILOT_READINESS.md](docs/PATIENT_PWA_PILOT_READINESS.md)
-7. [docs/HEBREW_TERMINOLOGY.md](docs/HEBREW_TERMINOLOGY.md)
-8. [CONTEXT.md](CONTEXT.md)
-9. [docs/AGENT_LEARNINGS.md](docs/AGENT_LEARNINGS.md)
-10. [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
-11. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
-12. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
-13. [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md)
+6. [docs/NETLIFY_HOSTING.md](docs/NETLIFY_HOSTING.md)
+7. [docs/PATIENT_PWA_PILOT_READINESS.md](docs/PATIENT_PWA_PILOT_READINESS.md)
+8. [docs/HEBREW_TERMINOLOGY.md](docs/HEBREW_TERMINOLOGY.md)
+9. [CONTEXT.md](CONTEXT.md)
+10. [docs/AGENT_LEARNINGS.md](docs/AGENT_LEARNINGS.md)
+11. [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
+12. [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md)
+13. [docs/STIMULI_ASSET_RUNBOOK.md](docs/STIMULI_ASSET_RUNBOOK.md)
+14. [docs/SUPABASE_RECONCILIATION.md](docs/SUPABASE_RECONCILIATION.md)
 
 `JOURNEY.md` is the patient/clinician journey authority. Update it when browser, backend, status, scoring, notification, or review behavior changes.
 `docs/PATIENT_PWA_ARCHITECTURE.md` is the surface architecture authority. Clinician work is a website; patient work is a tablet/phone-first PWA.
 `docs/PATIENT_PWA_DEPLOYMENT.md` is the patient/clinician frontend deployment split authority. Use it before changing surface build scripts, output directories, hosting fallbacks, or PWA cache headers.
+`docs/NETLIFY_HOSTING.md` is the Netlify provider runbook for the patient staging and clinician hosts.
 `docs/PATIENT_PWA_PILOT_READINESS.md` is the patient PWA clinical-pilot readiness checklist. Use it before marking staging, licensed stimuli, installed-PWA, or phone fallback checks complete.
 `docs/PATIENT_PWA_TRACKER.md` is the shared patient PWA implementation tracker. Update it when milestone status, ownership, or acceptance checks change.
 `docs/HEBREW_TERMINOLOGY.md` is the Hebrew UI terminology authority. Use it before changing patient-facing copy, clinician dashboard labels, status labels, task names, or review rubrics.
