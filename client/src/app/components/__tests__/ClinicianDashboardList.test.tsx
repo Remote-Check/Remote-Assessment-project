@@ -77,7 +77,74 @@ describe('ClinicianDashboardList', () => {
     expect(screen.getAllByText('דורש סקירה').length).toBeGreaterThan(0);
     expect(screen.queryByText('ציון MoCA ממוצע')).not.toBeInTheDocument();
     expect(screen.getByText('שינוי בציון MoCA לאורך זמן')).toBeInTheDocument();
+    expect(screen.getByText('0 מבדקים סופיים')).toBeInTheDocument();
+    expect(screen.getByText('אין עדיין מבדקים סופיים להצגת שינוי בציון.')).toBeInTheDocument();
     expect(selectMock).toHaveBeenCalledWith(expect.not.stringContaining('full_name'));
     await waitFor(() => expect(screen.queryByText('טוען...')).not.toBeInTheDocument());
+  });
+
+  it('renders the score trend chart from completed final scores only', async () => {
+    orderMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'patient-new',
+          case_id: 'CASE-NEW',
+          created_at: '2026-04-26T12:00:00.000Z',
+          sessions: [
+            {
+              id: 'session-review',
+              status: 'awaiting_review',
+              created_at: '2026-04-27T09:00:00.000Z',
+              scoring_reports: {
+                total_adjusted: 30,
+                total_score: 30,
+                total_provisional: true,
+                needs_review: true,
+                pending_review_count: 1,
+              },
+            },
+            {
+              id: 'session-new-final',
+              status: 'completed',
+              created_at: '2026-04-26T12:05:00.000Z',
+              scoring_reports: {
+                total_adjusted: 26,
+                total_score: 26,
+                total_provisional: false,
+                needs_review: false,
+                pending_review_count: 0,
+              },
+            },
+          ],
+        },
+        {
+          id: 'patient-old',
+          case_id: 'CASE-OLD',
+          created_at: '2026-04-24T12:00:00.000Z',
+          sessions: [
+            {
+              id: 'session-old-final',
+              status: 'completed',
+              created_at: '2026-04-24T12:05:00.000Z',
+              scoring_reports: {
+                total_adjusted: 24,
+                total_score: 24,
+                total_provisional: false,
+                needs_review: false,
+                pending_review_count: 0,
+              },
+            },
+          ],
+        },
+      ],
+      error: null,
+    });
+
+    renderDashboardList();
+
+    expect(await screen.findByText('2 מבדקים סופיים')).toBeInTheDocument();
+    expect(screen.getAllByText('26/30').length).toBeGreaterThan(0);
+    expect(screen.getByRole('img', { name: 'שינוי ציון MoCA מ-24 ל-26' })).toBeInTheDocument();
+    expect(screen.queryByText('אין עדיין מבדקים סופיים להצגת שינוי בציון.')).not.toBeInTheDocument();
   });
 });
