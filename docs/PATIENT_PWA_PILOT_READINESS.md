@@ -13,6 +13,7 @@ npm run lint
 npm run build -- --debug
 npm run build:surfaces
 npm run verify:surface-builds
+npm run verify:patient-pwa-readiness
 npm run e2e:browser
 ```
 
@@ -38,6 +39,15 @@ The patient PWA smoke gate checks:
 - `patient.webmanifest` is served.
 - `patient-sw.js` is served.
 - Clinician auth route redirects back to patient entry in patient-surface mode.
+
+To print a combined local/external readiness report after building surfaces:
+
+```bash
+cd client
+npm run verify:patient-pwa-readiness
+```
+
+The command fails only for broken local build outputs by default. It reports hosted staging, licensed stimuli, and real-device checks as `blocked` or `manual` until the required external evidence is available. Use `node ../scripts/patient-pwa-readiness.mjs --fail-on-blocked` when a release process should fail while external gates remain blocked.
 
 ## Licensed Stimuli Gate
 

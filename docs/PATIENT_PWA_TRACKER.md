@@ -30,6 +30,7 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 | UX hardening: preflight + drawing | Codex | Done | Preflight and drawing tasks fit tablet/phone viewports and drawing is stable with finger/stylus. | `codex/patient-tablet-drawing` |
 | UX hardening: audio/speech tasks | Codex | Done | Generated Hebrew speech and audio capture work on tablet/phone viewports. | `codex/patient-audio-speech` |
 | UX hardening: simple input tasks | Codex | Done | Naming task fits phone/tablet viewports with local item progress, guarded next-item navigation, and answer revisit controls. | `codex/patient-simple-inputs` |
+| Readiness reporting | Codex | Done | Local command reports patient/clinician build readiness and marks hosted staging, licensed stimuli, and real-device gates as blocked/manual until external evidence exists. | `codex/patient-readiness-report` |
 | Pilot readiness | Both | Blocked | Automated readiness gates exist; shared hosted staging, licensed stimuli verification, iPad/tablet install, and phone fallback checks still need external execution. | `codex/patient-pilot-readiness` |
 
 ## Current Shell Scope
@@ -50,9 +51,20 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 - Capture explicit device type and orientation at patient start so phone/tablet fallback use is visible in clinician detail, PDF, and CSV exports.
 - Flag drawing reviews captured on phones so clinicians account for small-screen touch input while scoring.
 - Show home-screen guidance on patient entry unless the PWA is already running in standalone mode.
+- Use `npm run verify:patient-pwa-readiness` after `npm run build:surfaces` to print local readiness status and the remaining external blocks.
 - Use `docs/PATIENT_PWA_PILOT_READINESS.md` for the final staging, licensed-stimuli, installed-PWA, and phone fallback gates before clinical pilot use.
 
 ## Latest Verification
+
+2026-04-28 Codex readiness-report verification:
+
+- `cd client && npm run build:surfaces`
+- `cd client && npm run verify:surface-builds`
+- `cd client && npm run verify:patient-pwa-readiness`
+- `node --check scripts/patient-pwa-readiness.mjs`
+- `node scripts/patient-pwa-readiness.mjs --json`
+- `cd client && npm run lint`
+- `cd client && npm run build -- --debug`
 
 2026-04-28 Codex phone-drawing-review verification:
 
