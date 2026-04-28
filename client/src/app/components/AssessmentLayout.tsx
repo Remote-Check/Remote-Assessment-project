@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, useLocation } from "react-router";
+import { Navigate, Outlet, useNavigate, useLocation } from "react-router";
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAssessmentStore } from "../store/AssessmentContext";
@@ -142,6 +142,10 @@ function hasAudioEvidence(data: unknown): boolean {
 
 function taskHasEvidence(taskKey: TaskKey | undefined, tasks: ReturnType<typeof useAssessmentStore>["state"]["tasks"]): boolean {
   if (!taskKey) return true;
+  const taskData = tasks[taskKey];
+  if (taskData && typeof taskData === "object" && !Array.isArray(taskData) && (taskData as { skipped?: unknown }).skipped === true) {
+    return true;
+  }
 
   switch (taskKey) {
     case "trailMaking":
@@ -162,7 +166,7 @@ function taskHasEvidence(taskKey: TaskKey | undefined, tasks: ReturnType<typeof 
 export function AssessmentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { state, setLastPath, taskSaveStatus, retryFailedSaves } = useAssessmentStore();
+  const { state, setLastPath, updateTaskData, taskSaveStatus, retryFailedSaves, hasInProgressAssessment } = useAssessmentStore();
   const mocaVersion = state.scoringContext?.mocaVersion ?? "8.3";
   const [validation, setValidation] = useState<{ path: string; message: string } | null>(null);
   const currentPath = location.pathname.split('/').pop() ?? "patient";
@@ -174,7 +178,7 @@ export function AssessmentLayout() {
   );
   const currentSaveStatus = currentStepConfig.taskKey ? taskSaveStatus[currentStepConfig.taskKey] : undefined;
   const saveBlocksContinue = currentSaveStatus?.status === "saving" || currentSaveStatus?.status === "error";
-  const canContinue = hasEvidence && !saveBlocksContinue;
+  const canContinue = !saveBlocksContinue;
   const isEndScreen = currentPath === "end";
 
   useEffect(() => {
@@ -183,13 +187,6 @@ export function AssessmentLayout() {
   }, [location.pathname, setLastPath]);
 
   const handleNext = () => {
-    if (!hasEvidence) {
-      setValidation({
-        path: location.pathname,
-        message: currentStepConfig.incompleteMessage ?? "יש להשלים את המשימה לפני מעבר למשימה הבאה.",
-      });
-      return;
-    }
     if (currentSaveStatus?.status === "saving") {
       setValidation({
         path: location.pathname,
@@ -205,6 +202,13 @@ export function AssessmentLayout() {
       });
       return;
     }
+    if (!hasEvidence && currentStepConfig.taskKey) {
+      updateTaskData(currentStepConfig.taskKey, {
+        skipped: true,
+        skippedAt: new Date().toISOString(),
+        reason: "no_evidence",
+      });
+    }
     setValidation(null);
     navigate(currentStepConfig.next);
   };
@@ -212,6 +216,10 @@ export function AssessmentLayout() {
   const progressPercent = (Math.min(currentStep, totalSteps) / totalSteps) * 100;
   const validationMessage = validation?.path === location.pathname ? validation.message : null;
   const continueStateId = validationMessage || currentSaveStatus ? "continue-state" : undefined;
+
+  if (!hasInProgressAssessment && !isEndScreen) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <StimuliManifestProvider>
@@ -324,7 +332,7 @@ export function AssessmentLayout() {
                 </>
               ) : (
                 <>
-                  <span>המשך</span>
+                  <span>{hasEvidence ? "המשך" : "דלג והמשך"}</span>
                   <ArrowLeft className="w-6 h-6" />
                 </>
               )}

@@ -35,18 +35,19 @@ describe('NamingTask', () => {
     updateTaskData.mockClear();
   });
 
-  it('confirms the selected answer without revealing correctness', async () => {
+  it('records typed answers without presenting answer choices or revealing correctness', async () => {
     render(<NamingTask />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'חמור' }));
+    expect(screen.queryByRole('button', { name: 'סוס' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'חמור' })).not.toBeInTheDocument();
 
-    expect(screen.getByRole('button', { name: /חמור/ })).toHaveTextContent('נבחר');
-    expect(screen.getByRole('button', { name: 'סוס' })).not.toHaveTextContent('נבחר');
+    await userEvent.type(screen.getByRole('textbox', { name: 'שם החיה' }), 'סוס');
+
     expect(screen.getByText('נבחרו 1 מתוך 3')).toBeInTheDocument();
     expect(screen.getByText('התשובה נשמרה. אפשר לעבור לפריט הבא.')).toBeInTheDocument();
     expect(screen.queryByText(/נכון|שגוי/)).not.toBeInTheDocument();
     expect(updateTaskData).toHaveBeenCalledWith('naming', {
-      answers: { 'item-1': 'חמור' },
+      answers: { 'item-1': 'סוס' },
     });
   });
 
@@ -55,14 +56,15 @@ describe('NamingTask', () => {
 
     expect(screen.getByRole('button', { name: 'לפריט הבא' })).toBeDisabled();
 
-    await userEvent.click(screen.getByRole('button', { name: 'חמור' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'שם החיה' }), 'חמור');
     await userEvent.click(screen.getByRole('button', { name: 'לפריט הבא' }));
 
     expect(screen.getByText('משימת שיום · פריט 2 מתוך 3')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'נמר' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'שם החיה' }), 'נמר');
     await userEvent.click(screen.getByRole('button', { name: 'לפריט הקודם' }));
-    await userEvent.click(screen.getByRole('button', { name: 'סוס' }));
+    await userEvent.clear(screen.getByRole('textbox', { name: 'שם החיה' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'שם החיה' }), 'סוס');
 
     expect(updateTaskData).toHaveBeenLastCalledWith('naming', {
       answers: { 'item-1': 'סוס', 'item-2': 'נמר' },
@@ -72,13 +74,13 @@ describe('NamingTask', () => {
   it('announces completion after all three naming items are selected', async () => {
     render(<NamingTask />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'חמור' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'שם החיה' }), 'סוס');
     await userEvent.click(screen.getByRole('button', { name: 'לפריט הבא' }));
-    await userEvent.click(screen.getByRole('button', { name: 'נמר' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'שם החיה' }), 'נמר');
     await userEvent.click(screen.getByRole('button', { name: 'לפריט הבא' }));
-    await userEvent.click(screen.getByRole('button', { name: 'ברווז' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'שם החיה' }), 'ברווז');
 
     expect(screen.getByText('נבחרו 3 מתוך 3')).toBeInTheDocument();
-    expect(screen.getByText('כל פריטי השיום נבחרו. אפשר להמשיך למשימה הבאה.')).toBeInTheDocument();
+    expect(screen.getByText('כל פריטי השיום נרשמו. אפשר להמשיך למשימה הבאה.')).toBeInTheDocument();
   });
 });

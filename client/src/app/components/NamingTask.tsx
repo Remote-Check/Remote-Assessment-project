@@ -8,25 +8,23 @@ import { DEFAULT_MOCA_VERSION, type MocaVersion } from "../../lib/scoring/moca-c
 interface NamingItem {
   id: "item-1" | "item-2" | "item-3";
   assetId: "item-1" | "item-2" | "item-3";
-  name: string;
-  options: string[];
 }
 
 const NAMING_ITEMS_BY_VERSION: Record<MocaVersion, NamingItem[]> = {
   "8.1": [
-    { id: "item-1", assetId: "item-1", name: "אריה", options: ["נמר", "אריה", "כלב", "חתול"] },
-    { id: "item-2", assetId: "item-2", name: "קרנף", options: ["פיל", "קרנף", "היפופוטם", "זברה"] },
-    { id: "item-3", assetId: "item-3", name: "גמל", options: ["סוס", "גמל", "פרד", "שור"] },
+    { id: "item-1", assetId: "item-1" },
+    { id: "item-2", assetId: "item-2" },
+    { id: "item-3", assetId: "item-3" },
   ],
   "8.2": [
-    { id: "item-1", assetId: "item-1", name: "נחש", options: ["נחש", "תולעת", "לטאה", "צב"] },
-    { id: "item-2", assetId: "item-2", name: "פיל", options: ["קרנף", "פיל", "היפופוטם", "גמל"] },
-    { id: "item-3", assetId: "item-3", name: "תנין", options: ["לטאה", "תנין", "נחש", "צב"] },
+    { id: "item-1", assetId: "item-1" },
+    { id: "item-2", assetId: "item-2" },
+    { id: "item-3", assetId: "item-3" },
   ],
   "8.3": [
-    { id: "item-1", assetId: "item-1", name: "סוס", options: ["חמור", "פרד", "סוס", "גמל"] },
-    { id: "item-2", assetId: "item-2", name: "נמר", options: ["אריה", "נמר", "ברדלס", "חתול"] },
-    { id: "item-3", assetId: "item-3", name: "ברווז", options: ["אווז", "תרנגול", "ברווז", "ברבור"] },
+    { id: "item-1", assetId: "item-1" },
+    { id: "item-2", assetId: "item-2" },
+    { id: "item-3", assetId: "item-3" },
   ],
 };
 
@@ -44,12 +42,11 @@ export function NamingTask() {
   const stimulusAsset = getAsset("moca-naming", currentAnimal.assetId);
   const imageSrc = stimulusAsset?.signedUrl ?? null;
   const selectedAnswer = answers[currentAnimal.id];
-  const isAnswered = !!selectedAnswer;
   const answeredCount = namingItems.filter((item) => answers[item.id]).length;
   const isComplete = answeredCount === namingItems.length;
 
-  const handleSelect = (option: string) => {
-    const nextAnswers = { ...answers, [currentAnimal.id]: option };
+  const handleAnswerChange = (answer: string) => {
+    const nextAnswers = { ...answers, [currentAnimal.id]: answer };
     setAnswers(nextAnswers);
     updateTaskData('naming', { answers: nextAnswers });
   };
@@ -118,38 +115,22 @@ export function NamingTask() {
 
         <div className="flex min-w-0 flex-col justify-center gap-3 sm:gap-4">
           <div className="text-center text-base font-medium text-gray-500 sm:text-lg">
-            בחר תשובה, או אמור את השם בקול רם
+            כתוב את שם החיה כפי שנאמר
           </div>
           <div className="grid grid-cols-1 gap-3 sm:gap-4">
-            {currentAnimal.options.map((option) => {
-              const isSelected = selectedAnswer === option;
-              
-              let btnClass = "bg-white border-2 border-gray-200 text-gray-800 hover:border-black";
-              
-              if (isAnswered) {
-                if (isSelected) {
-                  btnClass = "bg-blue-50 border-blue-600 text-blue-950 shadow-[0_0_0_3px_rgba(37,99,235,0.18)]";
-                } else {
-                  btnClass = "bg-white border-gray-100 text-gray-500";
-                }
-              }
-
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => handleSelect(option)}
-                  aria-pressed={isSelected}
-                  className={clsx(
-                    "relative flex min-h-14 items-center justify-between overflow-hidden rounded-xl px-5 text-lg font-bold transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600 sm:min-h-16 sm:px-6 sm:text-xl",
-                    btnClass
-                  )}
-                >
-                  <span>{option}</span>
-                  {isSelected && <span className="text-base sm:text-lg font-extrabold text-blue-800">נבחר</span>}
-                </button>
-              );
-            })}
+            <label className="sr-only" htmlFor={`naming-answer-${currentAnimal.id}`}>
+              שם החיה
+            </label>
+            <input
+              id={`naming-answer-${currentAnimal.id}`}
+              type="text"
+              dir="rtl"
+              value={selectedAnswer ?? ""}
+              onChange={(event) => handleAnswerChange(event.target.value)}
+              className="min-h-16 rounded-xl border-2 border-gray-200 bg-white px-5 text-center text-2xl font-extrabold text-gray-950 outline-none transition-colors focus:border-black focus:ring-4 focus:ring-black/10 sm:min-h-20 sm:px-6 sm:text-3xl"
+              autoComplete="off"
+              inputMode="text"
+            />
           </div>
 
           <div className="mt-2 flex flex-col gap-3 sm:mt-3 sm:flex-row sm:items-center sm:justify-between">
@@ -166,7 +147,7 @@ export function NamingTask() {
               <button
                 type="button"
                 onClick={handleNext}
-                disabled={!isAnswered}
+                disabled={!selectedAnswer?.trim()}
                 className="min-h-12 rounded-xl bg-black px-5 text-base font-extrabold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600"
               >
                 לפריט הבא
@@ -176,10 +157,10 @@ export function NamingTask() {
 
           <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-center text-sm font-extrabold text-gray-700" role="status" aria-live="polite">
             {isComplete
-              ? "כל פריטי השיום נבחרו. אפשר להמשיך למשימה הבאה."
-              : isAnswered
+              ? "כל פריטי השיום נרשמו. אפשר להמשיך למשימה הבאה."
+              : selectedAnswer?.trim()
                 ? "התשובה נשמרה. אפשר לעבור לפריט הבא."
-                : "בחר תשובה כדי להמשיך לפריט הבא."}
+                : "כתוב תשובה כדי להמשיך לפריט הבא."}
           </div>
         </div>
       </div>

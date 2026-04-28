@@ -178,6 +178,7 @@ Required remote secret names for current/future MVP behavior:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `ALLOWED_ORIGINS`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 
@@ -188,6 +189,14 @@ Legacy/future SMS secrets may exist but are not active in the MVP browser flow:
 - `TWILIO_FROM_NUMBER`
 
 Secret values must stay out of Git and chat.
+
+`ALLOWED_ORIGINS` must include the active hosted clinician and patient origins, separated by commas. For the current Netlify pilot hosts, include:
+
+```text
+https://reakwind-remote-assessment-clinician.netlify.app,https://reakwind-remote-assessment-patient-staging.netlify.app
+```
+
+If this secret is missing, hosted browser calls to Edge Functions can fail before the app receives JSON, commonly surfacing as `Load failed`.
 
 ## Step 6: Verify Storage
 
@@ -218,6 +227,7 @@ After migration/function deployment, run a minimal hosted smoke test:
 8. Drawing/audio evidence loads through signed URLs.
 9. Manual review saves and finalizes the report.
 10. Anonymous storage object reads are blocked.
+11. Edge Function CORS preflight allows the hosted clinician origin for `create-session` and the hosted patient origin for `start-session`.
 
 Record the exact hosted URL, date, branch/commit, and skipped steps in the PR or handoff.
 

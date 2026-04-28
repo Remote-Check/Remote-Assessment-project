@@ -94,10 +94,10 @@ To recheck hosted staging, run:
 
 ```bash
 cd client
-PATIENT_STAGING_URL=https://reakwind-remote-assessment-patient-staging.netlify.app CLINICIAN_STAGING_URL=https://reakwind-remote-assessment-clinician.netlify.app npm run e2e:hosted-pwa
+HOSTED_SUPABASE_URL=https://jdkaxdtrukfxzlzspuua.supabase.co PATIENT_STAGING_URL=https://reakwind-remote-assessment-patient-staging.netlify.app CLINICIAN_STAGING_URL=https://reakwind-remote-assessment-clinician.netlify.app npm run e2e:hosted-pwa
 ```
 
-The hosted smoke requires HTTPS, checks the patient staging banner, validates manifest and service-worker availability at the patient host root, confirms clinician routes redirect away from the patient PWA, and confirms patient PWA assets are absent from the clinician host.
+The hosted smoke requires HTTPS, checks the patient staging banner, validates manifest and service-worker availability at the patient host root, confirms clinician routes redirect away from the patient PWA, confirms patient PWA assets are absent from the clinician host, and verifies hosted Edge Function CORS for the patient and clinician origins.
 
 ## Real-Device Gate
 

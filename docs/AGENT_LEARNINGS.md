@@ -179,6 +179,24 @@ Required verification:
 - Unit test the no-session signup path so it does not call the profile table.
 - Locally apply the migration and smoke-test that inserting an Auth user creates the profile row.
 
+### 10. Hosted shell smoke is not hosted backend readiness
+
+Evidence:
+
+- Hosted Netlify smoke passed while hosted Edge Function CORS still returned the localhost origin for the clinician and patient Netlify origins.
+- The clinician could create a patient through Supabase client APIs, but opening a test failed in the browser as `Load failed` before `create-session` returned JSON.
+
+Rules:
+
+- For hosted patient/clinician QA, verify Edge Function CORS from the actual hosted origins, not just HTTPS, manifest, service worker, and routing.
+- Keep `ALLOWED_ORIGINS` in hosted Supabase secrets aligned with active clinician and patient hosts.
+- Browser-facing function failures should render actionable product copy instead of raw fetch errors.
+
+Required verification:
+
+- Hosted smoke must include preflight checks for `create-session` from the clinician host and `start-session` from the patient host.
+- After changing hosted origins or Supabase project links, rerun `npm run e2e:hosted-pwa` with `HOSTED_SUPABASE_URL`, `PATIENT_STAGING_URL`, and `CLINICIAN_STAGING_URL`.
+
 ## Update Rule
 
 Update this file before merge when a branch does any of the following:

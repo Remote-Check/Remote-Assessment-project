@@ -266,8 +266,29 @@ describe('patient resume state', () => {
     });
   });
 
-  it('blocks patient navigation until the current task has required evidence', async () => {
+  it('redirects direct task routes back to patient entry without a started session', async () => {
+    const router = renderWithProvider(
+      [
+        { path: '/', element: <LandingHub /> },
+        {
+          path: '/patient',
+          element: <AssessmentLayout />,
+          children: [{ path: 'trail-making', element: <div>Trail body</div> }],
+        },
+      ],
+      '/patient/trail-making',
+    );
+
+    await screen.findByRole('heading', { name: 'כניסת מטופל' });
+    expect(router.state.location.pathname).toBe('/');
+    expect(screen.queryByText('Trail body')).not.toBeInTheDocument();
+  });
+
+  it('records skipped evidence when patients advance without evidence', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(storedAssessment({ lastPath: '/patient/trail-making' })));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
 
     const router = renderWithProvider(
       [
@@ -284,11 +305,15 @@ describe('patient resume state', () => {
     );
 
     await screen.findByText('Trail body');
-    await userEvent.click(screen.getByRole('button', { name: 'המשך' }));
+    await userEvent.click(screen.getByRole('button', { name: /המשך/ }));
 
-    expect(router.state.location.pathname).toBe('/patient/trail-making');
-    expect(screen.getByRole('alert')).toHaveTextContent('יש להשלים את הציור לפני מעבר למשימה הבאה.');
-    expect(screen.queryByText('Cube body')).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/patient/cube');
+    await screen.findByText('Cube body');
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+    expect(stored.tasks.trailMaking).toMatchObject({
+      skipped: true,
+      reason: 'no_evidence',
+    });
   });
 
   it('keeps patients on the completion screen without a dashboard navigation action', async () => {
