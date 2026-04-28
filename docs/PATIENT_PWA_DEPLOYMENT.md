@@ -79,7 +79,7 @@ Use [NETLIFY_HOSTING.md](NETLIFY_HOSTING.md) for the provider-specific setup. Th
 | Patient PWA staging | `deploy/netlify/patient-staging` | `client/dist/patient-staging` |
 | Clinician website | `deploy/netlify/clinician` | `client/dist/clinician` |
 
-Leave Base directory unset for both sites. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Netlify with the Builds scope.
+Set Base directory to the matching package directory for each site. Netlify resolves the site-specific `netlify.toml` from that directory, and its build command and publish paths are relative to `deploy/netlify/<site>`. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Netlify with the Builds scope.
 
 ## Verification
 
