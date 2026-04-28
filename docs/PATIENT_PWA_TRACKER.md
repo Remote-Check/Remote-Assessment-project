@@ -34,7 +34,7 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 | Hosted staging smoke | Codex | Done | Playwright hosted smoke validates patient/clinician staging URL split, HTTPS, patient staging banner, manifest/service worker, and clinician-route hiding once URLs exist. | `codex/patient-hosted-smoke` |
 | Real-device evidence gate | Codex | Done | Readiness report can validate a structured iPad installed-PWA, tablet browser, and phone fallback evidence file before pilot review. | `codex/patient-device-evidence` |
 | Verification tightening | Codex | Done | Surface/readiness scripts validate offline fallback, manifest icons, service-worker cache guardrails, surface deploy flags, and hosted manifest icon availability. | `codex/patient-pwa-verification-tightening` |
-| Netlify hosting setup | Codex | Done | Repo includes Netlify package-directory configs and runbook for separate patient staging and clinician hosts. | `codex/netlify-hosting-setup` |
+| Netlify hosting setup | Codex | Done | Repo includes Netlify package-directory configs and runbook for separate patient staging and clinician hosts with GitHub continuous deploy from `main`. | `codex/netlify-hosting-setup` |
 | Hosted Netlify deployment | Codex | Done | Patient staging and clinician Netlify URLs are live and hosted smoke passes against both. | `https://reakwind-remote-assessment-patient-staging.netlify.app` / `https://reakwind-remote-assessment-clinician.netlify.app` |
 | Licensed hosted stimuli | Codex | Done | Hosted Supabase `stimuli` bucket contains all required MoCA 8.1, 8.2, and 8.3 licensed visual PNGs and verification passes. | `jdkaxdtrukfxzlzspuua` |
 | Pilot readiness | Both | Blocked | Automated local gates, hosted Netlify staging, and licensed stimuli pass; physical iPad/tablet install and phone fallback checks still need real-device execution. | `codex/patient-pilot-readiness` |
@@ -68,6 +68,8 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 
 2026-04-28 Codex hosted Netlify and stimuli verification:
 
+- `cd deploy/netlify/patient-staging && netlify build`
+- `cd deploy/netlify/clinician && netlify build`
 - `cd client && PATIENT_STAGING_URL=https://reakwind-remote-assessment-patient-staging.netlify.app CLINICIAN_STAGING_URL=https://reakwind-remote-assessment-clinician.netlify.app npm run e2e:hosted-pwa`
 - `SUPABASE_URL=https://jdkaxdtrukfxzlzspuua.supabase.co SUPABASE_SERVICE_ROLE_KEY=<from authenticated Supabase CLI> node scripts/verify-stimuli.mjs --all-versions`
 - Patient staging URL: `https://reakwind-remote-assessment-patient-staging.netlify.app`
