@@ -12,14 +12,26 @@ interface StartSessionBody {
 
 interface StartSessionRecord {
   id: string;
+  patient_id: string | null;
   link_token: string;
   status: "pending" | "in_progress";
   link_used_at: string | null;
   age_band: string | null;
   education_years: number | null;
   patient_age_years: number | null;
+  patient_date_of_birth: string | null;
+  patient_gender: string | null;
+  patient_dominant_hand: string | null;
   moca_version: string | null;
   assessment_language: string | null;
+}
+
+interface PatientRecord {
+  date_of_birth: string | null;
+  gender: string | null;
+  dominant_hand: string | null;
+  education_years: number | null;
+  language: string | null;
 }
 
 type SupabaseClient = any;
@@ -99,7 +111,7 @@ export async function handleStartSession(
   const { data: sessionData, error } = await supabase
     .from("sessions")
     .select(
-      "id, link_token, status, link_used_at, age_band, education_years, patient_age_years, created_at, access_code, moca_version, assessment_language",
+      "id, patient_id, link_token, status, link_used_at, age_band, education_years, patient_age_years, patient_date_of_birth, patient_gender, patient_dominant_hand, created_at, access_code, moca_version, assessment_language",
     )
     .eq("access_code", token)
     .in("status", ["pending", "in_progress"])
@@ -115,10 +127,8 @@ export async function handleStartSession(
     return json({ error: "Invalid test number" }, 404);
   }
 
-  if (
-    !Number.isInteger(session.education_years) ||
-    !Number.isInteger(session.patient_age_years)
-  ) {
+  const clinicalContext = await resolveClinicalContext(supabase, session, deps.now());
+  if (!clinicalContext) {
     await deps.recordStartAttempt(supabase, {
       fingerprint,
       success: false,
@@ -131,17 +141,19 @@ export async function handleStartSession(
     );
   }
 
-  if (session.link_used_at) {
+  const startableSession = clinicalContext;
+
+  if (startableSession.link_used_at) {
     await deps.recordStartAttempt(supabase, {
       fingerprint,
       success: false,
       failureReason: "test_number_already_used",
-      sessionId: session.id,
+      sessionId: startableSession.id,
     });
     return json({ error: "Test number already used" }, 410);
   }
 
-  if (session.status === "pending") {
+  if (startableSession.status === "pending") {
     const { data: startedSession, error: updateError } = await supabase
       .from("sessions")
       .update({
@@ -149,14 +161,21 @@ export async function handleStartSession(
         link_used_at: deps.now(),
         status: "in_progress",
         device_context: deviceContext,
+        patient_id: startableSession.patient_id,
+        education_years: startableSession.education_years,
+        patient_age_years: startableSession.patient_age_years,
+        patient_date_of_birth: startableSession.patient_date_of_birth,
+        patient_gender: startableSession.patient_gender,
+        patient_dominant_hand: startableSession.patient_dominant_hand,
       })
-      .eq("id", session.id)
+      .eq("id", startableSession.id)
       .eq("status", "pending")
       .is("link_used_at", null)
       .select("id")
       .maybeSingle();
 
     if (updateError) {
+      console.error("Failed to start session:", updateError);
       return json({ error: "Failed to start session" }, 500);
     }
     if (!startedSession) {
@@ -164,37 +183,118 @@ export async function handleStartSession(
         fingerprint,
         success: false,
         failureReason: "test_number_already_used",
-        sessionId: session.id,
+        sessionId: startableSession.id,
       });
       return json({ error: "Test number already used" }, 410);
     }
 
     await deps.writeAuditEvent(supabase, {
       eventType: "session_started",
-      sessionId: session.id,
+      sessionId: startableSession.id,
       actorType: "patient",
-      metadata: { mocaVersion: session.moca_version, deviceContext },
+      metadata: { mocaVersion: startableSession.moca_version, deviceContext },
     });
   }
 
   await deps.recordStartAttempt(supabase, {
     fingerprint,
     success: true,
-    sessionId: session.id,
-    metadata: { mocaVersion: session.moca_version },
+    sessionId: startableSession.id,
+    metadata: { mocaVersion: startableSession.moca_version },
   });
 
   return json({
     status: "ready",
-    sessionId: session.id,
-    linkToken: session.link_token,
-    ageBand: session.age_band,
-    educationYears: session.education_years,
-    patientAge: session.patient_age_years,
-    mocaVersion: session.moca_version,
-    language: session.assessment_language,
+    sessionId: startableSession.id,
+    linkToken: startableSession.link_token,
+    ageBand: startableSession.age_band,
+    educationYears: startableSession.education_years,
+    patientAge: startableSession.patient_age_years,
+    mocaVersion: startableSession.moca_version,
+    language: startableSession.assessment_language,
     sessionDate: deps.now(),
   });
+}
+
+async function resolveClinicalContext(
+  supabase: SupabaseClient,
+  session: StartSessionRecord,
+  nowIso: string,
+): Promise<StartSessionRecord | null> {
+  const candidate = { ...session };
+
+  if (
+    candidate.patient_id &&
+    (
+      !isInteger(candidate.education_years) ||
+      !isInteger(candidate.patient_age_years) ||
+      !candidate.patient_date_of_birth ||
+      !candidate.patient_gender ||
+      !candidate.patient_dominant_hand
+    )
+  ) {
+    const { data: patient, error } = await supabase
+      .from("patients")
+      .select("date_of_birth, gender, dominant_hand, education_years, language")
+      .eq("id", candidate.patient_id)
+      .single();
+
+    if (error || !patient) return null;
+    const patientRecord = patient as PatientRecord;
+
+    candidate.patient_date_of_birth = candidate.patient_date_of_birth ??
+      patientRecord.date_of_birth;
+    candidate.patient_gender = candidate.patient_gender ?? patientRecord.gender;
+    candidate.patient_dominant_hand = candidate.patient_dominant_hand ??
+      patientRecord.dominant_hand;
+    candidate.education_years = isInteger(candidate.education_years)
+      ? candidate.education_years
+      : patientRecord.education_years;
+    candidate.patient_age_years = isInteger(candidate.patient_age_years)
+      ? candidate.patient_age_years
+      : calculateAgeYears(candidate.patient_date_of_birth, nowIso);
+    candidate.assessment_language = candidate.assessment_language ??
+      patientRecord.language ?? "he";
+  }
+
+  const educationYears = candidate.education_years;
+  const patientAgeYears = candidate.patient_age_years;
+
+  if (
+    !candidate.patient_id ||
+    !isInteger(educationYears) ||
+    educationYears < 0 ||
+    educationYears > 40 ||
+    !isInteger(patientAgeYears) ||
+    patientAgeYears < 60 ||
+    patientAgeYears > 130 ||
+    !candidate.patient_date_of_birth ||
+    !["male", "female"].includes(candidate.patient_gender ?? "") ||
+    !["right", "left", "ambidextrous"].includes(
+      candidate.patient_dominant_hand ?? "",
+    )
+  ) {
+    return null;
+  }
+
+  return candidate;
+}
+
+function calculateAgeYears(dateOfBirth: string | null, nowIso: string): number | null {
+  if (!dateOfBirth) return null;
+  const birth = new Date(`${dateOfBirth}T00:00:00Z`);
+  const now = new Date(nowIso);
+  if (Number.isNaN(birth.getTime()) || Number.isNaN(now.getTime())) return null;
+  let age = now.getUTCFullYear() - birth.getUTCFullYear();
+  const monthDelta = now.getUTCMonth() - birth.getUTCMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && now.getUTCDate() < birth.getUTCDate())) {
+    age -= 1;
+  }
+  return age;
+}
+
+function isInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value);
 }
 
 function normalizeDeviceContext(raw: unknown): Record<string, unknown> {
