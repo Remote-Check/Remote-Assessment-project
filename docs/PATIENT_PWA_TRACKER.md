@@ -34,6 +34,7 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 | Hosted staging smoke | Codex | Done | Playwright hosted smoke validates patient/clinician staging URL split, HTTPS, patient staging banner, manifest/service worker, and clinician-route hiding once URLs exist. | `codex/patient-hosted-smoke` |
 | Real-device evidence gate | Codex | Done | Readiness report can validate a structured iPad installed-PWA, tablet browser, and phone fallback evidence file before pilot review. | `codex/patient-device-evidence` |
 | Verification tightening | Codex | Done | Surface/readiness scripts validate offline fallback, manifest icons, service-worker cache guardrails, surface deploy flags, and hosted manifest icon availability. | `codex/patient-pwa-verification-tightening` |
+| Netlify hosting setup | Codex | Done | Repo includes Netlify package-directory configs and runbook for separate patient staging and clinician hosts. | `codex/netlify-hosting-setup` |
 | Pilot readiness | Both | Blocked | Automated readiness gates exist; shared hosted staging, licensed stimuli verification, iPad/tablet install, and phone fallback checks still need external execution. | `codex/patient-pilot-readiness` |
 
 ## Current Shell Scope
@@ -57,6 +58,7 @@ Status values: `Not Started`, `In Progress`, `Blocked`, `Done`.
 - Use `npm run verify:patient-pwa-readiness` after `npm run build:surfaces` to print local readiness status and the remaining external blocks.
 - Use `PATIENT_STAGING_URL=https://<patient-host> CLINICIAN_STAGING_URL=https://<clinician-host> npm run e2e:hosted-pwa` after staging publication.
 - Use `PATIENT_PWA_REAL_DEVICE_EVIDENCE_FILE=../path/to/real-device-evidence.json npm run verify:patient-pwa-readiness` after filling the real-device evidence template.
+- Use `docs/NETLIFY_HOSTING.md` when creating or changing the Netlify patient staging and clinician sites.
 - Use `docs/PATIENT_PWA_PILOT_READINESS.md` for the final staging, licensed-stimuli, installed-PWA, and phone fallback gates before clinical pilot use.
 
 ## Latest Verification
