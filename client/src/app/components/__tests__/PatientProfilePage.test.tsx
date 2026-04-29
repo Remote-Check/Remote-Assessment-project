@@ -46,6 +46,16 @@ const patientRecord = {
 
 const sessions = [
   {
+    id: 'session-pending',
+    case_id: 'CASE-1',
+    status: 'pending',
+    assessment_type: 'moca',
+    created_at: '2026-04-27T12:00:00.000Z',
+    completed_at: null,
+    access_code: null,
+    scoring_reports: null,
+  },
+  {
     id: 'session-review',
     case_id: 'CASE-1',
     status: 'awaiting_review',
@@ -134,6 +144,14 @@ describe('PatientProfilePage', () => {
     expect(screen.getAllByText('24/30').length).toBeGreaterThan(0);
     expect(screen.getByText('29/30 (זמני)')).toBeInTheDocument();
     expect(screen.getByText('12345678')).toBeInTheDocument();
+  });
+
+  it('labels pending session detail links as open actions', async () => {
+    renderProfile();
+
+    expect(await screen.findByRole('heading', { name: 'תיק CASE-1' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'פתח' })).toHaveAttribute('href', '/dashboard/session/session-pending');
+    expect(screen.queryByRole('link', { name: 'העתק מספר' })).not.toBeInTheDocument();
   });
 
   it('copies access codes without triggering row navigation', async () => {

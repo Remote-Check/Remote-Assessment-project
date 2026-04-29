@@ -146,11 +146,11 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-3 sm:p-6 font-['Heebo',sans-serif]"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-3 font-['Heebo',sans-serif] sm:items-center sm:p-6"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 max-h-[92vh] overflow-hidden flex flex-col"
+        className="my-3 flex max-h-[calc(100vh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl sm:my-0 sm:max-h-[calc(100vh-3rem)] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 p-5 sm:p-8 pb-4 sm:pb-6 border-b border-gray-100">
@@ -174,120 +174,120 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-auto px-5 py-4 sm:px-8 sm:py-5 space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-600 mb-1">מזהה תיק*</label>
-            <input
-              value={caseId}
-              onChange={(e) => setCaseId(e.target.value.toUpperCase())}
-              placeholder="למשל CASE-20260425-001"
-              className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
-            />
-            <p className="mt-1 text-xs text-gray-500">קוד פסאודונימי בלבד: אותיות באנגלית, מספרים, נקודה, מקף או קו תחתון.</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-600 mb-1">טלפון*</label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="למשל 0501234567"
-              inputMode="tel"
-              className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-600 mb-1">תאריך לידה*</label>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div data-testid="case-form-scroll" className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-8 sm:py-5">
+            <div>
+              <label className="block text-sm font-bold text-gray-600 mb-1">מזהה תיק*</label>
               <input
-                value={birthDay}
-                onChange={(e) => setBirthDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                placeholder="יום"
-                inputMode="numeric"
-                className="h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
+                value={caseId}
+                onChange={(e) => setCaseId(e.target.value.toUpperCase())}
+                placeholder="למשל CASE-20260425-001"
+                className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
               />
+              <p className="mt-1 text-xs text-gray-500">קוד פסאודונימי בלבד: אותיות באנגלית, מספרים, נקודה, מקף או קו תחתון.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-600 mb-1">טלפון*</label>
               <input
-                value={birthMonth}
-                onChange={(e) => setBirthMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                placeholder="חודש"
-                inputMode="numeric"
-                className="h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
-              />
-              <input
-                value={birthYear}
-                onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="שנה"
-                inputMode="numeric"
-                className="h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-600 mb-1">מין*</label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value as "" | "male" | "female")}
-                aria-label="מין*"
-                className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
-              >
-                <option value="">בחרו</option>
-                <option value="male">זכר</option>
-                <option value="female">נקבה</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-600 mb-1">שפת המבדק*</label>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                aria-label="שפת המבדק*"
-                className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
-              >
-                <option value="he">עברית</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-600 mb-1">יד דומיננטית*</label>
-              <select
-                value={dominantHand}
-                onChange={(e) => setDominantHand(e.target.value as "" | "right" | "left" | "ambidextrous")}
-                aria-label="יד דומיננטית*"
-                className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
-              >
-                <option value="">בחרו</option>
-                <option value="right">ימין</option>
-                <option value="left">שמאל</option>
-                <option value="ambidextrous">שתי הידיים</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-600 mb-1">שנות לימוד*</label>
-              <input
-                value={educationYears}
-                onChange={(e) => setEducationYears(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                placeholder="למשל 12"
-                inputMode="numeric"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="למשל 0501234567"
+                inputMode="tel"
                 className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
               />
             </div>
-          </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 font-bold">
-              {error}
+            <div>
+              <label className="block text-sm font-bold text-gray-600 mb-1">תאריך לידה*</label>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <input
+                  value={birthDay}
+                  onChange={(e) => setBirthDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  placeholder="יום"
+                  inputMode="numeric"
+                  className="h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
+                />
+                <input
+                  value={birthMonth}
+                  onChange={(e) => setBirthMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  placeholder="חודש"
+                  inputMode="numeric"
+                  className="h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
+                />
+                <input
+                  value={birthYear}
+                  onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="שנה"
+                  inputMode="numeric"
+                  className="h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
+                />
+              </div>
             </div>
-          )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-600 mb-1">מין*</label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as "" | "male" | "female")}
+                  aria-label="מין*"
+                  className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
+                >
+                  <option value="">בחרו</option>
+                  <option value="male">זכר</option>
+                  <option value="female">נקבה</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-600 mb-1">שפת המבדק*</label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  aria-label="שפת המבדק*"
+                  className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
+                >
+                  <option value="he">עברית</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-600 mb-1">יד דומיננטית*</label>
+                <select
+                  value={dominantHand}
+                  onChange={(e) => setDominantHand(e.target.value as "" | "right" | "left" | "ambidextrous")}
+                  aria-label="יד דומיננטית*"
+                  className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
+                >
+                  <option value="">בחרו</option>
+                  <option value="right">ימין</option>
+                  <option value="left">שמאל</option>
+                  <option value="ambidextrous">שתי הידיים</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-600 mb-1">שנות לימוד*</label>
+                <input
+                  value={educationYears}
+                  onChange={(e) => setEducationYears(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  placeholder="למשל 12"
+                  inputMode="numeric"
+                  className="w-full h-12 px-4 text-lg border-2 border-gray-300 rounded-xl focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 font-bold">
+                {error}
+              </div>
+            )}
           </div>
 
-          <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white p-5 sm:p-8 sm:pt-5">
+          <div data-testid="case-form-footer" className="flex shrink-0 gap-3 border-t border-gray-100 bg-white p-5 sm:p-8 sm:pt-5">
             <button
               type="button"
               onClick={onClose}

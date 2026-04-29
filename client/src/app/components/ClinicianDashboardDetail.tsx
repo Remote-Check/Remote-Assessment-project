@@ -155,7 +155,7 @@ const REVIEW_TABS: Array<{ id: ReviewTab; label: string; kind: "drawing" | "manu
 ];
 
 const DEFAULT_RUBRICS: RubricState = {
-  clock: { contour: true, numbers: false, hands: false },
+  clock: { contour: false, numbers: false, hands: false },
   cube: { shape: false, lines: false, parallel: false },
   trail: { correct: false, noLinesCrossed: false },
   memory: { recall1: false, recall2: false, recall3: false, recall4: false, recall5: false },
@@ -167,6 +167,107 @@ const DEFAULT_RUBRICS: RubricState = {
   delayedRecall: { word1: false, word2: false, word3: false, word4: false, word5: false },
   orientation: { day: false, month: false, year: false, dayOfWeek: false, place: false, city: false },
 };
+
+function createEmptyRubrics(): RubricState {
+  return {
+    clock: { ...DEFAULT_RUBRICS.clock },
+    cube: { ...DEFAULT_RUBRICS.cube },
+    trail: { ...DEFAULT_RUBRICS.trail },
+    memory: { ...DEFAULT_RUBRICS.memory },
+    digitSpan: { ...DEFAULT_RUBRICS.digitSpan },
+    vigilance: { ...DEFAULT_RUBRICS.vigilance },
+    serial7: { ...DEFAULT_RUBRICS.serial7 },
+    language: { ...DEFAULT_RUBRICS.language },
+    abstraction: { ...DEFAULT_RUBRICS.abstraction },
+    delayedRecall: { ...DEFAULT_RUBRICS.delayedRecall },
+    orientation: { ...DEFAULT_RUBRICS.orientation },
+  };
+}
+
+function rubricItemsFromScore(tab: ReviewTab, score: number | null | undefined): Record<string, boolean> | null {
+  if (score == null) return null;
+  const next = { ...DEFAULT_RUBRICS[tab] };
+  const keys = Object.keys(next);
+  if (keys.length === 0 || score <= 0) return next;
+
+  let checkedCount = Math.floor(score);
+  if (tab === "cube" || tab === "trail" || tab === "vigilance") checkedCount = keys.length;
+  if (tab === "serial7") {
+    checkedCount = score >= 3 ? 4 : score >= 2 ? 2 : score >= 1 ? 1 : 0;
+  }
+
+  for (const [index, key] of keys.entries()) {
+    next[key] = index < checkedCount;
+  }
+  return next;
+}
+
+function normalizeSavedRubricItems(tab: ReviewTab, value: unknown): Record<string, boolean> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const saved = value as Record<string, unknown>;
+  const next = { ...DEFAULT_RUBRICS[tab] };
+  for (const key of Object.keys(next)) {
+    next[key] = saved[key] === true;
+  }
+  return next;
+}
+
+function buildSavedRubrics(drawings: DrawingReviewRow[], scoringReviews: ScoringReviewRow[]): RubricState {
+  const next = createEmptyRubrics();
+
+  for (const drawing of drawings) {
+    const tab = REVIEW_TABS.find((item) => DRAWING_TAB_TO_TASK_ID[item.id] === drawing.task_id)?.id;
+    if (!tab) continue;
+    const savedItems = normalizeSavedRubricItems(tab, drawing.rubric_items) ?? rubricItemsFromScore(tab, drawing.clinician_score);
+    if (savedItems) next[tab] = savedItems;
+  }
+
+  for (const review of scoringReviews) {
+    if (review.max_score <= 0) continue;
+    const tab = REVIEW_TABS.find((item) => SCORING_TAB_TO_TASK_ID[item.id] === review.item_id || SCORING_TAB_TO_TASK_ID[item.id] === review.task_type)?.id;
+    if (!tab) continue;
+    const savedItems = rubricItemsFromScore(tab, review.clinician_score);
+    if (savedItems) next[tab] = savedItems;
+  }
+
+  return next;
+}
+
+const AUDIT_EVENT_LABELS: Record<string, string> = {
+  session_created: "מבדק נוצר",
+  sessions_created: "מבדק נוצר",
+  session_started: "מטופל התחיל מבדק",
+  sessions_updated: "סטטוס מבדק עודכן",
+  stimuli_manifest_requested: "נטענו חומרי מבדק",
+  task_result_submitted: "משימה הוגשה",
+  task_results_created: "משימה הוגשה",
+  task_results_updated: "תוצאת משימה עודכנה",
+  drawing_saved: "ציור נשמר",
+  drawings_created: "ציור נשמר",
+  drawings_updated: "ציור עודכן",
+  audio_saved: "הקלטה נשמרה",
+  scoring_reviews_created: "פריט סקירה נוצר",
+  scoring_reviews_updated: "ניקוד ידני נשמר",
+  drawing_reviews_created: "סקירת ציור נוצרה",
+  drawing_reviews_updated: "סקירת ציור נשמרה",
+  session_completed: "מטופל השלים מבדק",
+  clinician_completion_email_sent: "נשלחה התראת השלמה",
+  clinician_completion_email_failed: "התראת השלמה נכשלה",
+  clinician_completion_email_skipped: "התראת השלמה דולגה",
+};
+
+function auditEventLabel(eventType: unknown): string {
+  if (typeof eventType !== "string" || eventType.trim() === "") return "אירוע מערכת";
+  return AUDIT_EVENT_LABELS[eventType] ?? "אירוע מערכת";
+}
+
+function auditActorLabel(log: any): string {
+  if (log.actor_id) return "קלינאי";
+  if (typeof log.event_type === "string" && (log.event_type.includes("session") || log.event_type.includes("task") || log.event_type.includes("audio") || log.event_type.includes("drawing"))) {
+    return "מטופל/מערכת";
+  }
+  return "מערכת";
+}
 
 const DOMAIN_LABELS: Record<string, string> = {
   visuospatial: "מרחבי-חזותי",
@@ -322,22 +423,6 @@ function safeEvidenceText(item: any, taskResultsByType: Map<string, TaskResult>,
   return null;
 }
 
-function hydrateSavedRubrics(current: RubricState, drawings: DrawingReviewRow[]): RubricState {
-  let next = current;
-  for (const drawing of drawings) {
-    const tab = REVIEW_TABS.find((item) => DRAWING_TAB_TO_TASK_ID[item.id] === drawing.task_id)?.id;
-    if (!tab || !drawing.rubric_items || typeof drawing.rubric_items !== "object" || Array.isArray(drawing.rubric_items)) {
-      continue;
-    }
-    if (next === current) next = { ...current };
-    next[tab] = {
-      ...next[tab],
-      ...(drawing.rubric_items as Record<string, boolean>),
-    };
-  }
-  return next;
-}
-
 export function ClinicianDashboardDetail() {
   const { sessionId } = useParams();
   const [sessionRecord, setSessionRecord] = useState<SessionWithPatient | null>(null);
@@ -348,7 +433,7 @@ export function ClinicianDashboardDetail() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<ReviewTab>("clock");
-  const [rubrics, setRubrics] = useState<RubricState>(DEFAULT_RUBRICS);
+  const [rubrics, setRubrics] = useState<RubricState>(() => createEmptyRubrics());
   const [exportingCsv, setExportingCsv] = useState(false);
   const [csvConfirmOpen, setCsvConfirmOpen] = useState(false);
   const [csvExportMessage, setCsvExportMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
@@ -372,7 +457,7 @@ export function ClinicianDashboardDetail() {
     const loadedSession = payload.session as SessionWithPatient;
     setSessionRecord(loadedSession);
     setReportRecord(loadedSession.scoring_report ?? null);
-    setRubrics((prev) => hydrateSavedRubrics(prev, loadedSession.drawings ?? []));
+    setRubrics(buildSavedRubrics(loadedSession.drawings ?? [], loadedSession.scoring_reviews ?? []));
   }, [sessionId]);
 
   useEffect(() => {
@@ -926,9 +1011,7 @@ export function ClinicianDashboardDetail() {
     sessionRecord?.status === "completed" && !reportNeedsReview && getPendingReviewCount(reportRecord) === 0;
   const reportPendingReviewCount = getPendingReviewCount(reportRecord);
   const pendingReviewCount = pendingQueue.length || reportPendingReviewCount;
-  const reviewTabsForDisplay = visibleReviewTabs.length > 0
-    ? visibleReviewTabs
-    : REVIEW_TABS.map((tab) => ({ ...tab, review: null, maxScore: undefined, isEvidenceOnly: false, isReviewed: false }));
+  const reviewTabsForDisplay = visibleReviewTabs;
   const exportBlockReason = canExportPdf
     ? "הדוח מוכן לייצוא"
     : pendingReviewCount > 0
@@ -1174,156 +1257,170 @@ export function ClinicianDashboardDetail() {
           </div>
         </div>
 
-        <div className="mt-5 flex items-stretch gap-3 overflow-x-auto pb-1 scrollbar-hide">
-          {reviewTabsForDisplay.map((tab) => {
-            const isActive = activeReviewTab === tab.id;
-            const score = tab.review?.clinician_score;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={clsx(
-                  "min-w-[132px] rounded-xl border p-3 text-right transition-colors sm:min-w-[150px] sm:p-4",
-                  isActive
-                    ? "border-black bg-black text-white"
-                    : tab.isReviewed
-                    ? "border-green-200 bg-green-50 text-green-950 hover:border-green-300"
-                    : tab.review
-                    ? "border-amber-200 bg-amber-50 text-amber-950 hover:border-amber-300"
-                    : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300",
-                )}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-base font-extrabold">{tab.label}</span>
-                  {tab.isReviewed ? (
-                    <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-                  ) : tab.review ? (
-                    <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-                  ) : null}
-                </div>
-                <div className={clsx("mt-2 text-xs font-bold", isActive ? "text-white/75" : "text-current/70")}>
-                  {tab.isEvidenceOnly
-                    ? "עדות קולית"
-                    : tab.isReviewed
-                    ? `נשמר ${score}/${tab.maxScore ?? "?"}`
-                    : tab.review
-                    ? "ממתין לניקוד"
-                    : "אין פריט סקירה"}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-8 lg:col-span-7">
-          {renderTaskContent()}
-        </div>
-
-        <div className="flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-sm sm:p-8 lg:col-span-5">
-          <div className="mb-8 flex items-center justify-between border-b border-gray-200 pb-4">
-            <h3 className="text-2xl font-extrabold text-black">ניקוד</h3>
-            <div className="text-3xl font-extrabold tabular-nums bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
-              <span className="text-black">{rubricData.score}</span>
-              <span className="text-gray-400">/{rubricData.max}</span>
-            </div>
-          </div>
-
-          {currentDrawing?.clinician_score != null && (
-            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
-              ניקוד שמור: {currentDrawing.clinician_score}/{rubricData.max}
-            </div>
-          )}
-          {!currentDrawing && currentScoringReview?.clinician_score != null && (
-            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
-              ניקוד שמור: {currentScoringReview.clinician_score}/{currentScoringReview.max_score}
-            </div>
-          )}
-
-          <div className="space-y-3 mb-8 flex-1">
-            {isCurrentEvidenceOnly ? (
-              <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm font-bold text-blue-950">
-                עדות קולית בלבד למשימה זו. אין פריט ניקוד ידני לשמירה במסך זה.
-              </div>
-            ) : rubricData.items.map((crit) => {
-              const isChecked = rubrics[activeReviewTab][crit.id];
+        {reviewTabsForDisplay.length > 0 && (
+          <div className="mt-5 flex items-stretch gap-3 overflow-x-auto pb-1 scrollbar-hide">
+            {reviewTabsForDisplay.map((tab) => {
+              const isActive = activeReviewTab === tab.id;
+              const score = tab.review?.clinician_score;
               return (
-                <div
-                  key={crit.id}
-                  onClick={() => toggleRubric(crit.id)}
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
                   className={clsx(
-                    "flex gap-4 p-5 rounded-xl cursor-pointer transition-all border-2",
-                    isChecked ? "bg-[#ecfdf5] border-green-200" : "bg-white border-transparent hover:border-gray-200",
+                    "min-w-[132px] rounded-xl border p-3 text-right transition-colors sm:min-w-[150px] sm:p-4",
+                    isActive
+                      ? "border-black bg-black text-white"
+                      : tab.isReviewed
+                      ? "border-green-200 bg-green-50 text-green-950 hover:border-green-300"
+                      : "border-amber-200 bg-amber-50 text-amber-950 hover:border-amber-300",
                   )}
                 >
-                  <div
-                    className={clsx(
-                      "mt-1 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors",
-                      isChecked ? "bg-green-600 text-white" : "bg-gray-200 text-transparent",
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-base font-extrabold">{tab.label}</span>
+                    {tab.isReviewed ? (
+                      <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                     )}
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
                   </div>
-                  <div>
-                    <div className={clsx("font-bold text-lg", isChecked ? "text-green-900" : "text-black")}>
-                      {crit.label}
-                    </div>
-                    <div className={clsx("text-sm mt-1", isChecked ? "text-green-700" : "text-gray-500")}>
-                      {crit.desc}
-                    </div>
+                  <div className={clsx("mt-2 text-xs font-bold", isActive ? "text-white/75" : "text-current/70")}>
+                    {tab.isEvidenceOnly
+                      ? "עדות קולית"
+                      : tab.isReviewed
+                      ? `נשמר ${score}/${tab.maxScore ?? "?"}`
+                      : "ממתין לניקוד"}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-bold text-gray-500 mb-2">הערות</label>
-            <textarea
-              value={reviewNotes}
-              onChange={(event) => {
-                setSaveMessage(null);
-                setReviewNotesByTab((prev) => ({ ...prev, [activeReviewTab]: event.target.value }));
-              }}
-              placeholder="הוסף הערה קלינית…"
-              className="w-full h-32 p-4 bg-white border border-gray-200 rounded-xl resize-none text-lg focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-600 transition-all"
-            />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <button
-                onClick={handleSaveReview}
-                disabled={savingReview || isCurrentEvidenceOnly || (!currentDrawing && !currentScoringReview)}
-                className={clsx(
-                  "inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white transition-colors",
-                  savingReview || isCurrentEvidenceOnly || (!currentDrawing && !currentScoringReview)
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-black hover:bg-gray-800",
-                )}
-              >
-                <Save className="h-5 w-5" />
-                {savingReview ? "שומר..." : "שמור ניקוד"}
-              </button>
-              {saveMessage && <div className="text-sm font-bold text-gray-600">{saveMessage}</div>}
+      </div>
+
+      {reviewQueue.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
+          <ClipboardCheck className="mx-auto mb-4 h-10 w-10 text-gray-400" />
+          <h3 className="text-xl font-extrabold text-black">אין פריטי סקירה להצגה</h3>
+          <p className="mx-auto mt-2 max-w-xl text-sm font-bold text-gray-500">
+            פריטי סקירה ועדויות יופיעו כאן אחרי שהמטופל יסיים את המבדק או אחרי שנוצרו פריטים הדורשים פענוח קליני.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-8 lg:col-span-7">
+            {renderTaskContent()}
+          </div>
+
+          <div className="flex flex-col rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-sm sm:p-8 lg:col-span-5">
+            <div className="mb-8 flex items-center justify-between border-b border-gray-200 pb-4">
+              <h3 className="text-2xl font-extrabold text-black">ניקוד</h3>
+              <div className="text-3xl font-extrabold tabular-nums bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
+                <span className="text-black">{rubricData.score}</span>
+                <span className="text-gray-400">/{rubricData.max}</span>
+              </div>
+            </div>
+
+            {currentDrawing?.clinician_score != null && (
+              <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
+                ניקוד שמור: {currentDrawing.clinician_score}/{rubricData.max}
+              </div>
+            )}
+            {!currentDrawing && currentScoringReview?.clinician_score != null && (
+              <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-800">
+                ניקוד שמור: {currentScoringReview.clinician_score}/{currentScoringReview.max_score}
+              </div>
+            )}
+
+            <div className="space-y-3 mb-8 flex-1">
+              {isCurrentEvidenceOnly ? (
+                <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm font-bold text-blue-950">
+                  עדות קולית בלבד למשימה זו. אין פריט ניקוד ידני לשמירה במסך זה.
+                </div>
+              ) : rubricData.items.map((crit) => {
+                const isChecked = rubrics[activeReviewTab][crit.id];
+                return (
+                  <div
+                    key={crit.id}
+                    onClick={() => toggleRubric(crit.id)}
+                    className={clsx(
+                      "flex gap-4 p-5 rounded-xl cursor-pointer transition-all border-2",
+                      isChecked ? "bg-[#ecfdf5] border-green-200" : "bg-white border-transparent hover:border-gray-200",
+                    )}
+                  >
+                    <div
+                      className={clsx(
+                        "mt-1 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors",
+                        isChecked ? "bg-green-600 text-white" : "bg-gray-200 text-transparent",
+                      )}
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className={clsx("font-bold text-lg", isChecked ? "text-green-900" : "text-black")}>
+                        {crit.label}
+                      </div>
+                      <div className={clsx("text-sm mt-1", isChecked ? "text-green-700" : "text-gray-500")}>
+                        {crit.desc}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-500 mb-2">הערות</label>
+              <textarea
+                value={reviewNotes}
+                onChange={(event) => {
+                  setSaveMessage(null);
+                  setReviewNotesByTab((prev) => ({ ...prev, [activeReviewTab]: event.target.value }));
+                }}
+                placeholder="הוסף הערה קלינית…"
+                className="w-full h-32 p-4 bg-white border border-gray-200 rounded-xl resize-none text-lg focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-600 transition-all"
+              />
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <button
+                  onClick={handleSaveReview}
+                  disabled={savingReview || isCurrentEvidenceOnly || (!currentDrawing && !currentScoringReview)}
+                  className={clsx(
+                    "inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white transition-colors",
+                    savingReview || isCurrentEvidenceOnly || (!currentDrawing && !currentScoringReview)
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-black hover:bg-gray-800",
+                  )}
+                >
+                  <Save className="h-5 w-5" />
+                  {savingReview ? "שומר..." : "שמור ניקוד"}
+                </button>
+                {saveMessage && <div className="text-sm font-bold text-gray-600">{saveMessage}</div>}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-12 bg-white rounded-xl p-6 border border-gray-200">
         <h3 className="text-xl font-bold mb-4">יומן אירועים</h3>
-        <div className="text-sm font-mono text-gray-500 max-h-64 overflow-y-auto space-y-2">
+        <div className="max-h-64 space-y-2 overflow-y-auto text-sm text-gray-600">
           {auditLogs.length === 0 ? (
             <div className="text-gray-400">אין אירועים להצגה.</div>
           ) : (
             auditLogs.map((log: any) => (
-              <div key={log.id} className="border-b pb-2 flex items-center justify-between">
-                <div>
-                  <span className="font-bold">{new Date(log.created_at).toLocaleString()}</span> -
-                  <span className="text-blue-600 ml-2">{log.event_type}</span>
+              <div key={log.id} className="flex items-center justify-between gap-4 border-b pb-2 last:border-b-0">
+                <div className="min-w-0">
+                  <div className="font-extrabold text-gray-900" title={typeof log.event_type === "string" ? log.event_type : undefined}>
+                    {auditEventLabel(log.event_type)}
+                  </div>
+                  <div className="mt-0.5 text-xs font-bold text-gray-400" dir="ltr">
+                    {new Date(log.created_at).toLocaleString()}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400">{log.actor_id ? "קלינאי" : "מטופל"}</div>
+                <div className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xs font-extrabold text-gray-600">
+                  {auditActorLabel(log)}
+                </div>
               </div>
             ))
           )}
