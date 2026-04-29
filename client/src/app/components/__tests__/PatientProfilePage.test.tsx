@@ -154,6 +154,14 @@ describe('PatientProfilePage', () => {
     expect(screen.queryByRole('link', { name: 'העתק מספר' })).not.toBeInTheDocument();
   });
 
+  it('prioritizes the awaiting-review session as the profile primary action', async () => {
+    const router = renderProfile();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'סקור מבדק' }));
+
+    expect(router.state.location.pathname).toBe('/dashboard/session/session-review');
+  });
+
   it('copies access codes without triggering row navigation', async () => {
     const router = renderProfile();
     await screen.findByRole('heading', { name: 'תיק CASE-1' });
@@ -167,7 +175,8 @@ describe('PatientProfilePage', () => {
 
   it('refreshes sessions in the background after ordering an assessment', async () => {
     renderProfile();
-    await userEvent.click(await screen.findByRole('button', { name: 'פתח מבדק' }));
+    const newAssessmentButtons = await screen.findAllByRole('button', { name: 'מבדק חדש' });
+    await userEvent.click(newAssessmentButtons[0]);
     await screen.findByRole('dialog', { name: 'order assessment' });
 
     await userEvent.click(screen.getByRole('button', { name: 'ordered' }));

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/incompatible-library */
-import { Search, ChevronLeft, Plus, Hash } from "lucide-react";
+import { Search, ChevronLeft, Plus, Hash, ClipboardCheck } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -182,6 +182,7 @@ function ScoreTrendChart({ points }: { points: ScoreTrendPoint[] }) {
 export function ClinicianDashboardList() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "review">("all");
   const [rows, setRows] = useState<PatientRow[]>([]);
   const [scoreTrend, setScoreTrend] = useState<ScoreTrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,12 +273,13 @@ export function ClinicianDashboardList() {
   }, [loadPatients]);
 
   const filtered = useMemo(() => {
+    const scopedRows = statusFilter === "review" ? rows.filter((r) => r.status === "review") : rows;
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
+    if (!q) return scopedRows;
+    return scopedRows.filter(
       (r) => caseDisplay(r).toLowerCase().includes(q) || r.id.toLowerCase().includes(q),
     );
-  }, [rows, search]);
+  }, [rows, search, statusFilter]);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
@@ -337,6 +339,19 @@ export function ClinicianDashboardList() {
   const totalCases = rows.length;
   const reviewCount = rows.filter((r) => r.status === "review").length;
   const completedCount = rows.filter((r) => r.status === "completed").length;
+  const filterButtonClass = (active: boolean) =>
+    [
+      "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition-colors",
+      active
+        ? "bg-black text-white shadow-sm"
+        : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50",
+    ].join(" ");
+  const emptyMessage =
+    rows.length === 0
+      ? "עדיין לא נוספו תיקים. התחילו על ידי לחיצה על \"תיק חדש\"."
+      : statusFilter === "review" && reviewCount === 0
+        ? "אין תיקים שממתינים לסקירה."
+        : "לא נמצאו תיקים מתאימים לחיפוש.";
 
   return (
     <div className="max-w-6xl mx-auto min-h-[calc(100vh-120px)] lg:h-[calc(100vh-56px)] flex flex-col">
@@ -387,6 +402,27 @@ export function ClinicianDashboardList() {
             {csvExportMessage.text}
           </p>
         )}
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="סינון תיקים">
+          <button
+            type="button"
+            aria-pressed={statusFilter === "all"}
+            onClick={() => setStatusFilter("all")}
+            className={filterButtonClass(statusFilter === "all")}
+          >
+            כל התיקים
+          </button>
+          <button
+            type="button"
+            aria-pressed={statusFilter === "review"}
+            aria-label={`ממתינים לסקירה ${reviewCount}`}
+            onClick={() => setStatusFilter("review")}
+            className={filterButtonClass(statusFilter === "review")}
+          >
+            <ClipboardCheck className="h-4 w-4" />
+            ממתינים לסקירה
+            <span className={statusFilter === "review" ? "text-white" : "text-red-600"}>{reviewCount}</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8 shrink-0">
@@ -431,11 +467,7 @@ export function ClinicianDashboardList() {
         <div className="md:hidden overflow-auto flex-1 p-3 space-y-3">
           {filtered.length === 0 && !loading && (
             <div className="flex min-h-52 flex-col items-center justify-center text-center text-gray-500 font-bold text-base gap-2 px-4">
-              <span>
-                {rows.length === 0
-                  ? "עדיין לא נוספו תיקים. התחילו על ידי לחיצה על \"תיק חדש\"."
-                  : "לא נמצאו תיקים מתאימים לחיפוש."}
-              </span>
+              <span>{emptyMessage}</span>
             </div>
           )}
 
@@ -495,11 +527,7 @@ export function ClinicianDashboardList() {
           >
             {filtered.length === 0 && !loading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 font-bold text-lg gap-2">
-                <span>
-                  {rows.length === 0
-                    ? "עדיין לא נוספו תיקים. התחילו על ידי לחיצה על \"תיק חדש\"."
-                    : "לא נמצאו תיקים מתאימים לחיפוש."}
-                </span>
+                <span>{emptyMessage}</span>
               </div>
             )}
 

@@ -851,7 +851,7 @@ export function ClinicianDashboardDetail() {
               </div>
               <div className="bg-gray-50 p-4 rounded-xl text-center">
                 <div className="text-xs font-bold text-gray-500 mb-1">מגע לעומת עט</div>
-                <div className="text-2xl font-extrabold tabular-nums text-blue-600">
+                <div className="break-words text-lg font-extrabold leading-tight text-blue-600 sm:text-xl">
                   {currentStats.usedPen ? "עט חכם" : "אצבע/עכבר"}
                 </div>
               </div>
@@ -1045,12 +1045,12 @@ export function ClinicianDashboardDetail() {
             {(patientCaseLabel?.trim()[0] ?? sessionRecord?.case_id?.trim()[0] ?? "ת").toUpperCase()}
           </div>
           <div className="min-w-0">
-            <h1 className="mb-2 truncate text-2xl font-extrabold text-black sm:text-3xl">
+            <h1 className="mb-2 break-words text-2xl font-extrabold leading-tight text-black sm:text-3xl">
               {patientCaseLabel ? `תיק ${patientCaseLabel}` : sessionRecord?.case_id ? `תיק ${sessionRecord.case_id}` : "תיק"}
             </h1>
             <div className="flex flex-wrap items-center gap-3 text-base font-medium text-gray-500 sm:gap-4 sm:text-lg">
               {sessionRecord?.case_id && (
-                <span className="font-mono bg-gray-100 px-2 py-0.5 rounded-md">{sessionRecord.case_id}</span>
+                <span className="break-all font-mono bg-gray-100 px-2 py-0.5 rounded-md">{sessionRecord.case_id}</span>
               )}
               <span>
                 {sessionRecord?.age_band ? `קבוצת גיל ${sessionRecord.age_band}` : "קבוצת גיל לא זמינה"}
