@@ -2,6 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ClinicianDashboardList } from '../ClinicianDashboardList';
@@ -146,5 +147,62 @@ describe('ClinicianDashboardList', () => {
     expect(screen.getAllByText('26/30').length).toBeGreaterThan(0);
     expect(screen.getByRole('img', { name: 'שינוי ציון MoCA מ-24 ל-26' })).toBeInTheDocument();
     expect(screen.queryByText('אין עדיין מבדקים סופיים להצגת שינוי בציון.')).not.toBeInTheDocument();
+  });
+
+  it('filters cases to the review queue from the main dashboard controls', async () => {
+    orderMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'patient-review',
+          case_id: 'CASE-REVIEW',
+          created_at: '2026-04-27T12:00:00.000Z',
+          sessions: [
+            {
+              id: 'session-review',
+              status: 'awaiting_review',
+              created_at: '2026-04-27T12:05:00.000Z',
+              scoring_reports: {
+                total_adjusted: 25,
+                total_score: 25,
+                total_provisional: true,
+                needs_review: true,
+                pending_review_count: 1,
+              },
+            },
+          ],
+        },
+        {
+          id: 'patient-final',
+          case_id: 'CASE-FINAL',
+          created_at: '2026-04-26T12:00:00.000Z',
+          sessions: [
+            {
+              id: 'session-final',
+              status: 'completed',
+              created_at: '2026-04-26T12:05:00.000Z',
+              scoring_reports: {
+                total_adjusted: 28,
+                total_score: 28,
+                total_provisional: false,
+                needs_review: false,
+                pending_review_count: 0,
+              },
+            },
+          ],
+        },
+      ],
+      error: null,
+    });
+
+    renderDashboardList();
+
+    expect(await screen.findByText('2 תיקים · 1 דורשים סקירה')).toBeInTheDocument();
+    expect(screen.getAllByText('תיק CASE-REVIEW').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('תיק CASE-FINAL').length).toBeGreaterThan(0);
+
+    await userEvent.click(screen.getByRole('button', { name: /ממתינים לסקירה\s+1/ }));
+
+    expect(screen.getAllByText('תיק CASE-REVIEW').length).toBeGreaterThan(0);
+    expect(screen.queryAllByText('תיק CASE-FINAL')).toHaveLength(0);
   });
 });

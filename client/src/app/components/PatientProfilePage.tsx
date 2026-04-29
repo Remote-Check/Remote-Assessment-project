@@ -85,6 +85,10 @@ function reviewActionLabel(status: PatientSession["status"]): string {
   return "פתח";
 }
 
+function sessionNeedsReview(session: PatientSession): boolean {
+  return session.status === "awaiting_review" || relationArray(session.scoring_reports).some(reportNeedsReview);
+}
+
 function scoreLabel(report: ScoringSummary | null | undefined): string {
   const score = reportScore(report);
   if (score == null) return "—";
@@ -186,6 +190,15 @@ export function PatientProfilePage() {
     .filter((report) => !reportNeedsReview(report))
     .map(reportScore)
     .find((score) => score != null);
+  const nextReviewSession = sessions.find(sessionNeedsReview) ?? null;
+
+  const handlePrimaryAction = () => {
+    if (nextReviewSession) {
+      navigate(`/dashboard/session/${nextReviewSession.id}`);
+      return;
+    }
+    setOrderOpen(true);
+  };
 
   const copyAccessCode = async (event: React.MouseEvent, code: string) => {
     event.stopPropagation();
@@ -227,13 +240,26 @@ export function PatientProfilePage() {
             </div>
           </div>
 
-          <button
-            onClick={() => setOrderOpen(true)}
-            className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-md"
-          >
-            <Stethoscope className="w-5 h-5" />
-            פתח מבדק
-          </button>
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <button
+              type="button"
+              onClick={handlePrimaryAction}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 font-bold text-white shadow-md transition-colors hover:bg-gray-800"
+            >
+              {nextReviewSession ? <FileText className="h-5 w-5" /> : <Stethoscope className="h-5 w-5" />}
+              {nextReviewSession ? "סקור מבדק" : "פתח מבדק"}
+            </button>
+            {nextReviewSession && (
+              <button
+                type="button"
+                onClick={() => setOrderOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-800 transition-colors hover:bg-gray-50"
+              >
+                <Plus className="h-4 w-4" />
+                מבדק חדש
+              </button>
+            )}
+          </div>
       </div>
 
       </div>
