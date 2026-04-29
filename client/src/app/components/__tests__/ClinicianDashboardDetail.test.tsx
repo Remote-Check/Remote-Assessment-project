@@ -254,6 +254,111 @@ describe('ClinicianDashboardDetail', () => {
     expect(screen.queryByText(exactText('5/3'))).not.toBeInTheDocument();
   });
 
+  it('shows an empty clinical review state without active scoring controls when no review evidence exists', async () => {
+    supabaseMocks.from.mockReturnValue({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          order: vi.fn().mockResolvedValue({
+            data: [
+              {
+                id: 'event-1',
+                event_type: 'sessions_updated',
+                actor_id: null,
+                created_at: '2026-04-25T12:06:00.000Z',
+              },
+            ],
+          }),
+        })),
+      })),
+    });
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify(sessionPayload({
+          status: 'pending',
+          completed_at: null,
+          drawings: [],
+          scoring_reviews: [],
+          audio_evidence_reviews: [],
+          scoring_report: {
+            total_adjusted: null,
+            total_score: null,
+            total_provisional: false,
+            needs_review: false,
+            pending_review_count: 0,
+            domains: [],
+            subscores: {},
+          },
+        })),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+
+    renderDetail();
+
+    await screen.findByRole('heading', { name: 'תיק CASE-1' });
+    expect(screen.getByRole('heading', { name: 'אין פריטי סקירה להצגה' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'ניקוד' })).not.toBeInTheDocument();
+    expect(screen.queryByText('מתאר')).not.toBeInTheDocument();
+    expect(await screen.findByText('סטטוס מבדק עודכן')).toBeInTheDocument();
+    expect(screen.queryByText('sessions_updated')).not.toBeInTheDocument();
+  });
+
+  it('hydrates saved drawing scores when legacy review rows have no rubric items', async () => {
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify(sessionPayload({
+          drawings: [
+            {
+              id: 'clock-review',
+              task_id: 'moca-clock',
+              task_name: 'clock',
+              signedUrl: null,
+              strokes_data: [[{ x: 10, y: 10, time: 0, pointerType: 'touch' }]],
+              rubric_items: null,
+              clinician_score: 3,
+              clinician_notes: null,
+            },
+          ],
+          scoring_report: {
+            total_adjusted: 24,
+            total_score: 24,
+            total_provisional: false,
+            needs_review: false,
+            pending_review_count: 0,
+            domains: [
+              {
+                domain: 'visuospatial',
+                raw: 5,
+                max: 5,
+                items: [
+                  { taskId: 'moca-clock', score: 3, max: 3, needsReview: false },
+                ],
+              },
+            ],
+            subscores: {},
+          },
+          audio_evidence_reviews: [],
+        })),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+
+    renderDetail();
+
+    await screen.findByRole('heading', { name: 'תיק CASE-1' });
+    expect(screen.getByText('ניקוד שמור: 3/3')).toBeInTheDocument();
+    expect(screen.getAllByText(exactText('3/3')).length).toBeGreaterThan(0);
+    expect(screen.queryByText(exactText('1/3'))).not.toBeInTheDocument();
+  });
+
   it('flags phone drawing evidence for clinician interpretation', async () => {
     fetchMock.mockReset();
     fetchMock.mockResolvedValueOnce(

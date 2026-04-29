@@ -82,7 +82,6 @@ function assessmentLabel(value: string | null): string {
 function reviewActionLabel(status: PatientSession["status"]): string {
   if (status === "awaiting_review") return "סקור";
   if (status === "completed") return "צפה";
-  if (status === "pending") return "העתק מספר";
   return "פתח";
 }
 

@@ -65,6 +65,14 @@ describe('PatientForm', () => {
     });
   });
 
+  it('keeps the form body scrollable above a non-overlapping footer', () => {
+    render(<PatientForm open onClose={vi.fn()} onCreated={vi.fn()} />);
+
+    expect(screen.getByTestId('case-form-scroll')).toHaveClass('overflow-y-auto');
+    expect(screen.getByTestId('case-form-footer')).toHaveClass('shrink-0');
+    expect(screen.getByTestId('case-form-footer')).not.toHaveClass('sticky');
+  });
+
   it('requires a case ID before saving', async () => {
     render(<PatientForm open onClose={vi.fn()} onCreated={vi.fn()} />);
 

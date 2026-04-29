@@ -151,6 +151,62 @@ test.describe('clinician mobile UX', () => {
   });
 });
 
+test.describe('clinician case modal UX', () => {
+  test.skip(!SUPABASE_ANON_KEY, 'Local Supabase anon key is required for clinician UX E2E.');
+  test.use({ viewport: { width: 1280, height: 720 } });
+
+  test.beforeAll(async ({ request }) => {
+    if (!SUPABASE_ANON_KEY) return;
+    const response = await request.get(`${SUPABASE_URL}/auth/v1/settings`, {
+      headers: { apikey: SUPABASE_ANON_KEY },
+    });
+    if (!response.ok()) {
+      throw new Error(`Local Supabase is not reachable at ${SUPABASE_URL}.`);
+    }
+  });
+
+  test('case form keeps required background fields reachable at laptop height', async ({ page, request }) => {
+    const runId = Date.now();
+    const email = `ux-case-modal-${runId}@example.test`;
+
+    await createClinician(request, email);
+    await signInClinician(page, email);
+    await page.getByRole('button', { name: /תיק חדש/ }).click();
+
+    await expect(page.getByRole('heading', { name: 'פתיחת תיק חדש' })).toBeVisible();
+    const scrollBody = page.getByTestId('case-form-scroll');
+    await scrollBody.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+
+    const education = page.getByPlaceholder('למשל 12');
+    await expect(education).toBeVisible();
+    await expect(page.getByRole('button', { name: 'פתח תיק' })).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const input = document.querySelector('input[placeholder="למשל 12"]');
+      const footer = document.querySelector('[data-testid="case-form-footer"]');
+      if (!input || !footer) return null;
+      const inputBox = input.getBoundingClientRect();
+      const footerBox = footer.getBoundingClientRect();
+      return {
+        inputBottom: inputBox.bottom,
+        footerTop: footerBox.top,
+        overlapsFooter:
+          inputBox.left < footerBox.right &&
+          inputBox.right > footerBox.left &&
+          inputBox.top < footerBox.bottom &&
+          inputBox.bottom > footerBox.top,
+      };
+    });
+
+    expect(layout).not.toBeNull();
+    expect(layout?.overlapsFooter).toBe(false);
+    expect(layout?.inputBottom).toBeLessThanOrEqual((layout?.footerTop ?? 0) + 1);
+    await expectNoHorizontalOverflow(page);
+  });
+});
+
 async function seedAssessmentState(page: Page, lastPath: string, overrides: Record<string, unknown> = {}) {
   await page.addInitScript(([path, storedOverrides]) => {
     window.localStorage.setItem('moca_assessment_state', JSON.stringify({
