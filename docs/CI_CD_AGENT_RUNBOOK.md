@@ -100,6 +100,14 @@ Required GitHub secrets for hosted automation:
 | `HOSTED_SUPABASE_ANON_KEY` or `SUPABASE_ANON_KEY` | hosted backend data smoke | Hosted project's anon key. |
 | `HOSTED_SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SERVICE_ROLE_KEY` | hosted backend data smoke | Hosted project's service-role key; never expose it to frontend build env. |
 
+Required hosted Supabase Edge Function secrets:
+
+| Secret | Notes |
+|---|---|
+| `START_SESSION_RATE_LIMIT_SECRET` | Long random secret dedicated to HMAC hashing patient-start IP and test-number fingerprints. |
+| `ALLOWED_ORIGINS` | Comma-separated clinician and patient Netlify origins for hosted browser calls. |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Notification provider configuration. |
+
 Optional GitHub repository variables override the default hosted smoke targets:
 
 | Variable | Default |
