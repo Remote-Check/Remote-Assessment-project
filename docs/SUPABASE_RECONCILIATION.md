@@ -287,6 +287,7 @@ Required remote secret names for current/future MVP behavior:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `START_SESSION_RATE_LIMIT_SECRET`
 - `ALLOWED_ORIGINS`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
@@ -306,6 +307,8 @@ https://reakwind-remote-assessment-clinician.netlify.app,https://reakwind-remote
 ```
 
 If this secret is missing, hosted browser calls to Edge Functions can fail before the app receives JSON, commonly surfacing as `Load failed`.
+
+`START_SESSION_RATE_LIMIT_SECRET` should be a long random secret dedicated to HMAC hashing patient-start IP and test-number fingerprints. Do not reuse the service-role key for hosted environments; the code keeps that fallback only for local compatibility.
 
 ## Step 6: Verify Storage
 
