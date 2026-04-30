@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from "react-router";
+import { Link, Outlet, NavLink, useNavigate } from "react-router";
 import { Users } from "lucide-react";
 import { clsx } from "clsx";
 import { useClinicianAuth } from "./auth/useClinicianAuth";
@@ -33,10 +33,14 @@ export function ClinicianDashboardLayout() {
     >
       <header className="lg:hidden bg-[#0a0a0a] text-white border-b border-gray-800">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <div className="min-w-0">
+          <Link
+            to="/dashboard"
+            className="min-w-0 rounded-lg transition-colors hover:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            aria-label="Remote Check - חזרה למסך הראשי"
+          >
             <div className="font-bold text-lg leading-tight">Remote Check</div>
             <div className="text-gray-400 text-xs">פורטל קלינאים</div>
-          </div>
+          </Link>
           <button
             onClick={handleSignOut}
             className="h-10 shrink-0 rounded-lg bg-white/10 px-3 text-sm font-bold text-gray-200 hover:bg-white/15"
@@ -67,8 +71,14 @@ export function ClinicianDashboardLayout() {
       {/* Sidebar */}
       <aside className="hidden lg:flex w-[220px] bg-[#0a0a0a] text-white flex-col h-screen sticky top-0">
         <div className="p-5 mb-3 border-b border-gray-800">
-          <div className="font-bold text-lg">Remote Check</div>
-          <div className="text-gray-400 text-xs mt-1 tracking-wider">CLINICIAN PORTAL</div>
+          <Link
+            to="/dashboard"
+            className="block rounded-lg transition-colors hover:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            aria-label="Remote Check - חזרה למסך הראשי"
+          >
+            <div className="font-bold text-lg">Remote Check</div>
+            <div className="text-gray-400 text-xs mt-1 tracking-wider">CLINICIAN PORTAL</div>
+          </Link>
         </div>
 
         <nav className="flex-1 px-3 space-y-1.5">
