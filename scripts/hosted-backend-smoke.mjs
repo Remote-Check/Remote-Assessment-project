@@ -4,6 +4,7 @@ const DEFAULT_PATIENT_ORIGIN = 'https://reakwind-remote-assessment-patient-stagi
 const DEFAULT_CLINICIAN_ORIGIN = 'https://reakwind-remote-assessment-clinician.netlify.app';
 const DEFAULT_MOCA_VERSION = '8.3';
 const DEFAULT_PASSWORD = 'Password123!';
+const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
 
 const options = parseArgs(process.argv.slice(2));
 if (options.help) {
@@ -109,6 +110,54 @@ try {
       sessionRow.body[0]?.assessment_language === 'he',
     'hosted schema stores the expected session contract',
     summarizeResponse(sessionRow),
+  );
+
+  const drawingStrokes = [[
+    { x: 40, y: 40, time: 0, pressure: 0.5, pointerType: 'touch' },
+    { x: 120, y: 120, time: 50, pressure: 0.5, pointerType: 'touch' },
+  ]];
+  const drawing = await request('/functions/v1/save-drawing', {
+    method: 'POST',
+    headers: {
+      ...anonHeaders(),
+      Origin: patientOrigin,
+    },
+    body: JSON.stringify({
+      sessionId: created.body.sessionId,
+      linkToken: started.body.linkToken,
+      taskId: 'moca-visuospatial',
+      imageBase64: TINY_PNG,
+      strokesData: drawingStrokes,
+    }),
+  });
+  assert(
+    drawing.status === 200 &&
+      drawing.body?.ok === true &&
+      drawing.body?.storagePath === `${created.body.sessionId}/moca-visuospatial.png`,
+    'save-drawing stores the hosted letter-number drawing review',
+    summarizeResponse(drawing),
+  );
+
+  const submittedDrawing = await request('/functions/v1/submit-results', {
+    method: 'POST',
+    headers: {
+      ...anonHeaders(),
+      Origin: patientOrigin,
+    },
+    body: JSON.stringify({
+      sessionId: created.body.sessionId,
+      linkToken: started.body.linkToken,
+      taskType: 'moca-visuospatial',
+      rawData: {
+        strokes: drawingStrokes,
+        drawingPath: drawing.body.storagePath,
+      },
+    }),
+  });
+  assert(
+    submittedDrawing.status === 200 && submittedDrawing.body?.ok === true,
+    'submit-results stores the hosted letter-number task result',
+    summarizeResponse(submittedDrawing),
   );
 
   console.log(`PASS hosted backend data smoke session=${created.body.sessionId} testNumberLength=${created.body.testNumber.length}`);
