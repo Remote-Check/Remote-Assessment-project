@@ -12,6 +12,7 @@ export type ExtendedSaveState = TaskSaveStatus | AdditionalSaveState;
 interface SaveStateNoticeProps {
   state?: ExtendedSaveState;
   actionLabel?: string;
+  id?: string;
   className?: string;
 }
 
@@ -68,7 +69,7 @@ function SaveStateIcon({ status }: { status: ExtendedSaveState["status"] }) {
   return <AlertTriangle className={iconClassName} aria-hidden="true" />;
 }
 
-export function SaveStateNotice({ state, actionLabel, className }: SaveStateNoticeProps) {
+export function SaveStateNotice({ state, actionLabel, id, className }: SaveStateNoticeProps) {
   if (!state) {
     return null;
   }
@@ -78,6 +79,7 @@ export function SaveStateNotice({ state, actionLabel, className }: SaveStateNoti
 
   return (
     <div
+      id={id}
       className={clsx(
         "inline-flex min-h-9 max-w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-extrabold sm:justify-end",
         SAVE_STATE_STYLES[state.status],
