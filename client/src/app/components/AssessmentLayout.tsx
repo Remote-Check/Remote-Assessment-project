@@ -9,6 +9,35 @@ import {
   patientTaskTotalSteps,
 } from "./patient/patientTaskFlow";
 
+const DRAWING_SAVE_ERROR_MESSAGE = "שמירת הציור נכשלה. בדוק חיבור ונסה שוב לפני המעבר.";
+const ANSWER_SAVE_ERROR_MESSAGE = "שמירת התשובה נכשלה. בדוק חיבור ונסה שוב לפני המעבר.";
+
+function isDrawingTask(taskKey: string | null) {
+  return taskKey === "trailMaking" || taskKey === "cube" || taskKey === "clock";
+}
+
+function isGenericSaveError(message: string) {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized === "" ||
+    normalized.includes("failed to save") ||
+    normalized.includes("save failed") ||
+    normalized.includes("שמירת התשובה נכשלה") ||
+    normalized.includes("שמירת הציור נכשלה")
+  );
+}
+
+function saveErrorMessageForTask(taskKey: string | null, message?: string) {
+  if (isDrawingTask(taskKey)) {
+    if (!message || isGenericSaveError(message)) {
+      return DRAWING_SAVE_ERROR_MESSAGE;
+    }
+    return message;
+  }
+
+  return message ?? ANSWER_SAVE_ERROR_MESSAGE;
+}
+
 export function AssessmentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,7 +51,6 @@ export function AssessmentLayout() {
     [currentStepConfig.taskKey, state.tasks],
   );
   const currentSaveStatus = currentStepConfig.taskKey ? taskSaveStatus[currentStepConfig.taskKey] : undefined;
-  const isDrawingTask = currentStepConfig.taskKey === "trailMaking" || currentStepConfig.taskKey === "cube" || currentStepConfig.taskKey === "clock";
   const isEndScreen = location.pathname.endsWith("/end");
 
   useEffect(() => {
@@ -42,7 +70,7 @@ export function AssessmentLayout() {
       retryFailedSaves();
       setValidation({
         path: location.pathname,
-        message: currentSaveStatus.message ?? (isDrawingTask ? "שמירת הציור נכשלה. בדוק חיבור ונסה שוב לפני המעבר." : "שמירת התשובה נכשלה. בדוק חיבור ונסה שוב לפני המעבר."),
+        message: saveErrorMessageForTask(currentStepConfig.taskKey, currentSaveStatus.message),
       });
       return;
     }
