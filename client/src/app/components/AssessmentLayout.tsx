@@ -22,6 +22,7 @@ export function AssessmentLayout() {
     [currentStepConfig.taskKey, state.tasks],
   );
   const currentSaveStatus = currentStepConfig.taskKey ? taskSaveStatus[currentStepConfig.taskKey] : undefined;
+  const isDrawingTask = currentStepConfig.taskKey === "trailMaking" || currentStepConfig.taskKey === "cube" || currentStepConfig.taskKey === "clock";
   const isEndScreen = location.pathname.endsWith("/end");
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function AssessmentLayout() {
       retryFailedSaves();
       setValidation({
         path: location.pathname,
-        message: currentSaveStatus.message ?? "שמירת התשובה נכשלה. בדוק חיבור ונסה שוב לפני המעבר.",
+        message: currentSaveStatus.message ?? (isDrawingTask ? "שמירת הציור נכשלה. בדוק חיבור ונסה שוב לפני המעבר." : "שמירת התשובה נכשלה. בדוק חיבור ונסה שוב לפני המעבר."),
       });
       return;
     }
