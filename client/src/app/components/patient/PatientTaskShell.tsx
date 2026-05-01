@@ -83,7 +83,7 @@ export function PatientTaskShell({
         />
       </div>
 
-      <main className="mx-auto flex w-full max-w-[1100px] min-w-0 flex-1 flex-col px-3 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-6">
+      <main className="mx-auto flex w-full max-w-[var(--patient-shell-max-width)] min-w-0 flex-1 flex-col px-3 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-6">
         {children}
       </main>
 
