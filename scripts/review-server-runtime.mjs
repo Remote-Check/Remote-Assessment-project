@@ -101,13 +101,15 @@ export function edgeFunctionNames({ cwd, env = process.env }) {
   return result.stdout.trim().split(/\s+/).filter(Boolean);
 }
 
-export async function isEdgeFunctionReachable(baseUrl, origin) {
+export async function isEdgeFunctionReachable(baseUrl, origin, { fetchImpl = fetch } = {}) {
   try {
-    const response = await fetch(new URL('/functions/v1/start-session', baseUrl), {
+    const response = await fetchImpl(new URL('/functions/v1/start-session', baseUrl), {
       method: 'OPTIONS',
       headers: { Origin: origin },
     });
-    return response.status < 500;
+    return response.status >= 200 &&
+      response.status < 300 &&
+      response.headers.get('Access-Control-Allow-Origin') === origin;
   } catch {
     return false;
   }

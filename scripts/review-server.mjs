@@ -66,7 +66,11 @@ process.on('exit', () => {
 });
 
 if (!options.skipFunctions) {
-  if (await isEdgeFunctionReachable(apiUrl, localUrl)) {
+  const functionsReachable = await Promise.all([
+    isEdgeFunctionReachable(apiUrl, localUrl),
+    isEdgeFunctionReachable(apiUrl, publicUrl),
+  ]);
+  if (functionsReachable.every(Boolean)) {
     console.log('Local Supabase Edge Functions are already reachable. Reusing them.');
   } else {
     const functionNames = edgeFunctionNames({ cwd: filePath(repoRoot) });

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildReviewServerHttpsEnv,
   buildReviewServerUrls,
+  isEdgeFunctionReachable,
   parseEnvOutput,
   parseReviewServerArgs,
   resolveReviewServerScheme,
@@ -109,4 +110,42 @@ test('reviewServerScriptName maps surface to npm script', () => {
   assert.equal(reviewServerScriptName('patient'), 'dev:patient');
   assert.equal(reviewServerScriptName('clinician'), 'dev:clinician');
   assert.equal(reviewServerScriptName('combined'), 'dev');
+});
+
+test('isEdgeFunctionReachable requires successful preflight for the requested origin', async () => {
+  const origin = 'https://192.168.1.230:5176';
+  const ok = await isEdgeFunctionReachable('http://127.0.0.1:54321', origin, {
+    fetchImpl: async (url, init) => {
+      assert.equal(String(url), 'http://127.0.0.1:54321/functions/v1/start-session');
+      assert.equal(init.method, 'OPTIONS');
+      assert.equal(init.headers.Origin, origin);
+      return new Response(null, {
+        status: 204,
+        headers: { 'Access-Control-Allow-Origin': origin },
+      });
+    },
+  });
+
+  assert.equal(ok, true);
+  assert.equal(
+    await isEdgeFunctionReachable('http://127.0.0.1:54321', origin, {
+      fetchImpl: async () => new Response(null, { status: 403, headers: { Vary: 'Origin' } }),
+    }),
+    false,
+  );
+  assert.equal(
+    await isEdgeFunctionReachable('http://127.0.0.1:54321', origin, {
+      fetchImpl: async () => new Response(null, { status: 204 }),
+    }),
+    false,
+  );
+  assert.equal(
+    await isEdgeFunctionReachable('http://127.0.0.1:54321', origin, {
+      fetchImpl: async () => new Response(null, {
+        status: 204,
+        headers: { 'Access-Control-Allow-Origin': 'https://127.0.0.1:5176' },
+      }),
+    }),
+    false,
+  );
 });

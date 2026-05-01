@@ -435,10 +435,10 @@ async function runHealthChecks({ apiUrl, patientUrl, clinicianUrl }) {
   health = mergeHealthResult(
     health,
     'edgeFunctions',
-    await checkUrl(new URL('/functions/v1/start-session', apiUrl), {
-      method: 'OPTIONS',
-      headers: { Origin: patientUrl },
-    }) ? 'pass' : 'fail',
+    (await Promise.all([
+      isEdgeFunctionReachable(apiUrl, patientUrl),
+      isEdgeFunctionReachable(apiUrl, clinicianUrl),
+    ])).every(Boolean) ? 'pass' : 'fail',
   );
   health = mergeHealthResult(health, 'patientHttps', await checkUrl(patientUrl) ? 'pass' : 'fail');
   health = mergeHealthResult(health, 'clinicianHttps', await checkUrl(clinicianUrl) ? 'pass' : 'fail');
