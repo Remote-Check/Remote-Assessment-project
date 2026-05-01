@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   automatedCheckCommands,
+  automatedCheckFailures,
   buildAllowedOrigins,
   buildEvidence,
   checkUrl,
@@ -9,6 +10,7 @@ import {
   mergeHealthResult,
   parseLocalRehearsalArgs,
   requireReadinessResetConfirmation,
+  runAutomatedChecks,
 } from './local-rehearsal.mjs';
 
 test('parseLocalRehearsalArgs defaults to debug mode', () => {
@@ -125,4 +127,97 @@ test('automatedCheckCommands includes frontend and backend local checks', () => 
     'Playwright browser E2E',
     'scripted local Supabase E2E',
   ]);
+});
+
+test('automatedCheckCommands forwards licensed PDF skip flag to local E2E commands', () => {
+  const checks = automatedCheckCommands({ skipLicensedPdfCheck: true });
+  assert.deepEqual(
+    checks.find((check) => check.label === 'local regression shell').args,
+    ['scripts/local-test-shell.mjs', '--skip-browser', '--skip-licensed-pdf-check'],
+  );
+  assert.deepEqual(
+    checks.find((check) => check.label === 'scripted local Supabase E2E').args,
+    ['scripts/local-e2e.mjs', '--all-versions', '--skip-licensed-pdf-check'],
+  );
+});
+
+test('automatedCheckCommands omits licensed PDF skip flag by default', () => {
+  const checks = automatedCheckCommands();
+  assert.deepEqual(
+    checks.find((check) => check.label === 'local regression shell').args,
+    ['scripts/local-test-shell.mjs', '--skip-browser'],
+  );
+  assert.deepEqual(
+    checks.find((check) => check.label === 'scripted local Supabase E2E').args,
+    ['scripts/local-e2e.mjs', '--all-versions'],
+  );
+});
+
+test('runAutomatedChecks returns partial results on failure', () => {
+  const calls = [];
+  let attempts = 0;
+  const times = [
+    '2026-05-01T10:00:00.000Z',
+    '2026-05-01T10:00:01.000Z',
+    '2026-05-01T10:00:02.000Z',
+    '2026-05-01T10:00:03.000Z',
+  ];
+  let timeIndex = 0;
+
+  assert.throws(
+    () => runAutomatedChecks(
+      {},
+      {
+        spawnSyncImpl(command, args, options) {
+          attempts += 1;
+          calls.push({ command, args, cwd: options.cwd, stdio: options.stdio });
+          return { status: attempts === 2 ? 2 : 0 };
+        },
+        now: () => times[timeIndex++],
+        log: () => {},
+      },
+    ),
+    (error) => {
+      assert.equal(error.message, 'client lint failed with exit code 2.');
+      assert.deepEqual(error.results.map((result) => result.label), [
+        'client unit tests',
+        'client lint',
+      ]);
+      assert.deepEqual(error.results[1], {
+        label: 'client lint',
+        passed: false,
+        startedAt: '2026-05-01T10:00:02.000Z',
+        finishedAt: '2026-05-01T10:00:03.000Z',
+        exitCode: 2,
+        signal: null,
+      });
+      assert.deepEqual(automatedCheckFailures(error.results), [
+        {
+          type: 'automatedCheck',
+          label: 'client lint',
+          message: 'client lint failed with exit code 2.',
+          exitCode: 2,
+          signal: null,
+          startedAt: '2026-05-01T10:00:02.000Z',
+          finishedAt: '2026-05-01T10:00:03.000Z',
+        },
+      ]);
+      return true;
+    },
+  );
+  assert.equal(calls.length, 2);
+});
+
+test('runAutomatedChecks skips commands when requested', () => {
+  assert.deepEqual(
+    runAutomatedChecks(
+      { skipAutomatedChecks: true },
+      {
+        spawnSyncImpl() {
+          throw new Error('unexpected command');
+        },
+      },
+    ),
+    [],
+  );
 });

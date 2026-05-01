@@ -97,6 +97,7 @@ export function buildEvidence({
   clinicianUrl,
   health = createPendingHealth(),
   automatedChecks = [],
+  failures = [],
 }) {
   return {
     schemaVersion: 1,
@@ -113,14 +114,18 @@ export function buildEvidence({
     manualChecks: Object.fromEntries(
       manualCheckKeys.map((key) => [key, { result: 'pending', notes: '' }]),
     ),
-    failures: [],
+    failures,
   };
 }
 
 export function automatedCheckCommands({ skipLicensedPdfCheck = false } = {}) {
   const clientRoot = path.join(repoRoot, 'client');
+  const localRegressionShellArgs = ['scripts/local-test-shell.mjs', '--skip-browser'];
   const scriptedLocalE2eArgs = ['scripts/local-e2e.mjs', '--all-versions'];
-  if (skipLicensedPdfCheck) scriptedLocalE2eArgs.push('--skip-licensed-pdf-check');
+  if (skipLicensedPdfCheck) {
+    localRegressionShellArgs.push('--skip-licensed-pdf-check');
+    scriptedLocalE2eArgs.push('--skip-licensed-pdf-check');
+  }
 
   return [
     { label: 'client unit tests', command: 'npm', args: ['test'], cwd: clientRoot },
@@ -128,7 +133,7 @@ export function automatedCheckCommands({ skipLicensedPdfCheck = false } = {}) {
     { label: 'client build', command: 'npm', args: ['run', 'build'], cwd: clientRoot },
     { label: 'client surface builds', command: 'npm', args: ['run', 'build:surfaces'], cwd: clientRoot },
     { label: 'client surface verification', command: 'npm', args: ['run', 'verify:surface-builds'], cwd: clientRoot },
-    { label: 'local regression shell', command: 'node', args: ['scripts/local-test-shell.mjs', '--skip-browser'], cwd: repoRoot },
+    { label: 'local regression shell', command: 'node', args: localRegressionShellArgs, cwd: repoRoot },
     { label: 'Playwright browser E2E', command: 'npm', args: ['run', 'e2e:browser'], cwd: clientRoot },
     {
       label: 'scripted local Supabase E2E',
@@ -137,6 +142,20 @@ export function automatedCheckCommands({ skipLicensedPdfCheck = false } = {}) {
       cwd: repoRoot,
     },
   ];
+}
+
+export function automatedCheckFailures(results) {
+  return results
+    .filter((result) => !result.passed)
+    .map((result) => ({
+      type: 'automatedCheck',
+      label: result.label,
+      message: `${result.label} failed with exit code ${result.exitCode}.`,
+      exitCode: result.exitCode,
+      signal: result.signal ?? null,
+      startedAt: result.startedAt,
+      finishedAt: result.finishedAt,
+    }));
 }
 
 function printUsage() {
@@ -208,7 +227,23 @@ async function main() {
     for (const child of children) child.kill('SIGTERM');
   });
 
-  const automatedChecks = runAutomatedChecks(options);
+  let automatedChecks;
+  try {
+    automatedChecks = runAutomatedChecks(options);
+  } catch (error) {
+    automatedChecks = error.results ?? [];
+    const evidencePath = writeEvidenceFile({
+      mode: options.mode,
+      publicHost,
+      patientUrl: patientUrls.publicUrl,
+      clinicianUrl: clinicianUrls.localUrl,
+      health: createPendingHealth(),
+      automatedChecks,
+      failures: automatedCheckFailures(automatedChecks),
+    });
+    console.error(`Automated check evidence written to ${evidencePath}`);
+    throw error;
+  }
 
   if (!(await areEdgeFunctionsReachable(apiUrl, allowedOrigins))) {
     const functions = spawnCommand(
@@ -292,24 +327,44 @@ async function main() {
   console.log('');
 }
 
-function runAutomatedChecks(options) {
+export function runAutomatedChecks(
+  options,
+  {
+    spawnSyncImpl = spawnSync,
+    now = () => new Date().toISOString(),
+    log = console.log,
+  } = {},
+) {
   if (options.skipAutomatedChecks) return [];
 
   const results = [];
   for (const check of automatedCheckCommands({
     skipLicensedPdfCheck: options.skipLicensedPdfCheck,
   })) {
-    console.log(`==> ${check.label}`);
-    const startedAt = new Date().toISOString();
-    const result = spawnSync(check.command, check.args, {
+    log(`==> ${check.label}`);
+    const startedAt = now();
+    const result = spawnSyncImpl(check.command, check.args, {
       cwd: check.cwd,
       stdio: 'inherit',
       env: process.env,
     });
-    const finishedAt = new Date().toISOString();
+    const finishedAt = now();
     const passed = result.status === 0;
-    results.push({ label: check.label, passed, startedAt, finishedAt });
-    if (!passed) throw new Error(`${check.label} failed with exit code ${result.status}.`);
+    const checkResult = {
+      label: check.label,
+      passed,
+      startedAt,
+      finishedAt,
+      exitCode: result.status,
+      signal: result.signal ?? null,
+    };
+    results.push(checkResult);
+    if (!passed) {
+      const error = new Error(`${check.label} failed with exit code ${result.status}.`);
+      error.results = results;
+      error.failedCheck = checkResult;
+      throw error;
+    }
   }
   return results;
 }
@@ -430,7 +485,15 @@ function spawnReviewServer(args) {
   });
 }
 
-function writeEvidenceFile({ mode, publicHost, patientUrl, clinicianUrl, health, automatedChecks }) {
+function writeEvidenceFile({
+  mode,
+  publicHost,
+  patientUrl,
+  clinicianUrl,
+  health,
+  automatedChecks,
+  failures,
+}) {
   const sha = readCommitSha();
   const evidence = buildEvidence({
     mode,
@@ -440,6 +503,7 @@ function writeEvidenceFile({ mode, publicHost, patientUrl, clinicianUrl, health,
     clinicianUrl,
     health,
     automatedChecks,
+    failures,
   });
   const evidenceDir = path.join(repoRoot, 'local-rehearsal-evidence');
   fs.mkdirSync(evidenceDir, { recursive: true, mode: 0o700 });
