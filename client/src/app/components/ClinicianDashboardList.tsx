@@ -8,6 +8,11 @@ import { supabase } from "../../lib/supabase";
 import { PatientForm } from "./PatientForm";
 import { CsvExportConfirmDialog } from "./CsvExportConfirmDialog";
 import { StatusPill } from "./StatusPill";
+import {
+  deriveClinicianQueueSummary,
+  deriveClinicianStatus,
+  type ClinicianQueueStatus,
+} from "./clinician/clinicianQueue";
 
 interface PatientRow {
   id: string;
@@ -19,7 +24,7 @@ interface PatientRow {
   latestScore: number | null;
   latestScoreProvisional: boolean;
   needsReview: boolean;
-  status: "new" | "in_progress" | "review" | "completed";
+  status: ClinicianQueueStatus;
 }
 
 interface ScoringSummary {
@@ -67,21 +72,6 @@ function reportNeedsReview(report: ScoringSummary | null | undefined): boolean {
 function scoreLabel(score: number | null, provisional: boolean): string {
   if (score == null) return "—";
   return provisional ? `${score}/30 (זמני)` : `${score}/30`;
-}
-
-function deriveStatus(sessionValue: PatientWithSessions["sessions"]): PatientRow["status"] {
-  const sessions = relationArray(sessionValue);
-  if (!sessions || sessions.length === 0) return "new";
-  if (
-    sessions.some(
-      (s) =>
-        s.status === "awaiting_review" || relationArray(s.scoring_reports).some(reportNeedsReview),
-    )
-  )
-    return "review";
-  if (sessions.some((s) => s.status === "in_progress")) return "in_progress";
-  if (sessions.every((s) => s.status === "completed")) return "completed";
-  return "new";
 }
 
 function caseDisplay(row: Pick<PatientRow, "case_id" | "id">): string {
@@ -280,7 +270,7 @@ export function ClinicianDashboardList() {
           latestScore,
           latestScoreProvisional: finalScore == null && provisionalScore != null,
           needsReview,
-          status: deriveStatus(sessions),
+          status: deriveClinicianStatus(sessions),
         };
       });
       const trendPoints = (data as PatientWithSessions[])
@@ -399,11 +389,12 @@ export function ClinicianDashboardList() {
     }
   };
 
-  const totalCases = rows.length;
-  const reviewCount = rows.filter((r) => r.status === "review").length;
-  const inProgressCount = rows.filter((r) => r.status === "in_progress").length;
-  const pendingCount = rows.filter((r) => r.status === "new").length;
-  const completedCount = rows.filter((r) => r.status === "completed").length;
+  const queueSummary = deriveClinicianQueueSummary(rows);
+  const totalCases = queueSummary.all;
+  const reviewCount = queueSummary.review;
+  const inProgressCount = queueSummary.in_progress;
+  const pendingCount = queueSummary.new;
+  const completedCount = queueSummary.completed;
   const statusFilters: Array<{
     key: "all" | PatientRow["status"];
     label: string;
