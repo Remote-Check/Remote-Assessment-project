@@ -31,6 +31,7 @@ Read focused docs only when touching their area:
 | Netlify patient/clinician hosts | [docs/NETLIFY_HOSTING.md](docs/NETLIFY_HOSTING.md) |
 | Clinical-pilot readiness, licensed stimuli, physical-device gates | [docs/PATIENT_PWA_PILOT_READINESS.md](docs/PATIENT_PWA_PILOT_READINESS.md) |
 | Patient PWA milestone status | [docs/PATIENT_PWA_TRACKER.md](docs/PATIENT_PWA_TRACKER.md) |
+| Frontend readiness, patient/clinician UI rules, verification matrix | [docs/FRONTEND_READINESS.md](docs/FRONTEND_READINESS.md) |
 | Patient-facing copy, clinician labels, status labels, task names, review rubrics | [docs/HEBREW_TERMINOLOGY.md](docs/HEBREW_TERMINOLOGY.md) |
 | GitHub, Netlify, and Supabase delivery flow | [docs/CI_CD_AGENT_RUNBOOK.md](docs/CI_CD_AGENT_RUNBOOK.md) |
 | Local browser/Supabase E2E | [docs/LOCAL_E2E_VERIFICATION.md](docs/LOCAL_E2E_VERIFICATION.md) |
