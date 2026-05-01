@@ -289,16 +289,35 @@ async function areEdgeFunctionsReachable(apiUrl, allowedOrigins) {
   return results.every(Boolean);
 }
 
-async function checkUrl(url, init = {}) {
-  const deadline = Date.now() + 60_000;
+export async function checkUrl(
+  url,
+  init = {},
+  { timeoutMs = 60_000, intervalMs = 1_000, fetchImpl = fetch } = {},
+) {
+  const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
+    const remainingMs = deadline - Date.now();
+    const abortController = new AbortController();
+    let attemptTimer;
     try {
-      const response = await fetch(url, init);
+      const timeout = new Promise((_, reject) => {
+        attemptTimer = setTimeout(() => {
+          abortController.abort();
+          reject(new DOMException('Local rehearsal health check timed out.', 'AbortError'));
+        }, remainingMs);
+      });
+      const response = await Promise.race([
+        fetchImpl(url, { ...init, signal: abortController.signal }),
+        timeout,
+      ]);
       if (response.status < 500) return true;
     } catch {
       // Keep polling until the local server finishes starting.
+    } finally {
+      clearTimeout(attemptTimer);
     }
-    await new Promise((resolve) => setTimeout(resolve, 1_000));
+    const sleepMs = Math.min(intervalMs, Math.max(0, deadline - Date.now()));
+    if (sleepMs > 0) await new Promise((resolve) => setTimeout(resolve, sleepMs));
   }
   return false;
 }

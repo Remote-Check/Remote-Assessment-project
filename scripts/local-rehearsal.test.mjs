@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildAllowedOrigins,
   buildEvidence,
+  checkUrl,
   createPendingHealth,
   mergeHealthResult,
   parseLocalRehearsalArgs,
@@ -94,4 +95,20 @@ test('mergeHealthResult updates one health field immutably', () => {
     clinicianHttps: 'pending',
     supabaseProxy: 'pending',
   });
+});
+
+test('checkUrl returns false when a fetch attempt hangs past the deadline', async () => {
+  const startedAt = Date.now();
+  const result = await checkUrl(
+    'https://127.0.0.1:5176',
+    {},
+    {
+      timeoutMs: 20,
+      intervalMs: 1,
+      fetchImpl: () => new Promise(() => {}),
+    },
+  );
+
+  assert.equal(result, false);
+  assert.ok(Date.now() - startedAt < 1_000);
 });
