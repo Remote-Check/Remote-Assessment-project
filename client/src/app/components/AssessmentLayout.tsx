@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useNavigate, useLocation } from "react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAssessmentStore } from "../store/AssessmentContext";
+import type { TaskSaveStatus } from "../store/AssessmentContext";
 import { StimuliManifestProvider, StimulusReadinessBanner } from "./StimuliManifestProvider";
 import { PatientTaskShell } from "./patient/PatientTaskShell";
 import {
@@ -38,6 +39,17 @@ function saveErrorMessageForTask(taskKey: string | null, message?: string) {
   return message ?? ANSWER_SAVE_ERROR_MESSAGE;
 }
 
+function displaySaveStatusForTask(taskKey: string | null, saveStatus?: TaskSaveStatus) {
+  if (saveStatus?.status !== "error") {
+    return saveStatus;
+  }
+
+  return {
+    ...saveStatus,
+    message: saveErrorMessageForTask(taskKey, saveStatus.message),
+  };
+}
+
 export function AssessmentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,6 +63,7 @@ export function AssessmentLayout() {
     [currentStepConfig.taskKey, state.tasks],
   );
   const currentSaveStatus = currentStepConfig.taskKey ? taskSaveStatus[currentStepConfig.taskKey] : undefined;
+  const displaySaveStatus = displaySaveStatusForTask(currentStepConfig.taskKey, currentSaveStatus);
   const isEndScreen = location.pathname.endsWith("/end");
 
   useEffect(() => {
@@ -99,7 +112,7 @@ export function AssessmentLayout() {
         totalSteps={patientTaskTotalSteps}
         isEndScreen={isEndScreen}
         hasEvidence={hasEvidence}
-        saveState={currentSaveStatus}
+        saveState={displaySaveStatus}
         validationMessage={validationMessage}
         topBanner={<StimulusReadinessBanner />}
         onBack={() => navigate(currentStepConfig.prev)}

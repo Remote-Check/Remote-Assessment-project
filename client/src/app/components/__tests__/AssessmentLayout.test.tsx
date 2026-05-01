@@ -132,6 +132,9 @@ describe('AssessmentLayout', () => {
     });
     const router = renderLayout();
 
+    expect(screen.getByText('שמירת הציור נכשלה. בדוק חיבור ונסה שוב לפני המעבר.')).toBeInTheDocument();
+    expect(screen.queryByText('Failed to save drawing')).not.toBeInTheDocument();
+
     await userEvent.click(screen.getByRole('button', { name: /נסה שוב לשמור/ }));
 
     expect(store.retryFailedSaves).toHaveBeenCalled();
