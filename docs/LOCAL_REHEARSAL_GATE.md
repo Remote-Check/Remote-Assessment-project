@@ -4,7 +4,7 @@
 
 The local rehearsal gate proves the clinician website and patient PWA work locally on a Mac plus iPad before hosted deployment readiness is discussed. It is the physical-device gate for HTTPS, installed-PWA behavior, local Supabase, Edge Functions, clinician review, finalization, and exports.
 
-Use `docs/LOCAL_REHEARSAL_EVIDENCE.example.json` as the evidence template. The runner writes generated evidence under `local-rehearsal-evidence/`; keep those generated files out of Git.
+Use `docs/LOCAL_REHEARSAL_EVIDENCE.example.json` as the evidence shape template, not as proof of readiness. The runner writes generated evidence under `local-rehearsal-evidence/`; keep those generated files out of Git.
 
 ## Modes
 
@@ -12,6 +12,8 @@ Use `docs/LOCAL_REHEARSAL_EVIDENCE.example.json` as the evidence template. The r
 - Readiness mode resets local Supabase and is the only mode that can certify deployment readiness.
 
 Use `--skip-automated-checks` only while debugging a local failure. A run with skipped automated checks cannot certify readiness.
+
+Generated readiness evidence must include the automated check results. Empty `automatedChecks` evidence is non-certifying.
 
 Use `--skip-licensed-pdf-check` only for non-clinical contract checks. Do not use it for clinical readiness, because clinical readiness must verify the licensed PDFs and private Storage manifests.
 
@@ -24,6 +26,8 @@ mkdir -p .certs
 mkcert -install
 mkcert -cert-file .certs/remote-assessment-local.pem -key-file .certs/remote-assessment-local-key.pem 127.0.0.1 localhost <mac-lan-ip>
 ```
+
+The `.certs/` directory is local-only and ignored by Git. Do not commit local certificate material.
 
 The mkcert root certificate must be installed and trusted on the iPad before installed-PWA testing. Without the trusted root, Safari may open the page with warnings and installed-PWA behavior is not valid readiness evidence.
 

@@ -60,7 +60,7 @@ Every agent must use GitHub branch-based version control for all repo changes. T
 - Delete merged/superseded branches only after confirming they are merged or explicitly no longer needed.
 - List verification performed and skipped checks in the PR and final handoff.
 
-Generated local artifacts stay out of Git: `.env.local`, `.playwright-mcp/`, `client/test-results/`, `client/playwright-report/`, `local-rehearsal-evidence/`, `node_modules/`, and `dist/`.
+Generated local artifacts stay out of Git: `.env.local`, `.certs/`, `.playwright-mcp/`, `client/test-results/`, `client/playwright-report/`, `local-rehearsal-evidence/`, `node_modules/`, and `dist/`.
 
 ## Development Process
 

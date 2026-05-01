@@ -4,6 +4,7 @@ node_modules/
 dist/
 .env
 .env.local
+.certs/
 .playwright-mcp/
 .superpowers/
 client/test-results/
