@@ -57,13 +57,14 @@ export function AssessmentLayout() {
   const mocaVersion = state.scoringContext?.mocaVersion ?? "8.3";
   const [validation, setValidation] = useState<{ path: string; message: string } | null>(null);
   const currentStepConfig = getPatientStepConfig(location.pathname);
+  const currentTaskKey = currentStepConfig.taskKey ?? null;
   const currentStep = currentStepConfig.step;
   const hasEvidence = useMemo(
-    () => patientTaskHasEvidence(currentStepConfig.taskKey, state.tasks),
-    [currentStepConfig.taskKey, state.tasks],
+    () => patientTaskHasEvidence(currentTaskKey ?? undefined, state.tasks),
+    [currentTaskKey, state.tasks],
   );
-  const currentSaveStatus = currentStepConfig.taskKey ? taskSaveStatus[currentStepConfig.taskKey] : undefined;
-  const displaySaveStatus = displaySaveStatusForTask(currentStepConfig.taskKey, currentSaveStatus);
+  const currentSaveStatus = currentTaskKey ? taskSaveStatus[currentTaskKey] : undefined;
+  const displaySaveStatus = displaySaveStatusForTask(currentTaskKey, currentSaveStatus);
   const isEndScreen = location.pathname.endsWith("/end");
 
   useEffect(() => {
@@ -83,12 +84,12 @@ export function AssessmentLayout() {
       retryFailedSaves();
       setValidation({
         path: location.pathname,
-        message: saveErrorMessageForTask(currentStepConfig.taskKey, currentSaveStatus.message),
+        message: saveErrorMessageForTask(currentTaskKey, currentSaveStatus.message),
       });
       return;
     }
-    if (!hasEvidence && currentStepConfig.taskKey) {
-      updateTaskData(currentStepConfig.taskKey, {
+    if (!hasEvidence && currentTaskKey) {
+      updateTaskData(currentTaskKey, {
         skipped: true,
         skippedAt: new Date().toISOString(),
         reason: "no_evidence",
