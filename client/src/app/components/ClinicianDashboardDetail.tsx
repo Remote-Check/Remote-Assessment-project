@@ -1,23 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck, Download, FileDown, Mic, Save } from "lucide-react";
-import { Link, useParams } from "react-router";
-import { edgeErrorMessage, edgeFetch } from "../../lib/edgeFetch";
-import { supabase } from "../../lib/supabase";
-import { DEFAULT_MOCA_VERSION, getMocaVersionConfig } from "../../lib/scoring/moca-config";
-import { clsx } from "clsx";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DBScoringReport, Session as DBSession, TaskResult } from "../../types/database";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardCheck,
+  Download,
+  FileDown,
+  Mic,
+  Save,
+} from 'lucide-react';
+import { Link, useParams } from 'react-router';
+import { edgeErrorMessage, edgeFetch } from '../../lib/edgeFetch';
+import { supabase } from '../../lib/supabase';
+import { DEFAULT_MOCA_VERSION, getMocaVersionConfig } from '../../lib/scoring/moca-config';
+import { clsx } from 'clsx';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { DBScoringReport, Session as DBSession, TaskResult } from '../../types/database';
 
-import { PlaybackCanvas } from "./PlaybackCanvas";
-import { PlaybackAudio } from "./PlaybackAudio";
-import { CsvExportConfirmDialog } from "./CsvExportConfirmDialog";
-import { StatusPill, type StatusPillValue } from "./StatusPill";
+import { PlaybackCanvas } from './PlaybackCanvas';
+import { PlaybackAudio } from './PlaybackAudio';
+import { CsvExportConfirmDialog } from './CsvExportConfirmDialog';
+import { StatusPill, type StatusPillValue } from './StatusPill';
 import {
   DRAWING_TAB_TO_TASK_ID,
   normalizeStrokes,
   SCORING_TAB_TO_TASK_ID,
   type ReviewTab,
-} from "./clinicianReviewUtils";
+} from './clinicianReviewUtils';
 
 interface PatientLite {
   id: string;
@@ -63,43 +72,54 @@ interface ScoreBreakdownRow {
   itemLabel: string;
   score: number;
   max: number;
-  status: "scored" | "review";
+  status: 'scored' | 'review';
   evidence: string | null;
 }
 
-function formatDuration(startIso: string | null | undefined, endIso: string | null | undefined): string {
-  if (!startIso || !endIso) return "—";
+function formatDuration(
+  startIso: string | null | undefined,
+  endIso: string | null | undefined,
+): string {
+  if (!startIso || !endIso) return '—';
   const start = new Date(startIso).getTime();
   const end = new Date(endIso).getTime();
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return "—";
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return '—';
   const totalSec = Math.round((end - start) / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-function formatDeviceContextDetails(context: Record<string, unknown> | null | undefined): Array<{ label: string; value: string }> {
-  if (!context || typeof context !== "object") return [];
+function formatDeviceContextDetails(
+  context: Record<string, unknown> | null | undefined,
+): Array<{ label: string; value: string }> {
+  if (!context || typeof context !== 'object') return [];
   const details = [
-    { label: "מצב", value: context.standalone === true ? "PWA מותקן" : context.standalone === false ? "דפדפן" : null },
-    { label: "סוג מכשיר", value: formFactorValue(context.formFactor) },
-    { label: "כיוון", value: orientationValue(context.orientation) },
-    { label: "פלטפורמה", value: stringValue(context.platform) },
-    { label: "שפה", value: stringValue(context.language) },
-    { label: "תצוגה", value: sizeValue(context.viewportWidth, context.viewportHeight) },
-    { label: "מסך", value: sizeValue(context.screenWidth, context.screenHeight) },
-    { label: "קלט", value: inputValue(context) },
+    {
+      label: 'מצב',
+      value:
+        context.standalone === true ? 'PWA מותקן' : context.standalone === false ? 'דפדפן' : null,
+    },
+    { label: 'סוג מכשיר', value: formFactorValue(context.formFactor) },
+    { label: 'כיוון', value: orientationValue(context.orientation) },
+    { label: 'פלטפורמה', value: stringValue(context.platform) },
+    { label: 'שפה', value: stringValue(context.language) },
+    { label: 'תצוגה', value: sizeValue(context.viewportWidth, context.viewportHeight) },
+    { label: 'מסך', value: sizeValue(context.screenWidth, context.screenHeight) },
+    { label: 'קלט', value: inputValue(context) },
   ];
 
-  return details.filter((detail): detail is { label: string; value: string } => Boolean(detail.value));
+  return details.filter((detail): detail is { label: string; value: string } =>
+    Boolean(detail.value),
+  );
 }
 
 function stringValue(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 function numberValue(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function sizeValue(width: unknown, height: unknown): string | null {
@@ -110,15 +130,15 @@ function sizeValue(width: unknown, height: unknown): string | null {
 }
 
 function formFactorValue(value: unknown): string | null {
-  if (value === "phone") return "טלפון";
-  if (value === "tablet") return "טאבלט";
-  if (value === "desktop") return "מחשב";
+  if (value === 'phone') return 'טלפון';
+  if (value === 'tablet') return 'טאבלט';
+  if (value === 'desktop') return 'מחשב';
   return null;
 }
 
 function orientationValue(value: unknown): string | null {
-  if (value === "portrait") return "לאורך";
-  if (value === "landscape") return "לרוחב";
+  if (value === 'portrait') return 'לאורך';
+  if (value === 'landscape') return 'לרוחב';
   return null;
 }
 
@@ -140,18 +160,18 @@ const SUBSCORE_CAPS: Record<string, number> = {
   orientation: 6,
 };
 
-const REVIEW_TABS: Array<{ id: ReviewTab; label: string; kind: "drawing" | "manual" }> = [
-  { id: "clock", label: "שעון", kind: "drawing" },
-  { id: "cube", label: "קובייה", kind: "drawing" },
-  { id: "trail", label: "חיבור נקודות", kind: "drawing" },
-  { id: "memory", label: "למידת מילים", kind: "manual" },
-  { id: "digitSpan", label: "קיבולת זיכרון", kind: "manual" },
-  { id: "vigilance", label: "קשב לאות א", kind: "manual" },
-  { id: "serial7", label: "חיסור 7", kind: "manual" },
-  { id: "language", label: "שפה", kind: "manual" },
-  { id: "abstraction", label: "הפשטה", kind: "manual" },
-  { id: "delayedRecall", label: "שליפה מושהית", kind: "manual" },
-  { id: "orientation", label: "התמצאות", kind: "manual" },
+const REVIEW_TABS: Array<{ id: ReviewTab; label: string; kind: 'drawing' | 'manual' }> = [
+  { id: 'clock', label: 'שעון', kind: 'drawing' },
+  { id: 'cube', label: 'קובייה', kind: 'drawing' },
+  { id: 'trail', label: 'חיבור נקודות', kind: 'drawing' },
+  { id: 'memory', label: 'למידת מילים', kind: 'manual' },
+  { id: 'digitSpan', label: 'קיבולת זיכרון', kind: 'manual' },
+  { id: 'vigilance', label: 'קשב לאות א', kind: 'manual' },
+  { id: 'serial7', label: 'חיסור 7', kind: 'manual' },
+  { id: 'language', label: 'שפה', kind: 'manual' },
+  { id: 'abstraction', label: 'הפשטה', kind: 'manual' },
+  { id: 'delayedRecall', label: 'שליפה מושהית', kind: 'manual' },
+  { id: 'orientation', label: 'התמצאות', kind: 'manual' },
 ];
 
 const DEFAULT_RUBRICS: RubricState = {
@@ -165,7 +185,14 @@ const DEFAULT_RUBRICS: RubricState = {
   language: { sentence1: false, sentence2: false, fluency: false },
   abstraction: { train: false, watch: false },
   delayedRecall: { word1: false, word2: false, word3: false, word4: false, word5: false },
-  orientation: { day: false, month: false, year: false, dayOfWeek: false, place: false, city: false },
+  orientation: {
+    day: false,
+    month: false,
+    year: false,
+    dayOfWeek: false,
+    place: false,
+    city: false,
+  },
 };
 
 function createEmptyRubrics(): RubricState {
@@ -184,15 +211,18 @@ function createEmptyRubrics(): RubricState {
   };
 }
 
-function rubricItemsFromScore(tab: ReviewTab, score: number | null | undefined): Record<string, boolean> | null {
+function rubricItemsFromScore(
+  tab: ReviewTab,
+  score: number | null | undefined,
+): Record<string, boolean> | null {
   if (score == null) return null;
   const next = { ...DEFAULT_RUBRICS[tab] };
   const keys = Object.keys(next);
   if (keys.length === 0 || score <= 0) return next;
 
   let checkedCount = Math.floor(score);
-  if (tab === "cube" || tab === "trail" || tab === "vigilance") checkedCount = keys.length;
-  if (tab === "serial7") {
+  if (tab === 'cube' || tab === 'trail' || tab === 'vigilance') checkedCount = keys.length;
+  if (tab === 'serial7') {
     checkedCount = score >= 3 ? 4 : score >= 2 ? 2 : score >= 1 ? 1 : 0;
   }
 
@@ -203,7 +233,7 @@ function rubricItemsFromScore(tab: ReviewTab, score: number | null | undefined):
 }
 
 function normalizeSavedRubricItems(tab: ReviewTab, value: unknown): Record<string, boolean> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const saved = value as Record<string, unknown>;
   const next = { ...DEFAULT_RUBRICS[tab] };
   for (const key of Object.keys(next)) {
@@ -212,19 +242,28 @@ function normalizeSavedRubricItems(tab: ReviewTab, value: unknown): Record<strin
   return next;
 }
 
-function buildSavedRubrics(drawings: DrawingReviewRow[], scoringReviews: ScoringReviewRow[]): RubricState {
+function buildSavedRubrics(
+  drawings: DrawingReviewRow[],
+  scoringReviews: ScoringReviewRow[],
+): RubricState {
   const next = createEmptyRubrics();
 
   for (const drawing of drawings) {
     const tab = REVIEW_TABS.find((item) => DRAWING_TAB_TO_TASK_ID[item.id] === drawing.task_id)?.id;
     if (!tab) continue;
-    const savedItems = normalizeSavedRubricItems(tab, drawing.rubric_items) ?? rubricItemsFromScore(tab, drawing.clinician_score);
+    const savedItems =
+      normalizeSavedRubricItems(tab, drawing.rubric_items) ??
+      rubricItemsFromScore(tab, drawing.clinician_score);
     if (savedItems) next[tab] = savedItems;
   }
 
   for (const review of scoringReviews) {
     if (review.max_score <= 0) continue;
-    const tab = REVIEW_TABS.find((item) => SCORING_TAB_TO_TASK_ID[item.id] === review.item_id || SCORING_TAB_TO_TASK_ID[item.id] === review.task_type)?.id;
+    const tab = REVIEW_TABS.find(
+      (item) =>
+        SCORING_TAB_TO_TASK_ID[item.id] === review.item_id ||
+        SCORING_TAB_TO_TASK_ID[item.id] === review.task_type,
+    )?.id;
     if (!tab) continue;
     const savedItems = rubricItemsFromScore(tab, review.clinician_score);
     if (savedItems) next[tab] = savedItems;
@@ -234,77 +273,83 @@ function buildSavedRubrics(drawings: DrawingReviewRow[], scoringReviews: Scoring
 }
 
 const AUDIT_EVENT_LABELS: Record<string, string> = {
-  session_created: "מבדק נוצר",
-  sessions_created: "מבדק נוצר",
-  session_started: "מטופל התחיל מבדק",
-  sessions_updated: "סטטוס מבדק עודכן",
-  stimuli_manifest_requested: "נטענו חומרי מבדק",
-  task_result_submitted: "משימה הוגשה",
-  task_results_created: "משימה הוגשה",
-  task_results_updated: "תוצאת משימה עודכנה",
-  drawing_saved: "ציור נשמר",
-  drawings_created: "ציור נשמר",
-  drawings_updated: "ציור עודכן",
-  audio_saved: "הקלטה נשמרה",
-  scoring_reviews_created: "פריט סקירה נוצר",
-  scoring_reviews_updated: "ניקוד ידני נשמר",
-  drawing_reviews_created: "סקירת ציור נוצרה",
-  drawing_reviews_updated: "סקירת ציור נשמרה",
-  session_completed: "מטופל השלים מבדק",
-  clinician_completion_email_sent: "נשלחה התראת השלמה",
-  clinician_completion_email_failed: "התראת השלמה נכשלה",
-  clinician_completion_email_skipped: "התראת השלמה דולגה",
+  session_created: 'מבדק נוצר',
+  sessions_created: 'מבדק נוצר',
+  session_started: 'מטופל התחיל מבדק',
+  sessions_updated: 'סטטוס מבדק עודכן',
+  stimuli_manifest_requested: 'נטענו חומרי מבדק',
+  task_result_submitted: 'משימה הוגשה',
+  task_results_created: 'משימה הוגשה',
+  task_results_updated: 'תוצאת משימה עודכנה',
+  drawing_saved: 'ציור נשמר',
+  drawings_created: 'ציור נשמר',
+  drawings_updated: 'ציור עודכן',
+  audio_saved: 'הקלטה נשמרה',
+  scoring_reviews_created: 'פריט סקירה נוצר',
+  scoring_reviews_updated: 'ניקוד ידני נשמר',
+  drawing_reviews_created: 'סקירת ציור נוצרה',
+  drawing_reviews_updated: 'סקירת ציור נשמרה',
+  session_completed: 'מטופל השלים מבדק',
+  clinician_completion_email_sent: 'נשלחה התראת השלמה',
+  clinician_completion_email_failed: 'התראת השלמה נכשלה',
+  clinician_completion_email_skipped: 'התראת השלמה דולגה',
 };
 
 function auditEventLabel(eventType: unknown): string {
-  if (typeof eventType !== "string" || eventType.trim() === "") return "אירוע מערכת";
-  return AUDIT_EVENT_LABELS[eventType] ?? "אירוע מערכת";
+  if (typeof eventType !== 'string' || eventType.trim() === '') return 'אירוע מערכת';
+  return AUDIT_EVENT_LABELS[eventType] ?? 'אירוע מערכת';
 }
 
 function auditActorLabel(log: any): string {
-  if (log.actor_id) return "קלינאי";
-  if (typeof log.event_type === "string" && (log.event_type.includes("session") || log.event_type.includes("task") || log.event_type.includes("audio") || log.event_type.includes("drawing"))) {
-    return "מטופל/מערכת";
+  if (log.actor_id) return 'קלינאי';
+  if (
+    typeof log.event_type === 'string' &&
+    (log.event_type.includes('session') ||
+      log.event_type.includes('task') ||
+      log.event_type.includes('audio') ||
+      log.event_type.includes('drawing'))
+  ) {
+    return 'מטופל/מערכת';
   }
-  return "מערכת";
+  return 'מערכת';
 }
 
 const DOMAIN_LABELS: Record<string, string> = {
-  visuospatial: "מרחבי-חזותי",
-  naming: "שיום",
-  attention: "קשב",
-  language: "שפה",
-  abstraction: "הפשטה",
-  memory: "שליפה מושהית",
-  orientation: "התמצאות",
+  visuospatial: 'מרחבי-חזותי',
+  naming: 'שיום',
+  attention: 'קשב',
+  language: 'שפה',
+  abstraction: 'הפשטה',
+  memory: 'שליפה מושהית',
+  orientation: 'התמצאות',
 };
 
 const ITEM_LABELS: Record<string, string> = {
-  "moca-visuospatial": "חיבור נקודות",
-  "moca-cube": "קובייה",
-  "moca-clock": "שעון",
-  "naming.item1": "שיום 1",
-  "naming.item2": "שיום 2",
-  "naming.item3": "שיום 3",
-  "moca-digit-span": "קיבולת זיכרון",
-  "digit-span.forward": "ספרות קדימה",
-  "digit-span.backward": "ספרות אחורה",
-  "moca-vigilance": "קשב לאות א",
-  "moca-serial-7s": "חיסור סדרתי 7",
-  "moca-language": "שפה",
-  "language.rep1": "חזרת משפט 1",
-  "language.rep2": "חזרת משפט 2",
-  "language.fluency": "שטף מילולי",
-  "moca-abstraction": "הפשטה",
-  "abstraction.pair1": "הפשטה 1",
-  "abstraction.pair2": "הפשטה 2",
-  "moca-delayed-recall": "שליפה מושהית",
-  "orientation.date": "התמצאות: יום בחודש",
-  "orientation.month": "התמצאות: חודש",
-  "orientation.year": "התמצאות: שנה",
-  "orientation.day": "התמצאות: יום בשבוע",
-  "orientation.place": "התמצאות: מקום",
-  "orientation.city": "התמצאות: עיר",
+  'moca-visuospatial': 'חיבור נקודות',
+  'moca-cube': 'קובייה',
+  'moca-clock': 'שעון',
+  'naming.item1': 'שיום 1',
+  'naming.item2': 'שיום 2',
+  'naming.item3': 'שיום 3',
+  'moca-digit-span': 'קיבולת זיכרון',
+  'digit-span.forward': 'ספרות קדימה',
+  'digit-span.backward': 'ספרות אחורה',
+  'moca-vigilance': 'קשב לאות א',
+  'moca-serial-7s': 'חיסור סדרתי 7',
+  'moca-language': 'שפה',
+  'language.rep1': 'חזרת משפט 1',
+  'language.rep2': 'חזרת משפט 2',
+  'language.fluency': 'שטף מילולי',
+  'moca-abstraction': 'הפשטה',
+  'abstraction.pair1': 'הפשטה 1',
+  'abstraction.pair2': 'הפשטה 2',
+  'moca-delayed-recall': 'שליפה מושהית',
+  'orientation.date': 'התמצאות: יום בחודש',
+  'orientation.month': 'התמצאות: חודש',
+  'orientation.year': 'התמצאות: שנה',
+  'orientation.day': 'התמצאות: יום בשבוע',
+  'orientation.place': 'התמצאות: מקום',
+  'orientation.city': 'התמצאות: עיר',
 };
 
 function getReportTotal(report: DBScoringReport | null): number | null {
@@ -324,11 +369,11 @@ function getPendingReviewCount(report: DBScoringReport | null): number {
 function getDomainRaw(report: DBScoringReport | null, domainId: string): number | null {
   const legacySubscores = (report?.subscores ?? {}) as Record<string, unknown>;
   const legacyRaw = legacySubscores[domainId];
-  if (typeof legacyRaw === "number") return legacyRaw;
+  if (typeof legacyRaw === 'number') return legacyRaw;
 
   const domains = Array.isArray(report?.domains) ? report.domains : [];
   const domain = domains.find((candidate: any) => candidate?.domain === domainId);
-  return typeof domain?.raw === "number" ? domain.raw : null;
+  return typeof domain?.raw === 'number' ? domain.raw : null;
 }
 
 function getReportDomains(report: DBScoringReport | null): any[] {
@@ -343,30 +388,30 @@ function scoreSerial7Rubric(correctCount: number): number {
 }
 
 function mergeEvidence(...items: Array<any | null | undefined>): any | null {
-  const objects = items.filter((item) => item && typeof item === "object" && !Array.isArray(item));
+  const objects = items.filter((item) => item && typeof item === 'object' && !Array.isArray(item));
   if (objects.length === 0) return null;
   return Object.assign({}, ...objects);
 }
 
 function evidenceNumber(evidence: any, key: string): number | null {
   const value = evidence?.[key];
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function scoringItemLabel(taskId: string): string {
   if (ITEM_LABELS[taskId]) return ITEM_LABELS[taskId];
-  if (taskId.startsWith("recall.word")) return `שליפה ${taskId.replace("recall.word", "")}`;
+  if (taskId.startsWith('recall.word')) return `שליפה ${taskId.replace('recall.word', '')}`;
   return taskId;
 }
 
 function taskResultTypeForItem(taskId: string): string | null {
-  if (taskId.startsWith("naming.")) return "moca-naming";
-  if (taskId.startsWith("digit-span.")) return "moca-digit-span";
-  if (taskId.startsWith("language.")) return "moca-language";
-  if (taskId.startsWith("abstraction.")) return "moca-abstraction";
-  if (taskId.startsWith("recall.")) return "moca-delayed-recall";
-  if (taskId.startsWith("orientation.")) return "moca-orientation-task";
-  return taskId.startsWith("moca-") ? taskId : null;
+  if (taskId.startsWith('naming.')) return 'moca-naming';
+  if (taskId.startsWith('digit-span.')) return 'moca-digit-span';
+  if (taskId.startsWith('language.')) return 'moca-language';
+  if (taskId.startsWith('abstraction.')) return 'moca-abstraction';
+  if (taskId.startsWith('recall.')) return 'moca-delayed-recall';
+  if (taskId.startsWith('orientation.')) return 'moca-orientation-task';
+  return taskId.startsWith('moca-') ? taskId : null;
 }
 
 function namingItemNumber(taskId: string): number | null {
@@ -379,47 +424,60 @@ function namingItemNumber(taskId: string): number | null {
 function patientNamingAnswer(rawData: any, itemNumber: number): string | null {
   if (Array.isArray(rawData)) {
     const value = rawData[itemNumber - 1];
-    return typeof value === "string" ? value : null;
+    return typeof value === 'string' ? value : null;
   }
   const answers = rawData?.answers;
-  if (!answers || typeof answers !== "object" || Array.isArray(answers)) return null;
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return null;
   const direct = answers[`item-${itemNumber}`];
-  if (typeof direct === "string") return direct;
-  const legacyKeys = ["lion", "rhino", "camel"];
+  if (typeof direct === 'string') return direct;
+  const legacyKeys = ['lion', 'rhino', 'camel'];
   const legacy = answers[legacyKeys[itemNumber - 1]];
-  return typeof legacy === "string" ? legacy : null;
+  return typeof legacy === 'string' ? legacy : null;
 }
 
-function expectedNamingAnswer(mocaVersion: string | null | undefined, itemNumber: number): string | null {
+function expectedNamingAnswer(
+  mocaVersion: string | null | undefined,
+  itemNumber: number,
+): string | null {
   try {
-    return getMocaVersionConfig(mocaVersion ?? DEFAULT_MOCA_VERSION).correctAnimalNames[itemNumber - 1] ?? null;
+    return (
+      getMocaVersionConfig(mocaVersion ?? DEFAULT_MOCA_VERSION).correctAnimalNames[
+        itemNumber - 1
+      ] ?? null
+    );
   } catch {
     return null;
   }
 }
 
-function safeEvidenceText(item: any, taskResultsByType: Map<string, TaskResult>, mocaVersion: string | null | undefined): string | null {
+function safeEvidenceText(
+  item: any,
+  taskResultsByType: Map<string, TaskResult>,
+  mocaVersion: string | null | undefined,
+): string | null {
   const taskType = taskResultTypeForItem(item.taskId);
   const taskRawData = taskType ? taskResultsByType.get(taskType)?.raw_data : null;
   const itemNumber = namingItemNumber(item.taskId);
   if (itemNumber) {
     const answer = patientNamingAnswer(taskRawData, itemNumber);
     const expected = expectedNamingAnswer(mocaVersion, itemNumber);
-    return [answer ? `תשובת מטופל: ${answer}` : null, expected ? `תשובה צפויה: ${expected}` : null]
-      .filter(Boolean)
-      .join(" · ") || null;
+    return (
+      [answer ? `תשובת מטופל: ${answer}` : null, expected ? `תשובה צפויה: ${expected}` : null]
+        .filter(Boolean)
+        .join(' · ') || null
+    );
   }
 
   const rawData = item.rawData ?? taskRawData;
-  if (item.taskId === "moca-vigilance") {
-    const tapped = evidenceNumber(rawData, "tapped");
-    const targetCount = evidenceNumber(rawData, "targetCount");
+  if (item.taskId === 'moca-vigilance') {
+    const tapped = evidenceNumber(rawData, 'tapped');
+    const targetCount = evidenceNumber(rawData, 'targetCount');
     if (tapped !== null || targetCount !== null) {
-      return `הקשות: ${tapped ?? "—"} · אותיות א: ${targetCount ?? "—"}`;
+      return `הקשות: ${tapped ?? '—'} · אותיות א: ${targetCount ?? '—'}`;
     }
   }
 
-  if (rawData?.audioStoragePath || rawData?.audioSignedUrl) return "הקלטה זמינה בסקירה הקלינית";
+  if (rawData?.audioStoragePath || rawData?.audioSignedUrl) return 'הקלטה זמינה בסקירה הקלינית';
   return null;
 }
 
@@ -432,11 +490,14 @@ export function ClinicianDashboardDetail() {
   const [savingReview, setSavingReview] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
-  const [activeTab, setActiveTab] = useState<ReviewTab>("clock");
+  const [activeTab, setActiveTab] = useState<ReviewTab>('clock');
   const [rubrics, setRubrics] = useState<RubricState>(() => createEmptyRubrics());
   const [exportingCsv, setExportingCsv] = useState(false);
   const [csvConfirmOpen, setCsvConfirmOpen] = useState(false);
-  const [csvExportMessage, setCsvExportMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  const [csvExportMessage, setCsvExportMessage] = useState<{
+    kind: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const loadDashboardSession = useCallback(async () => {
     if (!sessionId) return;
@@ -457,7 +518,9 @@ export function ClinicianDashboardDetail() {
     const loadedSession = payload.session as SessionWithPatient;
     setSessionRecord(loadedSession);
     setReportRecord(loadedSession.scoring_report ?? null);
-    setRubrics(buildSavedRubrics(loadedSession.drawings ?? [], loadedSession.scoring_reviews ?? []));
+    setRubrics(
+      buildSavedRubrics(loadedSession.drawings ?? [], loadedSession.scoring_reviews ?? []),
+    );
   }, [sessionId]);
 
   useEffect(() => {
@@ -468,10 +531,10 @@ export function ClinicianDashboardDetail() {
     (async () => {
       await loadDashboardSession();
       const { data: logs } = await supabase
-        .from("session_events")
-        .select("*")
-        .eq("session_id", sessionId)
-        .order("created_at", { ascending: false });
+        .from('session_events')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false });
 
       if (!cancelled && logs) {
         setAuditLogs(logs);
@@ -486,38 +549,53 @@ export function ClinicianDashboardDetail() {
   const patient: PatientLite | null = useMemo(() => {
     const raw = sessionRecord?.patients;
     if (!raw) return null;
-    return Array.isArray(raw) ? raw[0] ?? null : raw;
+    return Array.isArray(raw) ? (raw[0] ?? null) : raw;
   }, [sessionRecord]);
 
   const audioEvidenceByTaskType = useMemo(() => {
     const explicitEvidence = sessionRecord?.audio_evidence_reviews ?? [];
-    const legacyEvidence = (sessionRecord?.scoring_reviews ?? []).filter((row) => row.max_score === 0);
+    const legacyEvidence = (sessionRecord?.scoring_reviews ?? []).filter(
+      (row) => row.max_score === 0,
+    );
     const byTaskType = new Map<string, ScoringReviewRow>();
     for (const review of [...explicitEvidence, ...legacyEvidence]) {
-      if (typeof review.raw_data?.audioSignedUrl === "string") byTaskType.set(review.task_type, review);
+      if (typeof review.raw_data?.audioSignedUrl === 'string')
+        byTaskType.set(review.task_type, review);
     }
     return byTaskType;
   }, [sessionRecord]);
 
   const reviewQueue = useMemo(() => {
-    const scoringReviews = (sessionRecord?.scoring_reviews ?? []).filter((row) => row.max_score > 0);
+    const scoringReviews = (sessionRecord?.scoring_reviews ?? []).filter(
+      (row) => row.max_score > 0,
+    );
     return REVIEW_TABS.map((tab) => {
       const tabDrawingTaskId = DRAWING_TAB_TO_TASK_ID[tab.id];
       const tabScoringTaskId = SCORING_TAB_TO_TASK_ID[tab.id];
       const scoringReview = tabScoringTaskId
-        ? scoringReviews.find((row) => row.item_id === tabScoringTaskId || row.task_type === tabScoringTaskId)
+        ? scoringReviews.find(
+            (row) => row.item_id === tabScoringTaskId || row.task_type === tabScoringTaskId,
+          )
         : undefined;
-      const evidenceReview = tabScoringTaskId ? audioEvidenceByTaskType.get(tabScoringTaskId) : undefined;
+      const evidenceReview = tabScoringTaskId
+        ? audioEvidenceByTaskType.get(tabScoringTaskId)
+        : undefined;
       const review = tabDrawingTaskId
         ? sessionRecord?.drawings?.find((row) => row.task_id === tabDrawingTaskId)
-        : scoringReview ?? evidenceReview;
-      const maxScore = tabDrawingTaskId ? (tab.id === "clock" ? 3 : 1) : scoringReview?.max_score ?? evidenceReview?.max_score;
+        : (scoringReview ?? evidenceReview);
+      const maxScore = tabDrawingTaskId
+        ? tab.id === 'clock'
+          ? 3
+          : 1
+        : (scoringReview?.max_score ?? evidenceReview?.max_score);
       return {
         ...tab,
         review,
         maxScore,
         isEvidenceOnly: !tabDrawingTaskId && !scoringReview && !!evidenceReview,
-        isReviewed: scoringReview ? scoringReview.clinician_score != null : !!evidenceReview || review?.clinician_score != null,
+        isReviewed: scoringReview
+          ? scoringReview.clinician_score != null
+          : !!evidenceReview || review?.clinician_score != null,
       };
     }).filter((tab) => !!tab.review);
   }, [audioEvidenceByTaskType, sessionRecord]);
@@ -527,7 +605,7 @@ export function ClinicianDashboardDetail() {
   const visibleReviewTabs = showPendingOnly && pendingQueue.length > 0 ? pendingQueue : reviewQueue;
   const activeReviewTab = reviewQueue.some((tab) => tab.id === activeTab)
     ? activeTab
-    : (pendingQueue[0] ?? reviewQueue[0])?.id ?? activeTab;
+    : ((pendingQueue[0] ?? reviewQueue[0])?.id ?? activeTab);
 
   const drawingTaskId = DRAWING_TAB_TO_TASK_ID[activeReviewTab];
   const scoringTaskId = SCORING_TAB_TO_TASK_ID[activeReviewTab];
@@ -538,28 +616,43 @@ export function ClinicianDashboardDetail() {
     .reverse()
     .find((result: any) => result.task_type === (drawingTaskId ?? scoringTaskId));
   const currentScoringReview = scoringTaskId
-    ? sessionRecord?.scoring_reviews?.find((review) => review.max_score > 0 && (review.item_id === scoringTaskId || review.task_type === scoringTaskId))
+    ? sessionRecord?.scoring_reviews?.find(
+        (review) =>
+          review.max_score > 0 &&
+          (review.item_id === scoringTaskId || review.task_type === scoringTaskId),
+      )
     : null;
-  const currentAudioEvidenceReview = scoringTaskId ? audioEvidenceByTaskType.get(scoringTaskId) ?? null : null;
-  const currentEvidence = mergeEvidence(currentTaskResult?.raw_data, currentScoringReview?.raw_data, currentAudioEvidenceReview?.raw_data);
-  const currentStrokes = normalizeStrokes(currentDrawing?.strokes_data ?? currentTaskResult?.raw_data);
+  const currentAudioEvidenceReview = scoringTaskId
+    ? (audioEvidenceByTaskType.get(scoringTaskId) ?? null)
+    : null;
+  const currentEvidence = mergeEvidence(
+    currentTaskResult?.raw_data,
+    currentScoringReview?.raw_data,
+    currentAudioEvidenceReview?.raw_data,
+  );
+  const currentStrokes = normalizeStrokes(
+    currentDrawing?.strokes_data ?? currentTaskResult?.raw_data,
+  );
   const currentImageUrl = currentDrawing?.signedUrl ?? null;
-  const currentAudioUrl = typeof currentEvidence?.audioSignedUrl === "string" ? currentEvidence.audioSignedUrl : null;
+  const currentAudioUrl =
+    typeof currentEvidence?.audioSignedUrl === 'string' ? currentEvidence.audioSignedUrl : null;
   const currentReview = currentDrawing ?? currentScoringReview ?? currentAudioEvidenceReview;
-  const isCurrentEvidenceOnly = !currentDrawing && !currentScoringReview && !!currentAudioEvidenceReview;
-  const reviewNotes = reviewNotesByTab[activeReviewTab] ?? currentReview?.clinician_notes ?? "";
-  const isPhoneDrawingReview = !!currentDrawing && stringValue(sessionRecord?.device_context?.formFactor) === "phone";
+  const isCurrentEvidenceOnly =
+    !currentDrawing && !currentScoringReview && !!currentAudioEvidenceReview;
+  const reviewNotes = reviewNotesByTab[activeReviewTab] ?? currentReview?.clinician_notes ?? '';
+  const isPhoneDrawingReview =
+    !!currentDrawing && stringValue(sessionRecord?.device_context?.formFactor) === 'phone';
 
   const getDrawingStats = (strokes: any[][]) => {
     const valid = (strokes || []).filter((s) => s && s.length > 0);
-    if (valid.length === 0) return { count: 0, duration: "0s", usedPen: false };
+    if (valid.length === 0) return { count: 0, duration: '0s', usedPen: false };
 
     const firstPoint = valid[0][0];
     const lastStroke = valid[valid.length - 1];
     const lastPoint = lastStroke[lastStroke.length - 1];
     const durationMs = lastPoint.time - firstPoint.time;
-    const duration = durationMs > 0 ? (durationMs / 1000).toFixed(1) + "s" : "0s";
-    const usedPen = valid.some((s) => s.some((pt) => pt.pointerType === "pen"));
+    const duration = durationMs > 0 ? (durationMs / 1000).toFixed(1) + 's' : '0s';
+    const usedPen = valid.some((s) => s.some((pt) => pt.pointerType === 'pen'));
 
     return { count: valid.length, duration, usedPen };
   };
@@ -578,108 +671,114 @@ export function ClinicianDashboardDetail() {
   };
 
   const getRubricData = () => {
-    if (activeReviewTab === "clock") {
+    if (activeReviewTab === 'clock') {
       return {
         max: 3,
         score:
-          (rubrics.clock.contour ? 1 : 0) + (rubrics.clock.numbers ? 1 : 0) + (rubrics.clock.hands ? 1 : 0),
+          (rubrics.clock.contour ? 1 : 0) +
+          (rubrics.clock.numbers ? 1 : 0) +
+          (rubrics.clock.hands ? 1 : 0),
         items: [
-          { id: "contour", label: "מתאר", desc: "המעגל סגור ופרופורציונלי" },
-          { id: "numbers", label: "מספרים", desc: "כל המספרים נמצאים במיקום הנכון" },
-          { id: "hands", label: "מחוגים", desc: "השעה 11:10 בדיוק" },
+          { id: 'contour', label: 'מתאר', desc: 'המעגל סגור ופרופורציונלי' },
+          { id: 'numbers', label: 'מספרים', desc: 'כל המספרים נמצאים במיקום הנכון' },
+          { id: 'hands', label: 'מחוגים', desc: 'השעה 11:10 בדיוק' },
         ],
       };
-    } else if (activeReviewTab === "cube") {
+    } else if (activeReviewTab === 'cube') {
       return {
         max: 1,
         score: rubrics.cube.shape && rubrics.cube.lines && rubrics.cube.parallel ? 1 : 0,
         items: [
-          { id: "shape", label: "תלת מימד", desc: "שלוש פאות גלויות ונקודת מבט אחידה" },
-          { id: "lines", label: "כל הקווים מצוירים", desc: "כל הקווים הפנימיים קיימים" },
-          { id: "parallel", label: "קווים מקבילים", desc: "קווים מקבילים, ללא עיוות בולט" },
+          { id: 'shape', label: 'תלת מימד', desc: 'שלוש פאות גלויות ונקודת מבט אחידה' },
+          { id: 'lines', label: 'כל הקווים מצוירים', desc: 'כל הקווים הפנימיים קיימים' },
+          { id: 'parallel', label: 'קווים מקבילים', desc: 'קווים מקבילים, ללא עיוות בולט' },
         ],
       };
-    } else if (activeReviewTab === "trail") {
+    } else if (activeReviewTab === 'trail') {
       return {
         max: 1,
         score: rubrics.trail.correct && rubrics.trail.noLinesCrossed ? 1 : 0,
         items: [
-          { id: "correct", label: "סדר נכון", desc: "הקו עובר 1→א→2→ב→3→ג→4→ד→5→ה במלואו, ללא דילוגים" },
-          { id: "noLinesCrossed", label: "קווים לא נחתכים", desc: "הקו לא חותך את עצמו" },
+          {
+            id: 'correct',
+            label: 'סדר נכון',
+            desc: 'הקו עובר 1→א→2→ב→3→ג→4→ד→5→ה במלואו, ללא דילוגים',
+          },
+          { id: 'noLinesCrossed', label: 'קווים לא נחתכים', desc: 'הקו לא חותך את עצמו' },
         ],
       };
-    } else if (activeReviewTab === "memory") {
+    } else if (activeReviewTab === 'memory') {
       return {
         max: 0,
         score: 0,
         items: [
-          { id: "recall1", label: "פנים", desc: "תצפית בלבד: למידת מילים אינה מוסיפה נקודות" },
-          { id: "recall2", label: "קטיפה", desc: "תצפית בלבד: למידת מילים אינה מוסיפה נקודות" },
-          { id: "recall3", label: "כנסייה", desc: "תצפית בלבד: למידת מילים אינה מוסיפה נקודות" },
-          { id: "recall4", label: "חרצית", desc: "תצפית בלבד: למידת מילים אינה מוסיפה נקודות" },
-          { id: "recall5", label: "אדום", desc: "תצפית בלבד: למידת מילים אינה מוסיפה נקודות" },
+          { id: 'recall1', label: 'פנים', desc: 'תצפית בלבד: למידת מילים אינה מוסיפה נקודות' },
+          { id: 'recall2', label: 'קטיפה', desc: 'תצפית בלבד: למידת מילים אינה מוסיפה נקודות' },
+          { id: 'recall3', label: 'כנסייה', desc: 'תצפית בלבד: למידת מילים אינה מוסיפה נקודות' },
+          { id: 'recall4', label: 'חרצית', desc: 'תצפית בלבד: למידת מילים אינה מוסיפה נקודות' },
+          { id: 'recall5', label: 'אדום', desc: 'תצפית בלבד: למידת מילים אינה מוסיפה נקודות' },
         ],
       };
-    } else if (activeReviewTab === "digitSpan") {
+    } else if (activeReviewTab === 'digitSpan') {
       return {
         max: 2,
         score: (rubrics.digitSpan.forward ? 1 : 0) + (rubrics.digitSpan.backward ? 1 : 0),
         items: [
-          { id: "forward", label: "2-1-8-5-4 קדימה", desc: "חזר על הסדרה בסדר מדויק" },
-          { id: "backward", label: "7-4-2 אחורה", desc: "חזר על הסדרה בסדר הפוך מדויק" },
+          { id: 'forward', label: '2-1-8-5-4 קדימה', desc: 'חזר על הסדרה בסדר מדויק' },
+          { id: 'backward', label: '7-4-2 אחורה', desc: 'חזר על הסדרה בסדר הפוך מדויק' },
         ],
       };
-    } else if (activeReviewTab === "vigilance") {
+    } else if (activeReviewTab === 'vigilance') {
       return {
         max: 1,
         score: rubrics.vigilance.correct ? 1 : 0,
-        items: [
-          { id: "correct", label: "תגובה לאות א", desc: "עד טעות אחת: פספוס או הקשה שגויה" },
-        ],
+        items: [{ id: 'correct', label: 'תגובה לאות א', desc: 'עד טעות אחת: פספוס או הקשה שגויה' }],
       };
-    } else if (activeReviewTab === "serial7") {
+    } else if (activeReviewTab === 'serial7') {
       const correctCount = Object.values(rubrics.serial7).filter((v) => v).length;
       return {
         max: 3,
         score: scoreSerial7Rubric(correctCount),
         items: [
-          { id: "first", label: "93", desc: "תשובה ראשונה נכונה" },
-          { id: "second", label: "86", desc: "תשובה שנייה נכונה" },
-          { id: "third", label: "79", desc: "תשובה שלישית נכונה" },
-          { id: "fourth", label: "72", desc: "תשובה רביעית נכונה" },
-          { id: "fifth", label: "65", desc: "תשובה חמישית נכונה" },
+          { id: 'first', label: '93', desc: 'תשובה ראשונה נכונה' },
+          { id: 'second', label: '86', desc: 'תשובה שנייה נכונה' },
+          { id: 'third', label: '79', desc: 'תשובה שלישית נכונה' },
+          { id: 'fourth', label: '72', desc: 'תשובה רביעית נכונה' },
+          { id: 'fifth', label: '65', desc: 'תשובה חמישית נכונה' },
         ],
       };
-    } else if (activeReviewTab === "language") {
+    } else if (activeReviewTab === 'language') {
       return {
         max: 3,
         score:
-          (rubrics.language.sentence1 ? 1 : 0) + (rubrics.language.sentence2 ? 1 : 0) + (rubrics.language.fluency ? 1 : 0),
+          (rubrics.language.sentence1 ? 1 : 0) +
+          (rubrics.language.sentence2 ? 1 : 0) +
+          (rubrics.language.fluency ? 1 : 0),
         items: [
-          { id: "sentence1", label: "משפט 1", desc: "חזר על המשפט במלואו, ללא השמטות או החלפות" },
-          { id: "sentence2", label: "משפט 2", desc: "חזר על המשפט במלואו, ללא השמטות או החלפות" },
-          { id: "fluency", label: "שטף מילולי", desc: "מנה לפחות 11 מילים" },
+          { id: 'sentence1', label: 'משפט 1', desc: 'חזר על המשפט במלואו, ללא השמטות או החלפות' },
+          { id: 'sentence2', label: 'משפט 2', desc: 'חזר על המשפט במלואו, ללא השמטות או החלפות' },
+          { id: 'fluency', label: 'שטף מילולי', desc: 'מנה לפחות 11 מילים' },
         ],
       };
-    } else if (activeReviewTab === "abstraction") {
+    } else if (activeReviewTab === 'abstraction') {
       return {
         max: 2,
         score: (rubrics.abstraction.train ? 1 : 0) + (rubrics.abstraction.watch ? 1 : 0),
         items: [
-          { id: "train", label: "רכבת/אופניים", desc: "אמצעי תחבורה / כלי רכב" },
-          { id: "watch", label: "שעון/סרגל", desc: "כלי מדידה" },
+          { id: 'train', label: 'רכבת/אופניים', desc: 'אמצעי תחבורה / כלי רכב' },
+          { id: 'watch', label: 'שעון/סרגל', desc: 'כלי מדידה' },
         ],
       };
-    } else if (activeReviewTab === "delayedRecall") {
+    } else if (activeReviewTab === 'delayedRecall') {
       return {
         max: 5,
         score: Object.values(rubrics.delayedRecall).filter((v) => v).length,
         items: [
-          { id: "word1", label: "פנים", desc: "נזכר ספונטנית" },
-          { id: "word2", label: "קטיפה", desc: "נזכר ספונטנית" },
-          { id: "word3", label: "כנסייה", desc: "נזכר ספונטנית" },
-          { id: "word4", label: "חרצית", desc: "נזכר ספונטנית" },
-          { id: "word5", label: "אדום", desc: "נזכר ספונטנית" },
+          { id: 'word1', label: 'פנים', desc: 'נזכר ספונטנית' },
+          { id: 'word2', label: 'קטיפה', desc: 'נזכר ספונטנית' },
+          { id: 'word3', label: 'כנסייה', desc: 'נזכר ספונטנית' },
+          { id: 'word4', label: 'חרצית', desc: 'נזכר ספונטנית' },
+          { id: 'word5', label: 'אדום', desc: 'נזכר ספונטנית' },
         ],
       };
     } else {
@@ -687,12 +786,12 @@ export function ClinicianDashboardDetail() {
         max: 6,
         score: Object.values(rubrics.orientation).filter((v) => v).length,
         items: [
-          { id: "day", label: "יום בחודש", desc: "תאריך מדויק" },
-          { id: "month", label: "חודש", desc: "חודש מדויק" },
-          { id: "year", label: "שנה", desc: "שנה מדויקה" },
-          { id: "dayOfWeek", label: "יום בשבוע", desc: "היום המדויק" },
-          { id: "place", label: "מקום/מוסד", desc: "שם המוסד/מקום" },
-          { id: "city", label: "עיר", desc: "העיר הנכונה" },
+          { id: 'day', label: 'יום בחודש', desc: 'תאריך מדויק' },
+          { id: 'month', label: 'חודש', desc: 'חודש מדויק' },
+          { id: 'year', label: 'שנה', desc: 'שנה מדויקה' },
+          { id: 'dayOfWeek', label: 'יום בשבוע', desc: 'היום המדויק' },
+          { id: 'place', label: 'מקום/מוסד', desc: 'שם המוסד/מקום' },
+          { id: 'city', label: 'עיר', desc: 'העיר הנכונה' },
         ],
       };
     }
@@ -704,16 +803,18 @@ export function ClinicianDashboardDetail() {
     if (!currentReview) return;
     const nextPendingTab = pendingQueue.find((tab) => tab.id !== activeReviewTab)?.id ?? null;
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
-      setSaveMessage("יש להתחבר מחדש כקלינאי כדי לשמור ניקוד.");
+      setSaveMessage('יש להתחבר מחדש כקלינאי כדי לשמור ניקוד.');
       return;
     }
 
     setSavingReview(true);
     setSaveMessage(null);
 
-    const endpoint = currentDrawing ? "update-drawing-review" : "update-scoring-review";
+    const endpoint = currentDrawing ? 'update-drawing-review' : 'update-scoring-review';
     const body = currentDrawing
       ? {
           reviewId: currentDrawing.id,
@@ -723,14 +824,17 @@ export function ClinicianDashboardDetail() {
         }
       : {
           reviewId: currentScoringReview?.id,
-          clinicianScore: Math.min(rubricData.score, currentScoringReview?.max_score ?? rubricData.max),
+          clinicianScore: Math.min(
+            rubricData.score,
+            currentScoringReview?.max_score ?? rubricData.max,
+          ),
           clinicianNotes: reviewNotes,
         };
 
     const res = await edgeFetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(body),
@@ -739,13 +843,13 @@ export function ClinicianDashboardDetail() {
     setSavingReview(false);
 
     if (!res.ok) {
-      let message = "שמירת הניקוד נכשלה. נסה שוב או רענן את הדף.";
+      let message = 'שמירת הניקוד נכשלה. נסה שוב או רענן את הדף.';
       message = await edgeErrorMessage(res, message);
       setSaveMessage(message);
       return;
     }
 
-    setSaveMessage("הניקוד נשמר.");
+    setSaveMessage('הניקוד נשמר.');
     await loadDashboardSession();
     if (nextPendingTab) setActiveTab(nextPendingTab);
   };
@@ -757,16 +861,16 @@ export function ClinicianDashboardDetail() {
     }
 
     return getReportDomains(reportRecord).flatMap((domain: any) => {
-      const domainId = typeof domain?.domain === "string" ? domain.domain : "unknown";
+      const domainId = typeof domain?.domain === 'string' ? domain.domain : 'unknown';
       const domainLabel = DOMAIN_LABELS[domainId] ?? domainId;
       const items = Array.isArray(domain?.items) ? domain.items : [];
 
       return items
-        .filter((item: any) => typeof item?.taskId === "string")
+        .filter((item: any) => typeof item?.taskId === 'string')
         .map((item: any, index: number) => {
-          const score = typeof item.score === "number" ? item.score : 0;
-          const max = typeof item.max === "number" ? item.max : 0;
-          const status = item.needsReview ? "review" : "scored";
+          const score = typeof item.score === 'number' ? item.score : 0;
+          const max = typeof item.max === 'number' ? item.max : 0;
+          const status = item.needsReview ? 'review' : 'scored';
           return {
             id: `${domainId}-${item.taskId}-${index}`,
             domainLabel,
@@ -781,12 +885,15 @@ export function ClinicianDashboardDetail() {
   }, [reportRecord, sessionRecord?.moca_version, sessionRecord?.task_results]);
 
   const summary = useMemo(() => {
-    const pill = (raw: number | null, cap: number): { value: string; color: "warn" | "pass" | "neutral" } => {
-      if (raw == null) return { value: "—", color: "neutral" };
+    const pill = (
+      raw: number | null,
+      cap: number,
+    ): { value: string; color: 'warn' | 'pass' | 'neutral' } => {
+      if (raw == null) return { value: '—', color: 'neutral' };
       const pct = raw / cap;
       return {
         value: `${raw}/${cap}`,
-        color: pct >= 0.8 ? "pass" : pct >= 0.5 ? "neutral" : "warn",
+        color: pct >= 0.8 ? 'pass' : pct >= 0.5 ? 'neutral' : 'warn',
       };
     };
 
@@ -794,15 +901,24 @@ export function ClinicianDashboardDetail() {
     const totalPill = pill(total, 30);
 
     return [
-      { label: "סך הכל MoCA", ...totalPill },
-      { label: "מרחבי-חזותי", ...pill(getDomainRaw(reportRecord, "visuospatial"), SUBSCORE_CAPS.visuospatial) },
-      { label: "שיום", ...pill(getDomainRaw(reportRecord, "naming"), SUBSCORE_CAPS.naming) },
-      { label: "שליפה מושהית", ...pill(getDomainRaw(reportRecord, "memory"), SUBSCORE_CAPS.delayedRecall) },
-      { label: "קשב", ...pill(getDomainRaw(reportRecord, "attention"), SUBSCORE_CAPS.attention) },
+      { label: 'סך הכל MoCA', ...totalPill },
       {
-        label: "משך זמן",
-        value: formatDuration(sessionRecord?.started_at ?? null, sessionRecord?.completed_at ?? null),
-        color: "neutral" as const,
+        label: 'מרחבי-חזותי',
+        ...pill(getDomainRaw(reportRecord, 'visuospatial'), SUBSCORE_CAPS.visuospatial),
+      },
+      { label: 'שיום', ...pill(getDomainRaw(reportRecord, 'naming'), SUBSCORE_CAPS.naming) },
+      {
+        label: 'שליפה מושהית',
+        ...pill(getDomainRaw(reportRecord, 'memory'), SUBSCORE_CAPS.delayedRecall),
+      },
+      { label: 'קשב', ...pill(getDomainRaw(reportRecord, 'attention'), SUBSCORE_CAPS.attention) },
+      {
+        label: 'משך זמן',
+        value: formatDuration(
+          sessionRecord?.started_at ?? null,
+          sessionRecord?.completed_at ?? null,
+        ),
+        color: 'neutral' as const,
       },
     ];
   }, [reportRecord, sessionRecord]);
@@ -824,10 +940,15 @@ export function ClinicianDashboardDetail() {
       );
     }
 
-    if (["clock", "cube", "trail"].includes(activeReviewTab)) {
+    if (['clock', 'cube', 'trail'].includes(activeReviewTab)) {
       return (
         <div className="flex flex-col items-center">
-          <PlaybackCanvas strokes={currentStrokes} width={450} height={400} backgroundImageUrl={currentImageUrl ?? undefined} />
+          <PlaybackCanvas
+            strokes={currentStrokes}
+            width={450}
+            height={400}
+            backgroundImageUrl={currentImageUrl ?? undefined}
+          />
 
           {isPhoneDrawingReview && (
             <div className="mt-6 flex w-full items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-right text-amber-900">
@@ -843,16 +964,20 @@ export function ClinicianDashboardDetail() {
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-gray-50 p-4 rounded-xl text-center">
                 <div className="text-xs font-bold text-gray-500 mb-1">מספר משיכות</div>
-                <div className="text-2xl font-extrabold tabular-nums text-black">{currentStats.count}</div>
+                <div className="text-2xl font-extrabold tabular-nums text-black">
+                  {currentStats.count}
+                </div>
               </div>
               <div className="bg-gray-50 p-4 rounded-xl text-center">
                 <div className="text-xs font-bold text-gray-500 mb-1">משך זמן ברוטו</div>
-                <div className="text-2xl font-extrabold tabular-nums text-black">{currentStats.duration}</div>
+                <div className="text-2xl font-extrabold tabular-nums text-black">
+                  {currentStats.duration}
+                </div>
               </div>
               <div className="bg-gray-50 p-4 rounded-xl text-center">
                 <div className="text-xs font-bold text-gray-500 mb-1">מגע לעומת עט</div>
                 <div className="break-words text-lg font-extrabold leading-tight text-blue-600 sm:text-xl">
-                  {currentStats.usedPen ? "עט חכם" : "אצבע/עכבר"}
+                  {currentStats.usedPen ? 'עט חכם' : 'אצבע/עכבר'}
                 </div>
               </div>
             </div>
@@ -860,10 +985,10 @@ export function ClinicianDashboardDetail() {
         </div>
       );
     } else {
-      const tapped = evidenceNumber(currentEvidence, "tapped");
-      const targetCount = evidenceNumber(currentEvidence, "targetCount");
-      const sequenceLength = evidenceNumber(currentEvidence, "sequenceLength");
-      const hasVigilanceEvidence = activeReviewTab === "vigilance" && tapped !== null;
+      const tapped = evidenceNumber(currentEvidence, 'tapped');
+      const targetCount = evidenceNumber(currentEvidence, 'targetCount');
+      const sequenceLength = evidenceNumber(currentEvidence, 'sequenceLength');
+      const hasVigilanceEvidence = activeReviewTab === 'vigilance' && tapped !== null;
 
       return (
         <div className="flex flex-col items-center w-full min-h-[400px] justify-center">
@@ -871,7 +996,7 @@ export function ClinicianDashboardDetail() {
             <Mic className="w-10 h-10" />
           </div>
           <h3 className="text-2xl font-extrabold text-black mb-10">
-            {currentAudioUrl ? "האזן להקלטת המטופל" : "סקור את נתוני המשימה"}
+            {currentAudioUrl ? 'האזן להקלטת המטופל' : 'סקור את נתוני המשימה'}
           </h3>
 
           {currentAudioUrl ? (
@@ -884,11 +1009,15 @@ export function ClinicianDashboardDetail() {
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
                 <div className="text-xs font-bold text-gray-500 mb-1">מספר אותיות א</div>
-                <div className="text-3xl font-extrabold tabular-nums text-black">{targetCount ?? "—"}</div>
+                <div className="text-3xl font-extrabold tabular-nums text-black">
+                  {targetCount ?? '—'}
+                </div>
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
                 <div className="text-xs font-bold text-gray-500 mb-1">אורך רצף</div>
-                <div className="text-3xl font-extrabold tabular-nums text-black">{sequenceLength ?? "—"}</div>
+                <div className="text-3xl font-extrabold tabular-nums text-black">
+                  {sequenceLength ?? '—'}
+                </div>
               </div>
             </div>
           ) : (
@@ -903,41 +1032,47 @@ export function ClinicianDashboardDetail() {
 
   const handlePdfExport = async () => {
     if (!sessionId) return;
-    if (sessionRecord?.status !== "completed" || getReportNeedsReview(reportRecord) || getPendingReviewCount(reportRecord) > 0) {
-      setCsvExportMessage({ kind: "error", text: "ניתן לייצא PDF לאחר השלמת הסקירה הקלינית." });
+    if (
+      sessionRecord?.status !== 'completed' ||
+      getReportNeedsReview(reportRecord) ||
+      getPendingReviewCount(reportRecord) > 0
+    ) {
+      setCsvExportMessage({ kind: 'error', text: 'ניתן לייצא PDF לאחר השלמת הסקירה הקלינית.' });
       return;
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
-      setCsvExportMessage({ kind: "error", text: "יש להתחבר מחדש כקלינאי כדי לייצא דוח." });
+      setCsvExportMessage({ kind: 'error', text: 'יש להתחבר מחדש כקלינאי כדי לייצא דוח.' });
       return;
     }
 
     const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-pdf`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ sessionId }),
     });
 
     if (!res.ok) {
-      let message = "ייצוא PDF נכשל. נסה שוב או רענן את הדף.";
+      let message = 'ייצוא PDF נכשל. נסה שוב או רענן את הדף.';
       try {
         const payload = await res.json();
         if (payload?.error) message = payload.error;
       } catch {
         // Keep the localized fallback for non-JSON errors.
       }
-      setCsvExportMessage({ kind: "error", text: message });
+      setCsvExportMessage({ kind: 'error', text: message });
       return;
     }
 
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = `report_${sessionRecord?.case_id || sessionId}.pdf`;
     document.body.appendChild(a);
@@ -952,22 +1087,24 @@ export function ClinicianDashboardDetail() {
     setCsvExportMessage(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error("יש להתחבר כקלינאי כדי לייצא CSV.");
+        throw new Error('יש להתחבר כקלינאי כדי לייצא CSV.');
       }
 
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-csv`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ sessionId }),
       });
 
       if (!res.ok) {
-        let message = "ייצוא CSV נכשל.";
+        let message = 'ייצוא CSV נכשל.';
         try {
           const payload = await res.json();
           if (payload?.error) message = payload.error;
@@ -979,11 +1116,11 @@ export function ClinicianDashboardDetail() {
 
       const blob = await res.blob();
       if (blob.size === 0) {
-        throw new Error("קובץ ה-CSV שהתקבל ריק.");
+        throw new Error('קובץ ה-CSV שהתקבל ריק.');
       }
 
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = `moca_${sessionRecord?.case_id || sessionId}_export.csv`;
       document.body.appendChild(a);
@@ -991,41 +1128,43 @@ export function ClinicianDashboardDetail() {
       a.remove();
       window.URL.revokeObjectURL(url);
       setCsvExportMessage({
-        kind: "success",
-        text: canExportPdf ? "CSV ירד בהצלחה." : "CSV עם נתונים זמניים ירד בהצלחה.",
+        kind: 'success',
+        text: canExportPdf ? 'CSV ירד בהצלחה.' : 'CSV עם נתונים זמניים ירד בהצלחה.',
       });
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : "ייצוא CSV נכשל.";
-      setCsvExportMessage({ kind: "error", text: message });
+      const message = error instanceof Error ? error.message : 'ייצוא CSV נכשל.';
+      setCsvExportMessage({ kind: 'error', text: message });
     } finally {
       setExportingCsv(false);
     }
   };
 
-  const breadcrumbTo = patient ? `/dashboard/patient/${patient.id}` : "/dashboard";
+  const breadcrumbTo = patient ? `/dashboard/patient/${patient.id}` : '/dashboard';
   const patientCaseLabel = patient?.case_id ?? sessionRecord?.case_id ?? null;
-  const breadcrumbLabel = patientCaseLabel ? `תיקים / ${patientCaseLabel} / מבדק` : "תיקים / מבדק";
+  const breadcrumbLabel = patientCaseLabel ? `תיקים / ${patientCaseLabel} / מבדק` : 'תיקים / מבדק';
   const reportNeedsReview = getReportNeedsReview(reportRecord);
   const canExportPdf =
-    sessionRecord?.status === "completed" && !reportNeedsReview && getPendingReviewCount(reportRecord) === 0;
+    sessionRecord?.status === 'completed' &&
+    !reportNeedsReview &&
+    getPendingReviewCount(reportRecord) === 0;
   const reportPendingReviewCount = getPendingReviewCount(reportRecord);
   const pendingReviewCount = pendingQueue.length || reportPendingReviewCount;
   const reviewTabsForDisplay = visibleReviewTabs;
   const exportBlockReason = canExportPdf
-    ? "הדוח מוכן לייצוא"
+    ? 'הדוח מוכן לייצוא'
     : pendingReviewCount > 0
-    ? `נותרו ${pendingReviewCount} מסכי סקירה`
-    : "ניתן לייצא לאחר השלמת הסקירה";
+      ? `נותרו ${pendingReviewCount} מסכי סקירה`
+      : 'ניתן לייצא לאחר השלמת הסקירה';
   const sessionStatusForPill: StatusPillValue = reportNeedsReview
-    ? "review"
-    : sessionRecord?.status === "awaiting_review"
-    ? "awaiting_review"
-    : sessionRecord?.status === "completed"
-    ? "completed"
-    : sessionRecord?.status === "in_progress"
-    ? "in_progress"
-    : "pending";
+    ? 'review'
+    : sessionRecord?.status === 'awaiting_review'
+      ? 'awaiting_review'
+      : sessionRecord?.status === 'completed'
+        ? 'completed'
+        : sessionRecord?.status === 'in_progress'
+          ? 'in_progress'
+          : 'pending';
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col pb-16">
@@ -1042,23 +1181,35 @@ export function ClinicianDashboardDetail() {
       <div className="mb-5 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 gap-4 items-center">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl font-extrabold text-blue-700 sm:h-16 sm:w-16 sm:text-2xl">
-            {(patientCaseLabel?.trim()[0] ?? sessionRecord?.case_id?.trim()[0] ?? "ת").toUpperCase()}
+            {(
+              patientCaseLabel?.trim()[0] ??
+              sessionRecord?.case_id?.trim()[0] ??
+              'ת'
+            ).toUpperCase()}
           </div>
           <div className="min-w-0">
             <h1 className="mb-1 break-words text-2xl font-extrabold leading-tight text-black">
-              {patientCaseLabel ? `תיק ${patientCaseLabel}` : sessionRecord?.case_id ? `תיק ${sessionRecord.case_id}` : "תיק"}
+              {patientCaseLabel
+                ? `תיק ${patientCaseLabel}`
+                : sessionRecord?.case_id
+                  ? `תיק ${sessionRecord.case_id}`
+                  : 'תיק'}
             </h1>
             <div className="flex flex-wrap items-center gap-3 text-sm font-bold text-gray-500">
               {sessionRecord?.case_id && (
-                <span className="break-all font-mono bg-gray-100 px-2 py-0.5 rounded-md">{sessionRecord.case_id}</span>
+                <span className="break-all font-mono bg-gray-100 px-2 py-0.5 rounded-md">
+                  {sessionRecord.case_id}
+                </span>
               )}
               <span>
-                {sessionRecord?.age_band ? `קבוצת גיל ${sessionRecord.age_band}` : "קבוצת גיל לא זמינה"}
+                {sessionRecord?.age_band
+                  ? `קבוצת גיל ${sessionRecord.age_band}`
+                  : 'קבוצת גיל לא זמינה'}
               </span>
               <span>
                 {sessionRecord?.created_at
-                  ? `נוצר בתאריך ${new Date(sessionRecord.created_at).toLocaleDateString("he-IL")}`
-                  : "תאריך לא זמין"}
+                  ? `נוצר בתאריך ${new Date(sessionRecord.created_at).toLocaleDateString('he-IL')}`
+                  : 'תאריך לא זמין'}
               </span>
               <StatusPill status={sessionStatusForPill} />
             </div>
@@ -1071,8 +1222,8 @@ export function ClinicianDashboardDetail() {
               onClick={handlePdfExport}
               disabled={!canExportPdf}
               className={clsx(
-                "flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 font-bold text-black transition-colors",
-                canExportPdf ? "hover:border-black" : "opacity-50 cursor-not-allowed",
+                'flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 font-bold text-black transition-colors',
+                canExportPdf ? 'hover:border-black' : 'opacity-50 cursor-not-allowed',
               )}
             >
               <FileDown className="w-5 h-5" />
@@ -1082,20 +1233,20 @@ export function ClinicianDashboardDetail() {
               onClick={() => setCsvConfirmOpen(true)}
               disabled={exportingCsv}
               className={clsx(
-                "flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 font-bold text-black transition-colors",
-                exportingCsv ? "cursor-wait opacity-60" : "hover:border-black",
+                'flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 font-bold text-black transition-colors',
+                exportingCsv ? 'cursor-wait opacity-60' : 'hover:border-black',
               )}
             >
               <Download className="w-5 h-5" />
-              <span>{exportingCsv ? "מייצא..." : "ייצוא CSV"}</span>
+              <span>{exportingCsv ? 'מייצא...' : 'ייצוא CSV'}</span>
             </button>
           </div>
           {csvExportMessage && (
             <p
-              role={csvExportMessage.kind === "error" ? "alert" : "status"}
+              role={csvExportMessage.kind === 'error' ? 'alert' : 'status'}
               className={clsx(
-                "max-w-xs text-right text-sm font-bold",
-                csvExportMessage.kind === "error" ? "text-red-700" : "text-green-700",
+                'max-w-xs text-right text-sm font-bold',
+                csvExportMessage.kind === 'error' ? 'text-red-700' : 'text-green-700',
               )}
             >
               {csvExportMessage.text}
@@ -1118,8 +1269,12 @@ export function ClinicianDashboardDetail() {
             <div className="mb-1 text-sm font-bold text-gray-600">{item.label}</div>
             <div
               className={clsx(
-                "text-2xl font-extrabold tabular-nums",
-                item.color === "warn" ? "text-red-600" : item.color === "pass" ? "text-green-600" : "text-black",
+                'text-2xl font-extrabold tabular-nums',
+                item.color === 'warn'
+                  ? 'text-red-600'
+                  : item.color === 'pass'
+                    ? 'text-green-600'
+                    : 'text-black',
               )}
             >
               {item.value}
@@ -1140,7 +1295,9 @@ export function ClinicianDashboardDetail() {
             {deviceContextDetails.map((detail) => (
               <div key={detail.label} className="min-w-0 rounded-lg bg-gray-50 p-3">
                 <dt className="mb-1 text-xs font-bold text-gray-500">{detail.label}</dt>
-                <dd className="truncate text-sm font-extrabold text-black" title={detail.value}>{detail.value}</dd>
+                <dd className="truncate text-sm font-extrabold text-black" title={detail.value}>
+                  {detail.value}
+                </dd>
               </div>
             ))}
           </dl>
@@ -1175,21 +1332,23 @@ export function ClinicianDashboardDetail() {
               <tbody>
                 {scoringBreakdown.map((item) => (
                   <tr key={item.id} className="border-b border-gray-50 last:border-b-0">
-                    <td className="px-4 py-3 text-sm font-extrabold text-gray-900">{item.domainLabel}</td>
+                    <td className="px-4 py-3 text-sm font-extrabold text-gray-900">
+                      {item.domainLabel}
+                    </td>
                     <td className="px-4 py-3 text-sm font-bold text-gray-700">{item.itemLabel}</td>
                     <td className="max-w-sm px-4 py-3 text-sm font-medium text-gray-600">
-                      {item.evidence ?? "—"}
+                      {item.evidence ?? '—'}
                     </td>
                     <td
                       className={clsx(
-                        "px-4 py-3 text-lg font-extrabold tabular-nums",
-                        item.status === "review"
-                          ? "text-amber-700"
+                        'px-4 py-3 text-lg font-extrabold tabular-nums',
+                        item.status === 'review'
+                          ? 'text-amber-700'
                           : item.score >= item.max
-                          ? "text-green-700"
-                          : item.score === 0
-                          ? "text-red-700"
-                          : "text-gray-900",
+                            ? 'text-green-700'
+                            : item.score === 0
+                              ? 'text-red-700'
+                              : 'text-gray-900',
                       )}
                     >
                       {item.score}/{item.max}
@@ -1197,13 +1356,13 @@ export function ClinicianDashboardDetail() {
                     <td className="px-4 py-3">
                       <span
                         className={clsx(
-                          "inline-flex rounded-full px-3 py-1 text-xs font-extrabold",
-                          item.status === "review"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-green-100 text-green-800",
+                          'inline-flex rounded-full px-3 py-1 text-xs font-extrabold',
+                          item.status === 'review'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-green-100 text-green-800',
                         )}
                       >
-                        {item.status === "review" ? "דורש סקירה" : "נוקד אוטומטית"}
+                        {item.status === 'review' ? 'דורש סקירה' : 'נוקד אוטומטית'}
                       </span>
                     </td>
                   </tr>
@@ -1225,7 +1384,7 @@ export function ClinicianDashboardDetail() {
               <p className="text-sm font-bold text-gray-500">
                 {reviewQueue.length > 0
                   ? `${pendingQueue.length} ממתינים · ${completedQueue.length} נשמרו · ${reviewQueue.length} מסכי סקירה`
-                  : "אין פריטי סקירה מוכנים להצגה"}
+                  : 'אין פריטי סקירה מוכנים להצגה'}
               </p>
             </div>
           </div>
@@ -1233,11 +1392,15 @@ export function ClinicianDashboardDetail() {
           <div className="flex flex-wrap items-center gap-3">
             <span
               className={clsx(
-                "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold",
-                canExportPdf ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800",
+                'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold',
+                canExportPdf ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800',
               )}
             >
-              {canExportPdf ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+              {canExportPdf ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <AlertTriangle className="h-4 w-4" />
+              )}
               {exportBlockReason}
             </span>
             <button
@@ -1245,14 +1408,14 @@ export function ClinicianDashboardDetail() {
               onClick={() => setShowPendingOnly((value) => !value)}
               disabled={pendingQueue.length === 0}
               className={clsx(
-                "rounded-lg border px-3 py-2 text-sm font-extrabold transition-colors",
+                'rounded-lg border px-3 py-2 text-sm font-extrabold transition-colors',
                 showPendingOnly
-                  ? "border-black bg-black text-white"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-400",
-                pendingQueue.length === 0 && "cursor-not-allowed opacity-50",
+                  ? 'border-black bg-black text-white'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400',
+                pendingQueue.length === 0 && 'cursor-not-allowed opacity-50',
               )}
             >
-              {showPendingOnly ? "הצג הכל" : "הצג ממתינים"}
+              {showPendingOnly ? 'הצג הכל' : 'הצג ממתינים'}
             </button>
           </div>
         </div>
@@ -1266,14 +1429,14 @@ export function ClinicianDashboardDetail() {
                 <button
                   key={tab.id}
                   type="button"
-	                  onClick={() => setActiveTab(tab.id)}
-	                  className={clsx(
-	                    "min-w-[128px] rounded-lg border p-3 text-right transition-colors",
+                  onClick={() => setActiveTab(tab.id)}
+                  className={clsx(
+                    'min-w-[128px] rounded-lg border p-3 text-right transition-colors',
                     isActive
-                      ? "border-black bg-black text-white"
+                      ? 'border-black bg-black text-white'
                       : tab.isReviewed
-                      ? "border-green-200 bg-green-50 text-green-950 hover:border-green-300"
-                      : "border-amber-200 bg-amber-50 text-amber-950 hover:border-amber-300",
+                        ? 'border-green-200 bg-green-50 text-green-950 hover:border-green-300'
+                        : 'border-amber-200 bg-amber-50 text-amber-950 hover:border-amber-300',
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -1284,19 +1447,23 @@ export function ClinicianDashboardDetail() {
                       <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                     )}
                   </div>
-                  <div className={clsx("mt-2 text-xs font-bold", isActive ? "text-white/75" : "text-current/70")}>
+                  <div
+                    className={clsx(
+                      'mt-2 text-xs font-bold',
+                      isActive ? 'text-white/75' : 'text-current/70',
+                    )}
+                  >
                     {tab.isEvidenceOnly
-                      ? "עדות קולית"
+                      ? 'עדות קולית'
                       : tab.isReviewed
-                      ? `נשמר ${score}/${tab.maxScore ?? "?"}`
-                      : "ממתין לניקוד"}
+                        ? `נשמר ${score}/${tab.maxScore ?? '?'}`
+                        : 'ממתין לניקוד'}
                   </div>
                 </button>
               );
             })}
           </div>
         )}
-
       </div>
 
       {reviewQueue.length === 0 ? (
@@ -1304,7 +1471,8 @@ export function ClinicianDashboardDetail() {
           <ClipboardCheck className="mx-auto mb-4 h-10 w-10 text-gray-400" />
           <h3 className="text-xl font-extrabold text-black">אין פריטי סקירה להצגה</h3>
           <p className="mx-auto mt-2 max-w-xl text-sm font-bold text-gray-500">
-            פריטי סקירה ועדויות יופיעו כאן אחרי שהמטופל יסיים את המבדק או אחרי שנוצרו פריטים הדורשים פענוח קליני.
+            פריטי סקירה ועדויות יופיעו כאן אחרי שהמטופל יסיים את המבדק או אחרי שנוצרו פריטים הדורשים
+            פענוח קליני.
           </p>
         </div>
       ) : (
@@ -1338,47 +1506,67 @@ export function ClinicianDashboardDetail() {
                 <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm font-bold text-blue-950">
                   עדות קולית בלבד למשימה זו. אין פריט ניקוד ידני לשמירה במסך זה.
                 </div>
-              ) : rubricData.items.map((crit) => {
-                const isChecked = rubrics[activeReviewTab][crit.id];
-                return (
-                  <button
-                    key={crit.id}
-                    type="button"
-                    aria-pressed={isChecked}
-                    onClick={() => toggleRubric(crit.id)}
-                    className={clsx(
-                      "flex w-full gap-3 rounded-lg border p-4 text-right transition-all",
-                      isChecked ? "bg-[#ecfdf5] border-green-200" : "bg-white border-transparent hover:border-gray-200",
-                    )}
-                  >
-                    <div
+              ) : (
+                rubricData.items.map((crit) => {
+                  const isChecked = rubrics[activeReviewTab][crit.id];
+                  return (
+                    <button
+                      key={crit.id}
+                      type="button"
+                      aria-pressed={isChecked}
+                      onClick={() => toggleRubric(crit.id)}
                       className={clsx(
-                        "mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors",
-                        isChecked ? "bg-green-600 text-white" : "bg-gray-200 text-transparent",
+                        'flex w-full gap-3 rounded-lg border p-4 text-right transition-all',
+                        isChecked
+                          ? 'bg-[#ecfdf5] border-green-200'
+                          : 'bg-white border-transparent hover:border-gray-200',
                       )}
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className={clsx("font-bold text-base", isChecked ? "text-green-900" : "text-black")}>
-                        {crit.label}
+                      <div
+                        className={clsx(
+                          'mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors',
+                          isChecked ? 'bg-green-600 text-white' : 'bg-gray-200 text-transparent',
+                        )}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
                       </div>
-                      <div className={clsx("text-sm mt-1", isChecked ? "text-green-700" : "text-gray-500")}>
-                        {crit.desc}
+                      <div>
+                        <div
+                          className={clsx(
+                            'font-bold text-base',
+                            isChecked ? 'text-green-900' : 'text-black',
+                          )}
+                        >
+                          {crit.label}
+                        </div>
+                        <div
+                          className={clsx(
+                            'text-sm mt-1',
+                            isChecked ? 'text-green-700' : 'text-gray-500',
+                          )}
+                        >
+                          {crit.desc}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-500 mb-2">הערות</label>
+              <label htmlFor="reviewNotes" className="block text-sm font-bold text-gray-500 mb-2">
+                הערות
+              </label>
               <textarea
+                id="reviewNotes"
                 value={reviewNotes}
                 onChange={(event) => {
                   setSaveMessage(null);
-                  setReviewNotesByTab((prev) => ({ ...prev, [activeReviewTab]: event.target.value }));
+                  setReviewNotesByTab((prev) => ({
+                    ...prev,
+                    [activeReviewTab]: event.target.value,
+                  }));
                 }}
                 placeholder="הוסף הערה קלינית…"
                 className="w-full h-24 p-3 bg-white border border-gray-200 rounded-lg resize-none text-base focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-600 transition-all"
@@ -1386,18 +1574,26 @@ export function ClinicianDashboardDetail() {
               <div className="mt-3 flex items-center justify-between gap-3">
                 <button
                   onClick={handleSaveReview}
-                  disabled={savingReview || isCurrentEvidenceOnly || (!currentDrawing && !currentScoringReview)}
+                  disabled={
+                    savingReview ||
+                    isCurrentEvidenceOnly ||
+                    (!currentDrawing && !currentScoringReview)
+                  }
                   className={clsx(
-                    "inline-flex h-11 items-center gap-2 rounded-lg px-4 font-bold text-white transition-colors",
-                    savingReview || isCurrentEvidenceOnly || (!currentDrawing && !currentScoringReview)
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-black hover:bg-gray-800",
+                    'inline-flex h-11 items-center gap-2 rounded-lg px-4 font-bold text-white transition-colors',
+                    savingReview ||
+                      isCurrentEvidenceOnly ||
+                      (!currentDrawing && !currentScoringReview)
+                      ? 'bg-gray-300 cursor-not-allowed'
+                      : 'bg-black hover:bg-gray-800',
                   )}
                 >
                   <Save className="h-5 w-5" />
-                  {savingReview ? "שומר..." : "שמור ניקוד"}
+                  {savingReview ? 'שומר...' : 'שמור ניקוד'}
                 </button>
-                {saveMessage && <div className="text-sm font-bold text-gray-600">{saveMessage}</div>}
+                {saveMessage && (
+                  <div className="text-sm font-bold text-gray-600">{saveMessage}</div>
+                )}
               </div>
             </div>
           </div>
@@ -1411,9 +1607,15 @@ export function ClinicianDashboardDetail() {
             <div className="text-gray-400">אין אירועים להצגה.</div>
           ) : (
             auditLogs.map((log: any) => (
-              <div key={log.id} className="flex items-center justify-between gap-4 border-b pb-2 last:border-b-0">
+              <div
+                key={log.id}
+                className="flex items-center justify-between gap-4 border-b pb-2 last:border-b-0"
+              >
                 <div className="min-w-0">
-                  <div className="font-extrabold text-gray-900" title={typeof log.event_type === "string" ? log.event_type : undefined}>
+                  <div
+                    className="font-extrabold text-gray-900"
+                    title={typeof log.event_type === 'string' ? log.event_type : undefined}
+                  >
                     {auditEventLabel(log.event_type)}
                   </div>
                   <div className="mt-0.5 text-xs font-bold text-gray-400" dir="ltr">
@@ -1431,7 +1633,7 @@ export function ClinicianDashboardDetail() {
       <CsvExportConfirmDialog
         open={csvConfirmOpen}
         exporting={exportingCsv}
-        scopeLabel={patientCaseLabel ? `תיק ${patientCaseLabel}` : "המבדק הנוכחי"}
+        scopeLabel={patientCaseLabel ? `תיק ${patientCaseLabel}` : 'המבדק הנוכחי'}
         onCancel={() => setCsvConfirmOpen(false)}
         onConfirm={() => {
           setCsvConfirmOpen(false);
