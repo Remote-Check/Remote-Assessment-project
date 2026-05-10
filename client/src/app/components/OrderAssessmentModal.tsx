@@ -184,8 +184,9 @@ export function OrderAssessmentModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">מבדק</label>
+                <label htmlFor="assessmentType" className="block text-sm font-bold text-gray-600 mb-1">מבדק</label>
                 <select
+                  id="assessmentType"
                   value={assessmentType}
                   onChange={(e) => setAssessmentType(e.target.value)}
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
@@ -194,8 +195,9 @@ export function OrderAssessmentModal({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">שפה</label>
+                <label htmlFor="language" className="block text-sm font-bold text-gray-600 mb-1">שפה</label>
                 <select
+                  id="language"
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
@@ -204,8 +206,9 @@ export function OrderAssessmentModal({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">גרסה</label>
+                <label htmlFor="mocaVersion" className="block text-sm font-bold text-gray-600 mb-1">גרסה</label>
                 <select
+                  id="mocaVersion"
                   value={mocaVersion}
                   onChange={(e) => setMocaVersion(e.target.value)}
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
