@@ -1,0 +1,3 @@
+## 2024-05-13 - PatientForm Complex Input Label Accessibility
+**Learning:** When dealing with multiple input fields acting as one semantic field (like day/month/year for Date of Birth) in React/Tailwind applications, assigning a standard `<label>` doesn't provide enough screen reader context. The correct accessible pattern is to wrap the inputs in a `<fieldset>` with a `<legend>` replacing the visual label, and providing visually hidden (`sr-only`) `<label>` tags linked via `htmlFor` to each individual `id` for screen readers.
+**Action:** Apply this `<fieldset>` and visually hidden labels pattern anytime a single piece of user data requires multiple discrete input elements.
