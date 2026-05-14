@@ -1,0 +1,3 @@
+## 2026-05-14 - [Complex Grouped Form Inputs Accessibility]
+**Learning:** Grouped inputs that form a single logical field (like day, month, year for Date of Birth) require structural grouping using `<fieldset>` and `<legend>` to ensure screen readers provide correct context for each visually separate element. Without them, users only hear the hidden label (e.g., 'Birth Day') without understanding the broader context of what is being asked.
+**Action:** Always wrap multi-input logical forms in a `<fieldset>` and `<legend>` while providing visually hidden (`sr-only`) labels linked with `htmlFor` for each constituent input element.
