@@ -1,0 +1,3 @@
+## 2024-05-15 - Missing `htmlFor` and grouped inputs labeling
+**Learning:** Found an accessibility pattern specific to this app's forms: some labels lacked the `htmlFor` attribute linking them to inputs (which prevents click-to-focus), and grouped inputs like Date of Birth lacked proper `<fieldset>`, `<legend>`, and inner `<label>` wrapping.
+**Action:** Reusable UX pattern updated: wrap complex grouped form inputs (e.g., date parts) in a `<fieldset>` with a `<legend>`, and use visually hidden (`sr-only`) `<label>` elements for each individual input. Make sure all single inputs have `id` mapped to `<label htmlFor>`.
