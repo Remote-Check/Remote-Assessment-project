@@ -1,0 +1,3 @@
+## 2024-05-18 - Missing Explicit Label Associations in Forms
+**Learning:** Found an accessibility issue pattern in this app's components (`PatientForm.tsx`) where `<label>` elements visually precede inputs but lack proper programmatic association (missing `htmlFor` matching the input's `id`). Additionally, grouped inputs like "Date of Birth" lacking `<fieldset>` / `<legend>` and hidden labels are problematic for screen readers.
+**Action:** Always verify that every `<label>` in a new or modified form has an `htmlFor` attribute correctly pointing to its target input's `id`. For compound inputs (like day/month/year), use `<fieldset>` with `<legend>` and individual `aria-label` or `sr-only` tags.
