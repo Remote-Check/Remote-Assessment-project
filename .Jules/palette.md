@@ -1,0 +1,3 @@
+## 2026-05-19 - Grouped Input Accessibility Pattern
+**Learning:** In complex grouped forms requiring separate distinct fields acting as one entry point (like Date of Birth segmented into Day/Month/Year), standard labeling is insufficient for screen readers. Using a singular label visually above the group doesn't link the individual inputs correctly, leading to a degraded a11y experience.
+**Action:** Always wrap such logically grouped inputs in a `<fieldset>` with a descriptive `<legend>`. For the individual input fields within the fieldset, apply visually hidden (`sr-only`) `<label>` elements linked via `htmlFor` and `id` to maintain context for assistive technologies without disrupting the visual design.
