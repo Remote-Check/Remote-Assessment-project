@@ -1,0 +1,3 @@
+## 2025-02-27 - Grouped Form Input Accessibility
+**Learning:** Found a pattern where grouped related inputs (like Date of Birth fields for day, month, year) lacked proper structural grouping, meaning screen readers would announce "Day", "Month", "Year" without context that they belong to "Date of Birth".
+**Action:** Always wrap grouped inputs in a `<fieldset>` with a descriptive `<legend>`. For the individual parts, use a visually hidden label (`sr-only`) to maintain the clean visual layout while providing essential context for screen readers.
