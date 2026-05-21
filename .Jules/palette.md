@@ -1,0 +1,1 @@
+## 2026-05-21 - Add Loading Spinners to Async Buttons\n**Learning:** Users lack visibility during async actions, so adding a spinning `Loader2` to buttons improves feedback without layout shifts.\n**Action:** Reused the `lucide-react` spinner paired with standard Tailwind utilities for consistency.
