@@ -1,0 +1,3 @@
+## 2026-05-22 - Accessible Complex Grouped Inputs
+**Learning:** Complex grouped form inputs (e.g., Date of Birth with separate Day, Month, Year fields) must be wrapped in a `<fieldset>` with a `<legend>` to provide semantic context. Furthermore, each individual input within the group requires an explicit, visually hidden (`sr-only`) `<label>` with an `htmlFor` attribute matching the input's unique `id` to ensure complete screen reader accessibility and correct click-to-focus behavior.
+**Action:** Use the `<fieldset>` / `<legend>` pattern with individual `sr-only` labels for all future multi-part complex inputs.
