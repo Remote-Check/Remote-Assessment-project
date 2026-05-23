@@ -1,0 +1,3 @@
+## 2024-05-23 - Screen Reader Accessibility for Grouped Inputs
+**Learning:** For complex grouped form inputs (like Date of Birth split into day/month/year), wrapping them in a standard div is insufficient for screen readers. Using a `<fieldset>` with a `<legend>` provides necessary grouping context, and visually hidden (`sr-only`) `<label>`s for each input ensures they remain distinct and accessible without breaking the visual layout.
+**Action:** Always wrap grouped related inputs in a `<fieldset>`/`<legend>` combination, and ensure every input has an explicitly linked `<label>`, utilizing `sr-only` classes if the design dictates hiding them visually.
