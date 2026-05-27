@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.106.2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.104.0';
 import { json } from './http.ts';
 import { writeAuditEvent } from './audit.ts';
 import { validateTaskPayload } from './tasks.ts';
