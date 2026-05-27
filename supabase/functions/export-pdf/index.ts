@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.104.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.106.2';
 import { handleExportPdf } from './handler.ts';
 
 Deno.serve((req) => handleExportPdf(req, {

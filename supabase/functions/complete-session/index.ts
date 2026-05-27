@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.104.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.106.2';
 import { writeAuditEvent } from '../_shared/audit.ts';
 import { notifyClinicianSessionCompleted, recordNotificationOutcome } from '../_shared/notifications.ts';
 import { scoreSession } from '../_shared/scoring.ts';
