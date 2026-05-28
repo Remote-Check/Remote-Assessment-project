@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { X, Stethoscope, CheckCircle2, Copy } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { useState } from 'react';
+import { X, Stethoscope, CheckCircle2, Copy } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export interface PatientSummary {
   id: string;
@@ -10,8 +10,8 @@ export interface PatientSummary {
   language?: string | null;
   education_years?: number | null;
   date_of_birth?: string | null;
-  gender?: "male" | "female" | null;
-  dominant_hand?: "right" | "left" | "ambidextrous" | null;
+  gender?: 'male' | 'female' | null;
+  dominant_hand?: 'right' | 'left' | 'ambidextrous' | null;
 }
 
 export interface OrderAssessmentModalProps {
@@ -24,7 +24,7 @@ export interface OrderAssessmentModalProps {
 async function readJsonPayload(res: Response): Promise<Record<string, unknown> | null> {
   try {
     const payload = await res.json();
-    return payload && typeof payload === "object" && !Array.isArray(payload)
+    return payload && typeof payload === 'object' && !Array.isArray(payload)
       ? (payload as Record<string, unknown>)
       : null;
   } catch {
@@ -33,11 +33,11 @@ async function readJsonPayload(res: Response): Promise<Record<string, unknown> |
 }
 
 function orderAssessmentErrorMessage(err: unknown): string {
-  if (!(err instanceof Error)) return "פתיחת מבדק נכשלה.";
-  if (err.name === "TypeError" || /failed to fetch|load failed|network/i.test(err.message)) {
-    return "לא ניתן להתחבר לשרת פתיחת המבדקים. בדוק חיבור ונסה שוב. אם הבעיה חוזרת, יש לבדוק את הגדרות Supabase/Netlify.";
+  if (!(err instanceof Error)) return 'פתיחת מבדק נכשלה.';
+  if (err.name === 'TypeError' || /failed to fetch|load failed|network/i.test(err.message)) {
+    return 'לא ניתן להתחבר לשרת פתיחת המבדקים. בדוק חיבור ונסה שוב. אם הבעיה חוזרת, יש לבדוק את הגדרות Supabase/Netlify.';
   }
-  return err.message || "פתיחת מבדק נכשלה.";
+  return err.message || 'פתיחת מבדק נכשלה.';
 }
 
 export function OrderAssessmentModal({
@@ -46,15 +46,15 @@ export function OrderAssessmentModal({
   patient,
   onOrdered,
 }: OrderAssessmentModalProps) {
-  const [assessmentType, setAssessmentType] = useState("moca");
-  const [language, setLanguage] = useState(patient.language ?? "he");
-  const [mocaVersion, setMocaVersion] = useState("8.3");
+  const [assessmentType, setAssessmentType] = useState('moca');
+  const [language, setLanguage] = useState(patient.language ?? 'he');
+  const [mocaVersion, setMocaVersion] = useState('8.3');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     testNumber: string;
   } | null>(null);
-  const [copied, setCopied] = useState<"testNumber" | null>(null);
+  const [copied, setCopied] = useState<'testNumber' | null>(null);
 
   if (!open) return null;
 
@@ -66,35 +66,35 @@ export function OrderAssessmentModal({
     setError(null);
 
     if (missingClinicalFields.length > 0) {
-      setError("יש להשלים את כל פרטי הרקע הקליניים לפני פתיחת מבדק.");
+      setError('יש להשלים את כל פרטי הרקע הקליניים לפני פתיחת מבדק.');
       return;
     }
-    if (assessmentType !== "moca") {
-      setError("בשלב זה נתמך MoCA בלבד.");
+    if (assessmentType !== 'moca') {
+      setError('בשלב זה נתמך MoCA בלבד.');
       return;
     }
-    if (language !== "he") {
-      setError("בשלב זה נתמכת עברית בלבד.");
+    if (language !== 'he') {
+      setError('בשלב זה נתמכת עברית בלבד.');
       return;
     }
-    if (!["8.1", "8.2", "8.3"].includes(mocaVersion)) {
-      setError("יש לבחור גרסת MoCA תקינה.");
+    if (!['8.1', '8.2', '8.3'].includes(mocaVersion)) {
+      setError('יש לבחור גרסת MoCA תקינה.');
       return;
     }
 
     const { data: authData } = await supabase.auth.getSession();
     const session = authData.session;
     if (!session) {
-      setError("יש להתחבר מחדש כקלינאי.");
+      setError('יש להתחבר מחדש כקלינאי.');
       return;
     }
 
     setSubmitting(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-session`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -107,17 +107,17 @@ export function OrderAssessmentModal({
 
       const payload = await readJsonPayload(res);
       if (!res.ok) {
-        throw new Error(typeof payload?.error === "string" ? payload.error : "פתיחת מבדק נכשלה.");
+        throw new Error(typeof payload?.error === 'string' ? payload.error : 'פתיחת מבדק נכשלה.');
       }
 
       const testNumber =
-        typeof payload?.testNumber === "string"
+        typeof payload?.testNumber === 'string'
           ? payload.testNumber
-          : typeof payload?.accessCode === "string"
+          : typeof payload?.accessCode === 'string'
             ? payload.accessCode
-            : "";
+            : '';
       if (!/^\d{8}$/.test(testNumber)) {
-        throw new Error("מספר מבדק לא התקבל מהשרת.");
+        throw new Error('מספר מבדק לא התקבל מהשרת.');
       }
 
       setResult({ testNumber });
@@ -129,7 +129,7 @@ export function OrderAssessmentModal({
     }
   };
 
-  const copy = async (text: string, kind: "testNumber") => {
+  const copy = async (text: string, kind: 'testNumber') => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(kind);
@@ -159,11 +159,11 @@ export function OrderAssessmentModal({
             </div>
             <div className="min-w-0">
               <h2 id="order-assessment-title" className="text-xl font-extrabold text-black">
-                {result ? "המבדק נוצר בהצלחה" : "פתיחת מבדק חדש"}
+                {result ? 'המבדק נוצר בהצלחה' : 'פתיחת מבדק חדש'}
               </h2>
               <p className="text-gray-500 text-sm">
                 {result
-                  ? "העתק את מספר המבדק ושלח אותו למטופל"
+                  ? 'העתק את מספר המבדק ושלח אותו למטופל'
                   : `עבור תיק ${caseDisplay(patient)}`}
               </p>
             </div>
@@ -184,8 +184,14 @@ export function OrderAssessmentModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">מבדק</label>
+                <label
+                  htmlFor="assessmentType"
+                  className="block text-sm font-bold text-gray-600 mb-1"
+                >
+                  מבדק
+                </label>
                 <select
+                  id="assessmentType"
                   value={assessmentType}
                   onChange={(e) => setAssessmentType(e.target.value)}
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
@@ -194,8 +200,14 @@ export function OrderAssessmentModal({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">שפה</label>
+                <label
+                  htmlFor="assessmentLanguage"
+                  className="block text-sm font-bold text-gray-600 mb-1"
+                >
+                  שפה
+                </label>
                 <select
+                  id="assessmentLanguage"
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
@@ -204,8 +216,11 @@ export function OrderAssessmentModal({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">גרסה</label>
+                <label htmlFor="mocaVersion" className="block text-sm font-bold text-gray-600 mb-1">
+                  גרסה
+                </label>
                 <select
+                  id="mocaVersion"
                   value={mocaVersion}
                   onChange={(e) => setMocaVersion(e.target.value)}
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
@@ -225,7 +240,7 @@ export function OrderAssessmentModal({
             {missingClinicalFields.length > 0 && (
               <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-3 text-sm font-bold">
                 <div>יש להשלים פרטי רקע לפני פתיחת מבדק:</div>
-                <div className="mt-1 font-medium">{missingClinicalFields.join(" · ")}</div>
+                <div className="mt-1 font-medium">{missingClinicalFields.join(' · ')}</div>
               </div>
             )}
 
@@ -251,7 +266,7 @@ export function OrderAssessmentModal({
                 disabled={!canCreateSession}
                 className="flex-1 h-10 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:opacity-60"
               >
-                {submitting ? "יוצר..." : "צור מספר מבדק"}
+                {submitting ? 'יוצר...' : 'צור מספר מבדק'}
               </button>
             </div>
           </form>
@@ -276,12 +291,12 @@ export function OrderAssessmentModal({
                   </span>
                   <button
                     type="button"
-                    onClick={() => copy(result.testNumber, "testNumber")}
+                    onClick={() => copy(result.testNumber, 'testNumber')}
                     className="inline-flex h-10 items-center gap-2 rounded-lg bg-black px-4 font-bold text-white hover:bg-gray-800"
                     aria-label="העתק מספר מבדק"
                   >
                     <Copy className="w-4 h-4" />
-                    {copied === "testNumber" ? "הועתק" : "העתק מספר מבדק"}
+                    {copied === 'testNumber' ? 'הועתק' : 'העתק מספר מבדק'}
                   </button>
                 </div>
                 <p className="text-sm text-gray-600 mt-3">
@@ -306,21 +321,21 @@ export function OrderAssessmentModal({
 
 function clinicalContextGaps(patient: PatientSummary): string[] {
   const gaps: string[] = [];
-  if (!patient.case_id?.trim()) gaps.push("מזהה תיק");
-  if (!patient.phone?.trim()) gaps.push("טלפון");
-  if (!patient.date_of_birth) gaps.push("תאריך לידה");
-  if (patient.gender !== "male" && patient.gender !== "female") gaps.push("מין");
-  if (patient.language !== "he") gaps.push("שפת המבדק");
-  if (!["right", "left", "ambidextrous"].includes(patient.dominant_hand ?? ""))
-    gaps.push("יד דומיננטית");
+  if (!patient.case_id?.trim()) gaps.push('מזהה תיק');
+  if (!patient.phone?.trim()) gaps.push('טלפון');
+  if (!patient.date_of_birth) gaps.push('תאריך לידה');
+  if (patient.gender !== 'male' && patient.gender !== 'female') gaps.push('מין');
+  if (patient.language !== 'he') gaps.push('שפת המבדק');
+  if (!['right', 'left', 'ambidextrous'].includes(patient.dominant_hand ?? ''))
+    gaps.push('יד דומיננטית');
   const educationYears = patient.education_years;
   if (
-    typeof educationYears !== "number" ||
+    typeof educationYears !== 'number' ||
     !Number.isInteger(educationYears) ||
     educationYears < 0 ||
     educationYears > 40
   ) {
-    gaps.push("שנות לימוד");
+    gaps.push('שנות לימוד');
   }
   return gaps;
 }
