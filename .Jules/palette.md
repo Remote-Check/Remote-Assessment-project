@@ -1,0 +1,1 @@
+## 2024-06-03 - Form Accessibility\n**Learning:** In the React app, many forms lack `id`s on their inputs and their corresponding `htmlFor` on the labels, impacting click-to-focus and screen reader accessibility.\n**Action:** Use standard `htmlFor` and `id` pairings to connect labels to inputs, improving the overall UX.
