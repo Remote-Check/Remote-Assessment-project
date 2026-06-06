@@ -1,0 +1,3 @@
+## 2024-05-16 - Accessible Grouped Inputs in Forms
+**Learning:** This app requires complex grouped inputs (like Date of Birth) to be properly wrapped in `<fieldset>` and `<legend>`. Using just a `<label>` to group three independent inputs (day, month, year) caused a critical accessibility failure because screen readers could not associate the group label with the individual input fields, leaving them without accessible names.
+**Action:** When creating or modifying complex inputs spanning multiple distinct form elements, always wrap them in a `<fieldset>` and use visually hidden (`sr-only`) `<label>` elements linked to the input `id` via `htmlFor`.
