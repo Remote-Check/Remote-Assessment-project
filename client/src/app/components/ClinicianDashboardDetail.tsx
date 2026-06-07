@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck, Download, FileDown, Mic, Save } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck, Download, FileDown, Mic, Save, Loader2 } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { edgeErrorMessage, edgeFetch } from "../../lib/edgeFetch";
 import { supabase } from "../../lib/supabase";
@@ -1081,12 +1081,13 @@ export function ClinicianDashboardDetail() {
             <button
               onClick={() => setCsvConfirmOpen(true)}
               disabled={exportingCsv}
+              aria-busy={exportingCsv}
               className={clsx(
                 "flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 font-bold text-black transition-colors",
                 exportingCsv ? "cursor-wait opacity-60" : "hover:border-black",
               )}
             >
-              <Download className="w-5 h-5" />
+              {exportingCsv ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
               <span>{exportingCsv ? "מייצא..." : "ייצוא CSV"}</span>
             </button>
           </div>
