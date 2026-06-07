@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/incompatible-library */
-import { Search, ChevronLeft, Plus, Hash, ClipboardCheck } from "lucide-react";
+import { Search, ChevronLeft, Plus, Hash, ClipboardCheck, Loader2, Download } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -444,8 +444,10 @@ export function ClinicianDashboardList() {
             <button
               onClick={() => setCsvConfirmOpen(true)}
               disabled={exportingCsv}
+              aria-busy={exportingCsv}
               className="flex h-10 items-center justify-center gap-2 bg-white text-black border border-gray-200 px-3 rounded-lg font-bold hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60 transition-colors shadow-sm text-sm"
             >
+              {exportingCsv ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               <span>{exportingCsv ? "מייצא CSV..." : "ייצוא CSV"}</span>
             </button>
 
