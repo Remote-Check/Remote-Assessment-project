@@ -1,0 +1,3 @@
+## 2024-06-16 - Add `htmlFor` to form labels and `id` to inputs in `PatientForm`
+**Learning:** I found that `PatientForm.tsx` has form fields with `<label>` tags but no `htmlFor` attributes linking them to their corresponding `<input>` or `<select>` fields via `id`. This is an accessibility issue, as clicking the label does not focus the input, and screen readers may not correctly associate the label with the input.
+**Action:** Always ensure that `<label>` tags have an `htmlFor` attribute that exactly matches the `id` of their corresponding form control (`<input>`, `<select>`, `<textarea>`, etc.). For complex fields like Date of Birth which have multiple inputs, use a `<fieldset>` and `<legend>` along with visually hidden `sr-only` labels for the individual inputs.
