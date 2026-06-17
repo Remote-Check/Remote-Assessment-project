@@ -1,0 +1,3 @@
+## 2024-05-18 - Async Button State Consistency
+**Learning:** Adding a `Loader2` component and `aria-busy` to the `OrderAssessmentModal` async submit button greatly improves user feedback by providing visual and accessible indicators of background processing. Ensure to mock `supabase.auth.getSession` when visually verifying components with authentication dependencies in an isolated render setup.
+**Action:** Always include a visual loading indicator (e.g., `Loader2` from `lucide-react`) and an explicit `aria-busy` attribute on form submission buttons to enhance accessibility and user feedback during async operations.
