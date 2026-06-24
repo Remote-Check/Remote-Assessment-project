@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hash, X } from "lucide-react";
+import { Hash, X, Loader2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 export interface PatientFormProps {
@@ -315,9 +315,17 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 h-11 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:opacity-60"
+              aria-busy={saving}
+              className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:opacity-60"
             >
-              {saving ? "שומר..." : "פתח תיק"}
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>שומר...</span>
+                </>
+              ) : (
+                "פתח תיק"
+              )}
             </button>
           </div>
         </form>
