@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export function CsvExportConfirmDialog({
   open,
@@ -18,7 +19,10 @@ export function CsvExportConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="presentation">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      role="presentation"
+    >
       <div
         role="dialog"
         aria-modal="true"
@@ -29,8 +33,8 @@ export function CsvExportConfirmDialog({
           אישור ייצוא CSV
         </h2>
         <p className="mb-5 text-base font-medium leading-relaxed text-gray-700">
-          קובץ ה-CSV עבור {scopeLabel} מיועד לשימוש קליני בלבד. הוא עשוי לכלול נתונים מזהים או נתונים
-          זמניים לפני סיום סקירה, ולכן יש לשמור אותו רק במקום מאובטח.
+          קובץ ה-CSV עבור {scopeLabel} מיועד לשימוש קליני בלבד. הוא עשוי לכלול נתונים מזהים או
+          נתונים זמניים לפני סיום סקירה, ולכן יש לשמור אותו רק במקום מאובטח.
         </p>
 
         <label className="mb-6 flex cursor-pointer items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-950">
@@ -62,9 +66,17 @@ export function CsvExportConfirmDialog({
               onConfirm();
             }}
             disabled={!acknowledged || exporting}
-            className="min-h-12 rounded-xl bg-black px-5 py-2 font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-busy={exporting}
+            className="min-h-12 rounded-xl bg-black px-5 py-2 font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {exporting ? "מייצא..." : "ייצא CSV"}
+            {exporting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>מייצא...</span>
+              </>
+            ) : (
+              'ייצא CSV'
+            )}
           </button>
         </div>
       </div>
