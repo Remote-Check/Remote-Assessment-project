@@ -1,0 +1,3 @@
+## 2026-06-28 - Add accessible loading states to async buttons
+**Learning:** Relying solely on disabled states or text changes (e.g., 'Save' to 'Saving...') for asynchronous buttons is insufficient for UX and accessibility. Screen readers and users need an explicit `aria-busy` indicator alongside a standard visual spinner (like `Loader2` from `lucide-react`) to clearly communicate that the system is processing their request.
+**Action:** When creating or modifying async action buttons (e.g., submitting forms, opening modals, exporting data), always implement an explicit `aria-busy={isLoading}` attribute, accompanied by a visual loading indicator (e.g., `Loader2` with `animate-spin`) that toggles visibility along with the action text.
