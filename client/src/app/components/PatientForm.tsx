@@ -209,32 +209,44 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-600 mb-1">תאריך לידה*</label>
+            <fieldset>
+              <legend className="block text-sm font-bold text-gray-600 mb-1 w-full">תאריך לידה*</legend>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <input
-                  value={birthDay}
-                  onChange={(e) => setBirthDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                  placeholder="יום"
-                  inputMode="numeric"
-                  className="h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
-                />
-                <input
-                  value={birthMonth}
-                  onChange={(e) => setBirthMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                  placeholder="חודש"
-                  inputMode="numeric"
-                  className="h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
-                />
-                <input
-                  value={birthYear}
-                  onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                  placeholder="שנה"
-                  inputMode="numeric"
-                  className="h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
-                />
+                <div>
+                  <label htmlFor="birthDay" className="sr-only">יום</label>
+                  <input
+                    id="birthDay"
+                    value={birthDay}
+                    onChange={(e) => setBirthDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="יום"
+                    inputMode="numeric"
+                    className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="birthMonth" className="sr-only">חודש</label>
+                  <input
+                    id="birthMonth"
+                    value={birthMonth}
+                    onChange={(e) => setBirthMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="חודש"
+                    inputMode="numeric"
+                    className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="birthYear" className="sr-only">שנה</label>
+                  <input
+                    id="birthYear"
+                    value={birthYear}
+                    onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="שנה"
+                    inputMode="numeric"
+                    className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
+                  />
+                </div>
               </div>
-            </div>
+            </fieldset>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
