@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Stethoscope, CheckCircle2, Copy } from "lucide-react";
+import { X, Stethoscope, CheckCircle2, Copy, Loader2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 export interface PatientSummary {
@@ -248,9 +248,11 @@ export function OrderAssessmentModal({
               </button>
               <button
                 type="submit"
-                disabled={!canCreateSession}
-                className="flex-1 h-10 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:opacity-60"
+                disabled={!canCreateSession || submitting}
+                aria-busy={submitting}
+                className="flex-1 h-10 flex items-center justify-center gap-2 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:opacity-60"
               >
+                {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 {submitting ? "יוצר..." : "צור מספר מבדק"}
               </button>
             </div>
