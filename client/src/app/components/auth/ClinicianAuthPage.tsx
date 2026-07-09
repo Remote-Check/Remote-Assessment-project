@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { ArrowLeft, Lock, Stethoscope, UserPlus } from "lucide-react";
+import { ArrowLeft, Lock, Stethoscope, UserPlus, Loader2 } from "lucide-react";
 import { useClinicianAuth } from "./useClinicianAuth";
 import { useDocumentAppSurface } from "../../useDocumentAppSurface";
 
@@ -172,10 +172,11 @@ export function ClinicianAuthPage() {
             <button
               type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="w-full h-11 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               <span className="inline-flex items-center gap-2">
-                <Stethoscope className="w-4 h-4" />
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Stethoscope className="w-4 h-4" />}
                 {loading ? "טוען..." : submitLabel}
               </span>
             </button>
