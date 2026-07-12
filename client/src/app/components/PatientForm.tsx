@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Hash, X } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { useState } from 'react';
+import { Hash, Loader2, X } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export interface PatientFormProps {
   open: boolean;
@@ -9,30 +9,30 @@ export interface PatientFormProps {
 }
 
 export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
-  const [caseId, setCaseId] = useState("");
-  const [phone, setPhone] = useState("");
-  const [birthDay, setBirthDay] = useState("");
-  const [birthMonth, setBirthMonth] = useState("");
-  const [birthYear, setBirthYear] = useState("");
-  const [gender, setGender] = useState<"" | "male" | "female">("");
-  const [language, setLanguage] = useState("he");
-  const [dominantHand, setDominantHand] = useState<"" | "right" | "left" | "ambidextrous">("");
-  const [educationYears, setEducationYears] = useState("");
+  const [caseId, setCaseId] = useState('');
+  const [phone, setPhone] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthYear, setBirthYear] = useState('');
+  const [gender, setGender] = useState<'' | 'male' | 'female'>('');
+  const [language, setLanguage] = useState('he');
+  const [dominantHand, setDominantHand] = useState<'' | 'right' | 'left' | 'ambidextrous'>('');
+  const [educationYears, setEducationYears] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   if (!open) return null;
 
   const reset = () => {
-    setCaseId("");
-    setPhone("");
-    setBirthDay("");
-    setBirthMonth("");
-    setBirthYear("");
-    setGender("");
-    setLanguage("he");
-    setDominantHand("");
-    setEducationYears("");
+    setCaseId('');
+    setPhone('');
+    setBirthDay('');
+    setBirthMonth('');
+    setBirthYear('');
+    setGender('');
+    setLanguage('he');
+    setDominantHand('');
+    setEducationYears('');
     setError(null);
   };
 
@@ -63,7 +63,7 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
     ) {
       return null;
     }
-    return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+    return `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,56 +71,56 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
     setError(null);
 
     if (!normalizedCaseId) {
-      setError("יש למלא מזהה תיק.");
+      setError('יש למלא מזהה תיק.');
       return;
     }
     if (!/^[A-Z0-9][A-Z0-9_.-]{2,49}$/.test(normalizedCaseId)) {
-      setError("מזהה תיק חייב להיות קוד באנגלית/מספרים בלבד, 3-50 תווים.");
+      setError('מזהה תיק חייב להיות קוד באנגלית/מספרים בלבד, 3-50 תווים.');
       return;
     }
 
-    const normalizedPhone = phone.replace(/[\s-]/g, "");
+    const normalizedPhone = phone.replace(/[\s-]/g, '');
     if (!/^\+?[0-9]{7,15}$/.test(normalizedPhone)) {
-      setError("יש להזין מספר טלפון תקין.");
+      setError('יש להזין מספר טלפון תקין.');
       return;
     }
 
     const dateOfBirth = buildBirthDate();
     if (!dateOfBirth) {
-      setError("יש להזין תאריך לידה תקין.");
+      setError('יש להזין תאריך לידה תקין.');
       return;
     }
 
     if (!gender) {
-      setError("יש לבחור מין.");
+      setError('יש לבחור מין.');
       return;
     }
-    if (language !== "he") {
-      setError("בשלב זה נתמכת עברית בלבד.");
+    if (language !== 'he') {
+      setError('בשלב זה נתמכת עברית בלבד.');
       return;
     }
     if (!dominantHand) {
-      setError("יש לבחור יד דומיננטית.");
+      setError('יש לבחור יד דומיננטית.');
       return;
     }
 
     const education = Number(educationYears);
     if (!Number.isInteger(education) || education < 0 || education > 40) {
-      setError("שנות לימוד חייבות להיות בין 0 ל-40.");
+      setError('שנות לימוד חייבות להיות בין 0 ל-40.');
       return;
     }
 
     const { data: authData } = await supabase.auth.getSession();
     const session = authData.session;
     if (!session) {
-      setError("יש להתחבר מחדש.");
+      setError('יש להתחבר מחדש.');
       return;
     }
 
     setSaving(true);
     try {
       const { data, error: insertError } = await supabase
-        .from("patients")
+        .from('patients')
         .insert({
           clinician_id: session.user.id,
           case_id: normalizedCaseId,
@@ -134,17 +134,17 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
           id_number: null,
           notes: null,
         })
-        .select("id")
+        .select('id')
         .single();
 
       if (insertError || !data) {
-        throw new Error(insertError?.message ?? "פתיחת תיק נכשלה.");
+        throw new Error(insertError?.message ?? 'פתיחת תיק נכשלה.');
       }
 
       reset();
       onCreated(data.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "פתיחת תיק נכשלה.");
+      setError(err instanceof Error ? err.message : 'פתיחת תיק נכשלה.');
     } finally {
       setSaving(false);
     }
@@ -214,21 +214,21 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <input
                   value={birthDay}
-                  onChange={(e) => setBirthDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  onChange={(e) => setBirthDay(e.target.value.replace(/\D/g, '').slice(0, 2))}
                   placeholder="יום"
                   inputMode="numeric"
                   className="h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
                 />
                 <input
                   value={birthMonth}
-                  onChange={(e) => setBirthMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  onChange={(e) => setBirthMonth(e.target.value.replace(/\D/g, '').slice(0, 2))}
                   placeholder="חודש"
                   inputMode="numeric"
                   className="h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
                 />
                 <input
                   value={birthYear}
-                  onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   placeholder="שנה"
                   inputMode="numeric"
                   className="h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
@@ -241,7 +241,7 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
                 <label className="block text-sm font-bold text-gray-600 mb-1">מין*</label>
                 <select
                   value={gender}
-                  onChange={(e) => setGender(e.target.value as "" | "male" | "female")}
+                  onChange={(e) => setGender(e.target.value as '' | 'male' | 'female')}
                   aria-label="מין*"
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
                 >
@@ -270,7 +270,7 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
                 <select
                   value={dominantHand}
                   onChange={(e) =>
-                    setDominantHand(e.target.value as "" | "right" | "left" | "ambidextrous")
+                    setDominantHand(e.target.value as '' | 'right' | 'left' | 'ambidextrous')
                   }
                   aria-label="יד דומיננטית*"
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none bg-white"
@@ -286,7 +286,7 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
                 <label className="block text-sm font-bold text-gray-600 mb-1">שנות לימוד*</label>
                 <input
                   value={educationYears}
-                  onChange={(e) => setEducationYears(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  onChange={(e) => setEducationYears(e.target.value.replace(/\D/g, '').slice(0, 2))}
                   placeholder="למשל 12"
                   inputMode="numeric"
                   className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:border-black focus:ring-4 focus:ring-black/10 outline-none"
@@ -315,9 +315,11 @@ export function PatientForm({ open, onClose, onCreated }: PatientFormProps) {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 h-11 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:opacity-60"
+              aria-busy={saving}
+              className="flex-1 h-11 rounded-lg bg-black text-white font-bold hover:bg-gray-800 disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {saving ? "שומר..." : "פתח תיק"}
+              {saving ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : null}
+              {saving ? 'שומר...' : 'פתח תיק'}
             </button>
           </div>
         </form>
