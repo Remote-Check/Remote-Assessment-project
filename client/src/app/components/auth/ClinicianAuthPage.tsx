@@ -1,27 +1,27 @@
-import { useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
-import { ArrowLeft, Lock, Stethoscope, UserPlus } from "lucide-react";
-import { useClinicianAuth } from "./useClinicianAuth";
-import { useDocumentAppSurface } from "../../useDocumentAppSurface";
+import { useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { ArrowLeft, Lock, Stethoscope, UserPlus, Loader2 } from 'lucide-react';
+import { useClinicianAuth } from './useClinicianAuth';
+import { useDocumentAppSurface } from '../../useDocumentAppSurface';
 
-type Mode = "signin" | "signup";
+type Mode = 'signin' | 'signup';
 
 export function ClinicianAuthPage() {
-  useDocumentAppSurface("clinician");
+  useDocumentAppSurface('clinician');
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signUp, loading } = useClinicianAuth();
-  const [mode, setMode] = useState<Mode>("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [clinicName, setClinicName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [mode, setMode] = useState<Mode>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [clinicName, setClinicName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const submitLabel = useMemo(
-    () => (mode === "signin" ? "כניסה לקלינאים" : "יצירת חשבון קלינאי"),
+    () => (mode === 'signin' ? 'כניסה לקלינאים' : 'יצירת חשבון קלינאי'),
     [mode],
   );
 
@@ -31,22 +31,22 @@ export function ClinicianAuthPage() {
     setSuccess(null);
 
     if (!email.trim() || !password.trim()) {
-      setError("יש למלא אימייל וסיסמה.");
+      setError('יש למלא אימייל וסיסמה.');
       return;
     }
 
-    if (mode === "signup" && (!fullName.trim() || !clinicName.trim() || !phoneNumber.trim())) {
-      setError("בהרשמה יש למלא שם מלא, שם מרפאה ומספר טלפון.");
+    if (mode === 'signup' && (!fullName.trim() || !clinicName.trim() || !phoneNumber.trim())) {
+      setError('בהרשמה יש למלא שם מלא, שם מרפאה ומספר טלפון.');
       return;
     }
 
-    if (mode === "signin") {
+    if (mode === 'signin') {
       const res = await signIn(email.trim(), password);
       if (!res.ok) {
-        setError(res.error ?? "הכניסה נכשלה.");
+        setError(res.error ?? 'הכניסה נכשלה.');
         return;
       }
-      const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
+      const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
       navigate(from, { replace: true });
       return;
     }
@@ -59,12 +59,12 @@ export function ClinicianAuthPage() {
       phoneNumber: phoneNumber.trim(),
     });
     if (!res.ok) {
-      setError(res.error ?? "הרשמה נכשלה.");
+      setError(res.error ?? 'הרשמה נכשלה.');
       return;
     }
 
-    setSuccess("החשבון נוצר בהצלחה. אפשר להתחבר עכשיו.");
-    setMode("signin");
+    setSuccess('החשבון נוצר בהצלחה. אפשר להתחבר עכשיו.');
+    setMode('signin');
   };
 
   return (
@@ -87,11 +87,11 @@ export function ClinicianAuthPage() {
           <div className="grid grid-cols-2 gap-2 mb-4">
             <button
               type="button"
-              onClick={() => setMode("signin")}
+              onClick={() => setMode('signin')}
               className={`h-10 rounded-lg font-bold text-sm transition-colors ${
-                mode === "signin"
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                mode === 'signin'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <span className="inline-flex items-center gap-1.5 sm:gap-2">
@@ -101,11 +101,11 @@ export function ClinicianAuthPage() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("signup")}
+              onClick={() => setMode('signup')}
               className={`h-10 rounded-lg font-bold text-sm transition-colors ${
-                mode === "signup"
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                mode === 'signup'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <span className="inline-flex items-center gap-1.5 sm:gap-2">
@@ -116,7 +116,7 @@ export function ClinicianAuthPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            {mode === "signup" && (
+            {mode === 'signup' && (
               <>
                 <input
                   type="text"
@@ -172,12 +172,15 @@ export function ClinicianAuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              aria-busy={loading}
+              className="w-full h-11 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
-              <span className="inline-flex items-center gap-2">
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+              ) : (
                 <Stethoscope className="w-4 h-4" />
-                {loading ? "טוען..." : submitLabel}
-              </span>
+              )}
+              <span>{loading ? 'טוען...' : submitLabel}</span>
             </button>
           </form>
         </div>
