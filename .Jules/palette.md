@@ -1,0 +1,3 @@
+## 2024-05-15 - Explicit visual loading states for async action buttons
+**Learning:** For async action buttons, users need clear visual feedback beyond text changes or disabled states to understand that a process is ongoing. The standard design system handles this gracefully using `aria-busy` paired with a spinning `Loader2` icon. This improves both perceived performance and accessibility.
+**Action:** When implementing forms or actions that involve async operations (like saving a patient form), always wrap the submit/action button in an explicit visual loading state with `aria-busy` and a `lucide-react` `Loader2` element with the `animate-spin` tailwind class.
